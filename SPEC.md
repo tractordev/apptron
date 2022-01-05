@@ -1,6 +1,5 @@
 # hostbridge API
 
-
 ## window module
 
 ### `window.All(): Handle[]`
@@ -171,14 +170,12 @@ type Options struct {
 	Transparent bool // both window and webview
 	Visible     bool
 	Center      bool // convenience
+  Icon        string // bytestream callback
 	URL         string
 	HTML        string
 	Script      string
 }
 ```
-  
-* icon?? todo
-* menu?? todo
 
 * [WebViewBuilder.with_url](https://docs.rs/wry/latest/wry/webview/struct.WebViewBuilder.html#method.with_url)
 * [WebViewBuilder.with_html](https://docs.rs/wry/latest/wry/webview/struct.WebViewBuilder.html#method.with_html)
@@ -191,13 +188,13 @@ Logical window position
 
 ```golang
 type Position struct {
-	X float64
+  X float64
   Y float64
 }
 ```
 
-* [Electron: Point](https://www.electronjs.org/docs/latest/api/structures/point)
-* [wry: LogicalPosition](https://docs.rs/wry/latest/wry/application/dpi/struct.LogicalPosition.html)
+* electron: [Point](https://www.electronjs.org/docs/latest/api/structures/point)
+* wry: [LogicalPosition](https://docs.rs/wry/latest/wry/application/dpi/struct.LogicalPosition.html)
 
 
 ### `window.Size` [struct]
@@ -216,24 +213,76 @@ type Size struct {
 
 ## menu module
 
+### `menu.AppMenu(): Handle|null`
+Returns application if set otherwise null.
+
+* electron: [Menu.getApplicationMenu](https://www.electronjs.org/docs/latest/api/menu#menugetapplicationmenu)
+
+
+### `menu.SetAppMenu(menu: Handle)`
+Set application menu. On Windows and Linux, sets the default menu on windows.
+
+* electron: [Menu.setApplicationMenu](https://www.electronjs.org/docs/latest/api/menu#menusetapplicationmenumenu)
+
+### `menu.Create(items: Item[]): Handle`
+Create a new webview window.
+
+### `menu.Menu` [object]
+Object representing a menu
+
+```golang
+type Menu struct {
+	Items []Item
+}
+```
+
+#### Events
+
+* `ItemClicked(item Item)` - A menu item was clicked.
+  * wry: [Event::MenuEvent](https://docs.rs/wry/latest/wry/application/event/enum.Event.html#variant.MenuEvent)
+
+### menu.Item [struct]
+Menu item
+
+```golang
+type Item struct {
+  ID          uint16
+  Title       string
+  SubMenu     []Item
+  Enabled     bool
+  Selected    bool
+  Accelerator string
+}
+```
+
+* electron: [MenuItem](https://www.electronjs.org/docs/latest/api/menu-item)
+* wry: [MenuItemAttributes](https://docs.rs/wry/latest/wry/application/menu/struct.MenuItemAttributes.html)
+
 ## notification module
+
+TODO
 
 ## indicator module
 
+TODO
+
 ## screen module
+
+TODO
+
+## input module
+
+TODO
 
 ## shell module
 
-## hotkey module
-
-## dialog module 
-
-## clipboard module
-
+TODO
 
 ## Notes
 
 app module is removed for now.
+
+window icon and menu attributes are not included.
 
 fullscreen in wry/tao has two parameterized modes:
 * exclusive with a video mode change
