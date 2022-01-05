@@ -3,115 +3,107 @@
 
 ## window module
 
-### `window.getAllWindows(): Handle[]`
-
-An array of all opened browser windows.
-
+### `window.All(): Handle[]`
+Returns array of handles to all opened windows.
 
 * [BrowserWindow.getAllWindows](https://www.electronjs.org/docs/latest/api/browser-window#browserwindowgetallwindows)
 
 
-### `window.getFocusedWindow(): Handle|null`
-
-The window that is focused in this application, otherwise returns null.
+### `window.Focused(): Handle|null`
+Handle to window that is focused in this application, otherwise returns null.
 
 * [BrowserWindow.getFocusedWindow](https://www.electronjs.org/docs/latest/api/browser-window#browserwindowgetfocusedwindow)
 
-### `window.create(options?: Options): Handle`
+### `window.Create(options?: Options): Handle`
+Create a new webview window.
 
 * [new BrowserWindow](https://www.electronjs.org/docs/latest/api/browser-window#new-browserwindowoptions)
-* [wry::application::window::Window::new](https://docs.rs/wry/latest/wry/application/window/struct.Window.html#method.new)
+* wry: [Window::new](https://docs.rs/wry/latest/wry/application/window/struct.Window.html#method.new)
 
-### `window.Window`
+### `window.Window` [object]
 Object representing a window
 
-##### Fields
-* `title: string`
-* `transparent: bool`
-* `size: Size`
-* `position: Point`
-* `alwaysOnTop: bool`
-* `fullscreen: bool`
-* `minSize: Size`
-* `maxSize: Size`
-* `canResize: bool`
-* unavailable in wry
-  * canMove
-  * canMinimize
-  * canMaximize
-  * canClose
-  * canFocus
-  * canFullscreen
-  * isModal
-  * backgroundColor
-  * hasShadow
-  * opacity
-  * titleBar
-  * roundedCorners
-  * frame
-  * parent
-  * useContentSize
+```golang
+type Window struct {
+	Title       string
+	Transparent bool
+	Size        Size
+	Position    Position
+	AlwaysOnTop bool
+	Fullscreen  bool
+	MinSize     Size
+	MaxSize     Size
+	Resizable   bool
+}
+```
+
+#### Events
+* `CloseRequested()` - The window has been requested to close.
+  * wry: [WindowEvent::CloseRequested](https://docs.rs/wry/latest/wry/application/event/enum.WindowEvent.html#variant.CloseRequested)
+* `Destroyed()` - The window has been closed/destroyed.
+  * wry: [WindowEvent::Destroyed](https://docs.rs/wry/latest/wry/application/event/enum.WindowEvent.html#variant.Destroyed)
+* `Focused(focus: bool)` - The window gained or lost focus.
+  * wry: [WindowEvent::Focused](https://docs.rs/wry/latest/wry/application/event/enum.WindowEvent.html#variant.Focused)
+* `Resized(size: Size)` - The size of the window has changed. Contains the client area’s new dimensions.
+  * wry: [WindowEvent::Resized](https://docs.rs/wry/latest/wry/application/event/enum.WindowEvent.html#variant.Resized)
+* `Moved(position: Position)` - The position of the window has changed. Contains the window’s new position.
+  * wry: [WindowEvent::Moved](https://docs.rs/wry/latest/wry/application/event/enum.WindowEvent.html#variant.Moved)
 
 
-##### Events
-* `closeRequested()` - The window has been requested to close.
-  * [wry::application::event::WindowEvent::CloseRequested](https://docs.rs/wry/latest/wry/application/event/enum.WindowEvent.html#variant.CloseRequested)
-* `destroyed()` - The window has been closed/destroyed.
-  * [wry::application::event::WindowEvent::Destroyed](https://docs.rs/wry/latest/wry/application/event/enum.WindowEvent.html#variant.Destroyed)
-* `focused(focus: bool)` - The window gained or lost focus.
-  * [wry::application::event::WindowEvent::Focused](https://docs.rs/wry/latest/wry/application/event/enum.WindowEvent.html#variant.Focused)
-* `resized(size: Size)` - The size of the window has changed. Contains the client area’s new dimensions.
-  * [wry::application::event::WindowEvent::Resized](https://docs.rs/wry/latest/wry/application/event/enum.WindowEvent.html#variant.Resized)
-* `moved(position: Point)` - The position of the window has changed. Contains the window’s new position.
-  * [wry::application::event::WindowEvent::Moved](https://docs.rs/wry/latest/wry/application/event/enum.WindowEvent.html#variant.Moved)
-* not available in wry?
-  * 'show'
-  * 'hide'
-  * 'maximize'
-  * 'unmaximize'
-  * 'minimize'
-  * 'restore'
-  * 'enter-fullscreen'
-  * 'leave-fullscreen'
+#### Methods
+* `Destroy()` - Release the window object resource.
 
-##### Methods
-* `destroy()` - Release the window object resource.
-* `isDestroyed(): bool` - Has the resource been destroyed.
-* `focus()` - Bring the window to front and focus on webview control.
-  * [wry::application::window::Window.set_focus](https://docs.rs/wry/latest/wry/application/window/struct.Window.html#method.set_focus)
-  * [wry::webview::WebView.focus](https://docs.rs/wry/latest/wry/webview/struct.WebView.html#method.focus)
-* `setVisible(visible: bool)` - Modifies the window’s visibility.
-  * If `false`, this will hide the window. If `true`, this will show the window.
-  * [wry::application::window::Window.setVisible](https://docs.rs/wry/latest/wry/application/window/struct.Window.html#method.set_visible)
-* `isVisible(): bool` - Gets the window’s current vibility state.
-  * [wry::application:window::Window.is_visible](https://docs.rs/wry/latest/wry/application/window/struct.Window.html#method.is_visible)
-* !isNormal
-* `setMaximized(maximized: bool)` - Sets the window to maximized or back.
-  * [wry::application:window::Window.set_maximized](https://docs.rs/wry/latest/wry/application/window/struct.Window.html#method.set_maximized)
-* `setMinimized(minimized: bool)` - Sets the window to minimized or back.
-  * [wry::application:window::Window.set_minimized](https://docs.rs/wry/latest/wry/application/window/struct.Window.html#method.set_minimized)
-* `setFullscreen(fullscreen: bool)` - Sets the window to fullscreen or back.
-  * [wry::application:window::Window.set_fullscreen](https://docs.rs/wry/latest/wry/application/window/struct.Window.html#method.set_fullscreen)
+* `IsDestroyed(): bool` - Has the resource been destroyed.
+
+* `Focus()` - Bring the window to front and focus on webview control.
+  * wry: [Window.set_focus](https://docs.rs/wry/latest/wry/application/window/struct.Window.html#method.set_focus)
+  * wry: [WebView.focus](https://docs.rs/wry/latest/wry/webview/struct.WebView.html#method.focus)
+
+* `SetVisible(visible: bool)` - Modifies the window’s visibility.
+  * wry: [Window.setVisible](https://docs.rs/wry/latest/wry/application/window/struct.Window.html#method.set_visible)
+
+* `IsVisible(): bool` - Gets the window’s current vibility state.
+  * wry: [Window.is_visible](https://docs.rs/wry/latest/wry/application/window/struct.Window.html#method.is_visible)
+
+* `SetMaximized(maximized: bool)` - Sets the window to maximized or back.
+  * wry: [Window.set_maximized](https://docs.rs/wry/latest/wry/application/window/struct.Window.html#method.set_maximized)
+
+* `SetMinimized(minimized: bool)` - Sets the window to minimized or back.
+  * wry: [Window.set_minimized](https://docs.rs/wry/latest/wry/application/window/struct.Window.html#method.set_minimized)
+
+* `SetFullscreen(fullscreen: bool)` - Sets the window to fullscreen or back.
+  * wry: [Window.set_fullscreen](https://docs.rs/wry/latest/wry/application/window/struct.Window.html#method.set_fullscreen)
   * NOTE: uses borderless with no monitor
 
-* `setSize(size: Size)` - Modifies the inner size of the window.
-  * [wry::application:window::Window.set_inner_size](https://docs.rs/wry/latest/wry/application/window/struct.Window.html#method.set_inner_size)
-* `setMinSize(size: Size)` - Sets a minimum dimension size for the window.
-  * [wry::application:window::Window.set_min_inner_size](https://docs.rs/wry/latest/wry/application/window/struct.Window.html#method.set_min_inner_size)
-* `setMaxSize(size: Size)` - Sets a maximum dimension size for the window.
-  * [wry::application:window::Window.set_max_inner_size](https://docs.rs/wry/latest/wry/application/window/struct.Window.html#method.set_max_inner_size)
-* `setResizable(resizable: bool)` - Sets whether the window is resizable or not.
-  * [wry::application:window::Window.set_resizable](https://docs.rs/wry/latest/wry/application/window/struct.Window.html#method.set_resizable)
-* `setAlwaysOnTop(always: bool)` - Change whether or not the window will always be on top of other windows.
-  * [wry::application:window::Window.set_always_on_top](https://docs.rs/wry/latest/wry/application/window/struct.Window.html#method.set_always_on_top)
+* `SetSize(size: Size)` - Modifies the inner size of the window.
+  * wry: [Window.set_inner_size](https://docs.rs/wry/latest/wry/application/window/struct.Window.html#method.set_inner_size)
 
-* `setPosition(position: Point)` - Modifies the position of the window.
-  * [wry::application:window::Window.set_outer_position](https://docs.rs/wry/latest/wry/application/window/struct.Window.html#method.set_outer_position)
-  * [BrowserWindow#setPosition](https://www.electronjs.org/docs/latest/api/browser-window#winsetpositionx-y-animate)
-* `setTitle(title: string)` - Modifies the title of the window.
-  * [wry::application:window::Window.set_title](https://docs.rs/wry/latest/wry/application/window/struct.Window.html#method.set_title)
-* TODO?:
-  * Most of these do not map to wry APIs, but are possible via direct platform calls. Some are convenience wrappers like center
+* `SetMinSize(size: Size)` - Sets a minimum dimension size for the window.
+  * wry: [Window.set_min_inner_size](https://docs.rs/wry/latest/wry/application/window/struct.Window.html#method.set_min_inner_size)
+
+* `SetMaxSize(size: Size)` - Sets a maximum dimension size for the window.
+  * wry: [Window.set_max_inner_size](https://docs.rs/wry/latest/wry/application/window/struct.Window.html#method.set_max_inner_size)
+
+* `SetResizable(resizable: bool)` - Sets whether the window is resizable or not.
+  * wry: [Window.set_resizable](https://docs.rs/wry/latest/wry/application/window/struct.Window.html#method.set_resizable)
+
+* `SetAlwaysOnTop(always: bool)` - Change whether or not the window will always be on top of other windows.
+  * wry: [Window.set_always_on_top](https://docs.rs/wry/latest/wry/application/window/struct.Window.html#method.set_always_on_top)
+
+* `SetPosition(position: Position)` - Modifies the position of the window.
+  * wry: [Window.set_outer_position](https://docs.rs/wry/latest/wry/application/window/struct.Window.html#method.set_outer_position)
+  * electron: [BrowserWindow#setPosition](https://www.electronjs.org/docs/latest/api/browser-window#winsetpositionx-y-animate)
+
+* `SetTitle(title: string)` - Modifies the title of the window.
+  * wry: [Window.set_title](https://docs.rs/wry/latest/wry/application/window/struct.Window.html#method.set_title)
+
+
+
+#### Not Yet
+Most of these do not map to wry APIs, but are possible via direct platform calls. Some can be convenience wrappers like center 
+
+* methods
+  * `isNormal`
   * `setHasShadow`
   * `setOpacity`
   * `setIgnoreMouseEvents`
@@ -135,56 +127,92 @@ Object representing a window
   * `setContentBounds`
   * `getContentBounds`
   * `getNormalBounds`
+* events
+  * 'show'
+  * 'hide'
+  * 'maximize'
+  * 'unmaximize'
+  * 'minimize'
+  * 'restore'
+  * 'enter-fullscreen'
+  * 'leave-fullscreen'
+* fields
+  * canMove
+  * canMinimize
+  * canMaximize
+  * canClose
+  * canFocus
+  * canFullscreen
+  * isModal
+  * backgroundColor
+  * hasShadow
+  * opacity
+  * titleBar
+  * roundedCorners
+  * frame
+  * parent
+  * useContentSize
 
-### `window.Options`
-Options used by `window.create`.
+### `window.Options` [struct]
+Options used by `window.Create`.
 
-* `alwaysOnTop: bool`
-* `frameless: bool` (!with_decorations)
-* `fullscreen: bool` (Fullscreen::Borderless(None))
-* `size: Size`
-* `minSize: Size`
-* `maxSize: Size`
-* `maximized: bool`
-* `position: Point`
-* `resizable: bool`
-* `title: string`
-* `transparent: bool` (both window and webview)
-* `visible: bool`
-* `center: bool` (convenience)
-* `url: string`
-  * [wry::webview::WebViewBuilder.with_url](https://docs.rs/wry/latest/wry/webview/struct.WebViewBuilder.html#method.with_url)
-* `html: string`
-  * [wry::webview::WebViewBuilder.with_html](https://docs.rs/wry/latest/wry/webview/struct.WebViewBuilder.html#method.with_html)
-* `script: string`
-  * [wry::webview::WebViewBuilder.with_initialization_script](https://docs.rs/wry/latest/wry/webview/struct.WebViewBuilder.html#method.with_initialization_script)
+```golang
+type Options struct {
+	AlwaysOnTop bool
+	Frameless   bool // !with_decorations
+	Fullscreen  bool // Fullscreen::Borderless(None)
+	Size        Size
+	MinSize     Size
+	MaxSize     Size
+	Maximized   bool
+	Position    Position
+	Resizable   bool
+	Title       string
+	Transparent bool // both window and webview
+	Visible     bool
+	Center      bool // convenience
+	URL         string
+	HTML        string
+	Script      string
+}
+```
+  
 * icon?? todo
 * menu?? todo
 
-See also [wry::application::window::WindowBuilder](https://docs.rs/wry/latest/wry/application/window/struct.WindowBuilder.html)
+* [WebViewBuilder.with_url](https://docs.rs/wry/latest/wry/webview/struct.WebViewBuilder.html#method.with_url)
+* [WebViewBuilder.with_html](https://docs.rs/wry/latest/wry/webview/struct.WebViewBuilder.html#method.with_html)
+* [WebViewBuilder.with_initialization_script](https://docs.rs/wry/latest/wry/webview/struct.WebViewBuilder.html#method.with_initialization_script)
+* [wry::application::window::WindowBuilder](https://docs.rs/wry/latest/wry/application/window/struct.WindowBuilder.html)
 
 
-### `window.Point`
-Struct for (logical) screen point location
+### `window.Position` [struct]
+Logical window position
 
-* `x: float64`
-* `y: float64` 
+```golang
+type Position struct {
+	X float64
+  Y float64
+}
+```
 
 * [Electron: Point](https://www.electronjs.org/docs/latest/api/structures/point)
 * [wry: LogicalPosition](https://docs.rs/wry/latest/wry/application/dpi/struct.LogicalPosition.html)
 
 
-### `window.Size`
-Struct for (logical) window size
+### `window.Size` [struct]
+Logical window size
 
-* `width: float64`
-* `height: float64` 
+```golang
+type Size struct {
+	Width  float64
+	Height float64
+}
+```
 
+* electron: [Size](https://www.electronjs.org/docs/latest/api/structures/size)
+* wry: [LogicalSize](https://docs.rs/wry/latest/wry/application/dpi/struct.LogicalSize.html)
 
-* [Electron: Size](https://www.electronjs.org/docs/latest/api/structures/size)
-* [wry: LogicalSize](https://docs.rs/wry/latest/wry/application/dpi/struct.LogicalSize.html)
-
-## app module
 
 ## menu module
 
@@ -204,6 +232,8 @@ Struct for (logical) window size
 
 
 ## Notes
+
+app module is removed for now.
 
 fullscreen in wry/tao has two parameterized modes:
 * exclusive with a video mode change
