@@ -1,72 +1,92 @@
 use std::ffi::CStr;
 
-#[no_mangle]
-pub extern "C" fn hello(name: *const libc::c_char) {
-    let buf_name = unsafe { CStr::from_ptr(name).to_bytes() };
-    let str_name = String::from_utf8(buf_name.to_vec()).unwrap();
-    println!("Hello {}!", str_name);
+fn string_from_cstr(cstr: *const libc::c_char) -> String {
+  let buffer = unsafe { CStr::from_ptr(cstr).to_bytes() };
+  String::from_utf8(buffer.to_vec()).unwrap()
 }
 
 /*
-#[no_mangle]
-pub extern "C" fn window_create(width: i32, height: i32, title: *const libc::c_char) -> i32 {
-  use wry::{
-      application::{
-          event::{Event, StartCause, WindowEvent},
-          event_loop::{ControlFlow, EventLoop},
-          window::WindowBuilder,
-          platform::run_return::EventLoopExtRunReturn,
-      },
-      webview::WebViewBuilder,
-  };
+use lazy_static::lazy_static;
+use std::sync::Mutex;
 
-  let title_buf = unsafe { CStr::from_ptr(title).to_bytes() };
-  let title_str = String::from_utf8(title_buf.to_vec()).unwrap();
+lazy_static! {
+  static ref GLOBAL_WINDOWS: Mutex<Vec<i32>> = Mutex::new(Vec::new());
+}
 
-  let mut event_loop = EventLoop::new();
-  let maybe_window = WindowBuilder::new()
-      .with_title(title_str)
-      .with_decorations(true)
-      //.with_transparent(false)
-      //.with_inner_size(width, height)
-      .build(&event_loop);
+// GLOBAL_WINDOWS.unlock().unwrap().push(42);
+*/
 
-  if !maybe_window.is_ok() {
-    return 0
-  }
+use std::cell::RefCell;
+use wry::application::event_loop::EventLoop;
 
-  let window = maybe_window.unwrap();
+thread_local! {
+  static GLOBAL_WINDOWS: Vec<i32> = Vec::new();
+}
 
-  let maybe_webview_builder = WebViewBuilder::new(window);
+thread_local! {
+  static EVENT_LOOP: EventLoop<()> = EventLoop::new();
+}
 
-  if !maybe_webview_builder.is_ok() { return 0; }
+/*
+use lazy_static::lazy_static;
 
-  let maybe_webview = maybe_webview_builder.unwrap()
-      .with_url(
-          r#"data:text/html,
-          <!doctype html>
-          <html>
-            <body style="font-family: -apple-system, BlinkMacSystemFont, avenir next, avenir, segoe ui, helvetica neue, helvetica, Ubuntu, roboto, noto, arial, sans-serif; background-color:rgba(87,87,87,0.75);"></body>
-            <script>
-              window.onload = function() {
-                document.body.innerHTML = `<div style="padding: 30px">Transparency Test<br><br>${navigator.userAgent}</div>`;
-              };
-            </script>
-          </html>"#,
-      );
-
-  if !maybe_webview.is_ok() { return 0; }
-
-  let result = maybe_webview.unwrap().build();
-
-  if !result.is_ok() { return 0; }
-
-  return 1
+lazy_static! {
+  static ref EVENT_LOOP2: EventLoop<()> = EventLoop::new();
 }
 */
 
+//static mut EVENT_LOOP3: EventLoop<()> = EventLoop::new();
+
+/*
+use lazy_static::lazy_static;
+use std::sync::Mutex;
+
+lazy_static! {
+  //static ref EVENT_LOOP4: Mutex<EventLoop<()>> = Mutex::new(EventLoop::new());
+  static ref EVENT_LOOP4: Mutex<EventLoop<()>> = Mutex::new(EventLoop::new());
+}
+*/
+
+// static mut N: i32 = 5;
+
+
+// window_create()
+
+// run(callback_main_loop)
+
 #[no_mangle]
-pub extern "C" fn run(user_callback: unsafe extern "C" fn(i32)) -> i32 {
+pub extern "C" fn run(user_callback: unsafe extern "C" fn(i32)) {
+  use wry::{
+      application::{
+          event::{Event, WindowEvent},
+          event_loop::{ControlFlow},
+      },
+  };
+
+  EVENT_LOOP.with(|event_loop| {
+    event_loop.run(move |event, _, control_flow| {
+        *control_flow = ControlFlow::Poll;
+
+        //println!("{:?}", event);
+
+        let event_type = match event {
+          Event::WindowEvent { event: WindowEvent::Resized{ .. }, .. } => 1,
+          Event::WindowEvent { event: WindowEvent::Moved{ .. }, .. } => 2,
+          Event::WindowEvent { event: WindowEvent::Focused{ .. }, .. } => 3,
+          Event::WindowEvent { event: WindowEvent::MouseInput{ .. }, .. } => 4,
+          Event::WindowEvent { event: WindowEvent::KeyboardInput{ .. }, .. } => 5,
+          _ => 0,
+        };
+
+        unsafe {
+          user_callback(event_type);
+        }
+    });
+  });
+}
+
+#[no_mangle]
+pub extern "C" fn window_create(width: i32, height: i32, title: *const libc::c_char) -> i32 {
   use wry::{
       application::{
           event::{Event, WindowEvent},
@@ -76,65 +96,53 @@ pub extern "C" fn run(user_callback: unsafe extern "C" fn(i32)) -> i32 {
       webview::WebViewBuilder,
   };
 
-  let event_loop = EventLoop::new();
-  let maybe_window = WindowBuilder::new()
-      .with_title("Progrium Test")
-      .with_decorations(true)
-      //.with_transparent(false)
-      .build(&event_loop);
+  //GLOBAL_WINDOWS.with(|windows| windows.push(42));
 
-  if !maybe_window.is_ok() {
-    return 0
-  }
+  println!("[rust] window_create");
 
-  let window = maybe_window.unwrap();
+  return EVENT_LOOP.with(|event_loop| {
+    let maybe_window = WindowBuilder::new()
+        .with_title("Progrium Test")
+        .with_decorations(true)
+        //.with_transparent(false)
+        .build(&event_loop);
 
-  let maybe_webview_builder = WebViewBuilder::new(window);
+    if !maybe_window.is_ok() {
+      return 0
+    }
 
-  if !maybe_webview_builder.is_ok() { return 0; }
+    let window = maybe_window.unwrap();
 
-  let maybe_webview = maybe_webview_builder.unwrap()
-      .with_url(
-          r#"data:text/html,
-          <!doctype html>
-          <html>
-            <body style="font-family: -apple-system, BlinkMacSystemFont, avenir next, avenir, segoe ui, helvetica neue, helvetica, Ubuntu, roboto, noto, arial, sans-serif; background-color:rgba(87,87,87,0.75);"></body>
-            <script>
-              window.onload = function() {
-                document.body.innerHTML = `<div style="padding: 30px">Transparency Test<br><br>${navigator.userAgent}</div>`;
-              };
-            </script>
-          </html>"#,
-      );
+    let maybe_webview_builder = WebViewBuilder::new(window);
 
-  if !maybe_webview.is_ok() { return 0; }
+    if !maybe_webview_builder.is_ok() { return 0; }
 
-  let result = maybe_webview.unwrap().build();
+    let maybe_webview = maybe_webview_builder.unwrap()
+        .with_url(
+            r#"data:text/html,
+            <!doctype html>
+            <html>
+              <body style="font-family: -apple-system, BlinkMacSystemFont, avenir next, avenir, segoe ui, helvetica neue, helvetica, Ubuntu, roboto, noto, arial, sans-serif; background-color:rgba(87,87,87,0.75);"></body>
+              <script>
+                window.onload = function() {
+                  document.body.innerHTML = `<div style="padding: 30px">Transparency Test<br><br>${navigator.userAgent}</div>`;
+                };
+              </script>
+            </html>"#,
+        );
 
-  if !result.is_ok() { return 0; }
+    if !maybe_webview.is_ok() { return 0; }
 
-  event_loop.run(move |event, _, control_flow| {
-      *control_flow = ControlFlow::Wait; // Or Poll
+    let result = maybe_webview.unwrap().build();
 
-      //println!("{:?}", event);
+    if !result.is_ok() { return 0; }
 
-      let event_type = match event {
-        Event::WindowEvent { event: WindowEvent::Resized{ .. }, .. } => 1,
-        Event::WindowEvent { event: WindowEvent::Moved{ .. }, .. } => 2,
-        Event::WindowEvent { event: WindowEvent::Focused{ .. }, .. } => 3,
-        Event::WindowEvent { event: WindowEvent::MouseInput{ .. }, .. } => 4,
-        Event::WindowEvent { event: WindowEvent::KeyboardInput{ .. }, .. } => 5,
-        _ => 0,
-      };
-
-      unsafe {
-        user_callback(event_type);
-      }
+    // @Incomplete: return window id
+    return 1
   });
-
-  return 1
 }
 
+/*
 #[no_mangle]
 pub extern "C" fn gomain() {
     oldmain().ok();
@@ -187,3 +195,4 @@ fn oldmain() -> wry::Result<()> {
       }
   });
 }
+*/

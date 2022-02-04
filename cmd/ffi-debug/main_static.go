@@ -31,6 +31,20 @@ func Run(user_callback func(event_type int)) {
     C.run(C.closure(C.go_main_loop))
 }
 
+type Window struct {
+	Id    int
+	Title string
+}
+
+func WindowCreate() Window {
+	result := Window{}
+	return result
+}
+
+func (it *Window) SetTitle(Title string) {
+	it.Title = Title
+}
+
 //
 // User Code
 //
@@ -43,8 +57,16 @@ func main_loop(event_type int) {
 
 func main() {
 	fmt.Println("[go] main");
-	C.hello(C.CString("static"))
+
+	w := Window{}
+	w.SetTitle("Hello, Sailor!")
+
+	C.window_create(C.int(1280), C.int(720), C.CString("Hey"));
+
+	fmt.Printf("%s\n", w.Title)
 
 	fmt.Println("[go] run");
 	Run(main_loop)
+
+	fmt.Println("[go] this will never fire");
 }
