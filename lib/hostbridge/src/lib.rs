@@ -1,145 +1,131 @@
 use std::ffi::CStr;
+use std::mem::size_of;
+
+use wry::{
+    application::{
+        event::{Event, WindowEvent},
+        event_loop::{ControlFlow, EventLoop, EventLoopProxy},
+        window::WindowBuilder,
+    },
+    webview::WebViewBuilder,
+};
+
+unsafe fn any_as_u8_slice<T: Sized>(p: &T) -> &[u8] {
+    ::std::slice::from_raw_parts(
+        (p as *const T) as *const u8,
+        ::std::mem::size_of::<T>(),
+    )
+}
+
+#[no_mangle]
+pub extern "C" fn create_event_loop() -> EventLoop<()> {
+  //let raw_mt_one_ptr = Box::into_raw(Box::new(mt_one)) as *const c_void;
+  let result = Box::new(EventLoop::new());
+
+  let bytes: &[u8] = unsafe { any_as_u8_slice(&result) };
+  println!("[rust] create_event_loop {:?}", bytes);
+
+  std::mem::forget(result);
+
+  result
+}
+
+#[no_mangle]
+//pub extern "C" fn create_window(data: *const libc::c_void) -> i32 {
+pub extern "C" fn create_window(event_loop: EventLoop<()>) -> i32 {
+
+  println!("[rust] event_loop {:?}", event_loop);
+  
+  let bytes: &[u8] = unsafe { any_as_u8_slice(&event_loop) };
+  println!("[rust] bytes {:?}", bytes);
+
+  return 42;
+}
+
+/*
+pub extern "C" fn create_window(event_loop: EventLoop<()>) -> i32 {
+  println!("{:?}", event_loop);
+  
+  return 42;
+}
+*/
 
 fn string_from_cstr(cstr: *const libc::c_char) -> String {
   let buffer = unsafe { CStr::from_ptr(cstr).to_bytes() };
   String::from_utf8(buffer.to_vec()).unwrap()
 }
 
-/*
-use lazy_static::lazy_static;
-use std::sync::Mutex;
-
-lazy_static! {
-  static ref GLOBAL_WINDOWS: Mutex<Vec<i32>> = Mutex::new(Vec::new());
-}
-
-// GLOBAL_WINDOWS.unlock().unwrap().push(42);
-*/
-
-use std::cell::RefCell;
-use wry::application::event_loop::EventLoop;
-
-thread_local! {
-  static GLOBAL_WINDOWS: Vec<i32> = Vec::new();
-}
-
-thread_local! {
-  static EVENT_LOOP: EventLoop<()> = EventLoop::new();
-}
-
-/*
-use lazy_static::lazy_static;
-
-lazy_static! {
-  static ref EVENT_LOOP2: EventLoop<()> = EventLoop::new();
-}
-*/
-
-//static mut EVENT_LOOP3: EventLoop<()> = EventLoop::new();
-
-/*
-use lazy_static::lazy_static;
-use std::sync::Mutex;
-
-lazy_static! {
-  //static ref EVENT_LOOP4: Mutex<EventLoop<()>> = Mutex::new(EventLoop::new());
-  static ref EVENT_LOOP4: Mutex<EventLoop<()>> = Mutex::new(EventLoop::new());
-}
-*/
-
-// static mut N: i32 = 5;
-
-
-// window_create()
-
-// run(callback_main_loop)
-
 #[no_mangle]
-pub extern "C" fn run(user_callback: unsafe extern "C" fn(i32)) {
-  use wry::{
-      application::{
-          event::{Event, WindowEvent},
-          event_loop::{ControlFlow},
-      },
-  };
-
-  EVENT_LOOP.with(|event_loop| {
-    event_loop.run(move |event, _, control_flow| {
-        *control_flow = ControlFlow::Poll;
-
-        //println!("{:?}", event);
-
-        let event_type = match event {
-          Event::WindowEvent { event: WindowEvent::Resized{ .. }, .. } => 1,
-          Event::WindowEvent { event: WindowEvent::Moved{ .. }, .. } => 2,
-          Event::WindowEvent { event: WindowEvent::Focused{ .. }, .. } => 3,
-          Event::WindowEvent { event: WindowEvent::MouseInput{ .. }, .. } => 4,
-          Event::WindowEvent { event: WindowEvent::KeyboardInput{ .. }, .. } => 5,
-          _ => 0,
-        };
-
-        unsafe {
-          user_callback(event_type);
-        }
-    });
-  });
-}
-
-#[no_mangle]
-pub extern "C" fn window_create(width: i32, height: i32, title: *const libc::c_char) -> i32 {
-  use wry::{
-      application::{
-          event::{Event, WindowEvent},
-          event_loop::{ControlFlow, EventLoop},
-          window::WindowBuilder,
-      },
-      webview::WebViewBuilder,
-  };
+pub extern "C" fn run(event_loop: EventLoop<()>, user_callback: unsafe extern "C" fn(i32)) -> i32 {
+  println!("{}", size_of::<EventLoop<()>>());
 
   //GLOBAL_WINDOWS.with(|windows| windows.push(42));
 
+  /*
+  let event_loop21 = EventLoop::new();
+
+  let event_loop = EventLoop::new();
+  */
+
   println!("[rust] window_create");
 
-  return EVENT_LOOP.with(|event_loop| {
-    let maybe_window = WindowBuilder::new()
-        .with_title("Progrium Test")
-        .with_decorations(true)
-        //.with_transparent(false)
-        .build(&event_loop);
+  let maybe_window = WindowBuilder::new()
+      .with_title("Progrium Test")
+      .with_decorations(true)
+      //.with_transparent(false)
+      .build(&event_loop);
 
-    if !maybe_window.is_ok() {
-      return 0
+  if !maybe_window.is_ok() {
+    return 0
+  }
+
+  let window = maybe_window.unwrap();
+
+  let maybe_webview_builder = WebViewBuilder::new(window);
+
+  if !maybe_webview_builder.is_ok() { return 0; }
+
+  let maybe_webview = maybe_webview_builder.unwrap()
+      .with_url(
+          r#"data:text/html,
+          <!doctype html>
+          <html>
+            <body style="font-family: -apple-system, BlinkMacSystemFont, avenir next, avenir, segoe ui, helvetica neue, helvetica, Ubuntu, roboto, noto, arial, sans-serif; background-color:rgba(87,87,87,0.75);"></body>
+            <script>
+              window.onload = function() {
+                document.body.innerHTML = `<div style="padding: 30px">Transparency Test<br><br>${navigator.userAgent}</div>`;
+              };
+            </script>
+          </html>"#,
+      );
+
+  if !maybe_webview.is_ok() { return 0; }
+
+  let result = maybe_webview.unwrap().build();
+
+  if !result.is_ok() { return 0; }
+
+  event_loop.run(move |event, _, control_flow| {
+    *control_flow = ControlFlow::Poll;
+
+    //println!("{:?}", event);
+
+    let event_type = match event {
+      Event::WindowEvent { event: WindowEvent::Resized{ .. }, .. } => 1,
+      Event::WindowEvent { event: WindowEvent::Moved{ .. }, .. } => 2,
+      Event::WindowEvent { event: WindowEvent::Focused{ .. }, .. } => 3,
+      Event::WindowEvent { event: WindowEvent::MouseInput{ .. }, .. } => 4,
+      Event::WindowEvent { event: WindowEvent::KeyboardInput{ .. }, .. } => 5,
+      _ => 0,
+    };
+
+    unsafe {
+      user_callback(event_type);
     }
-
-    let window = maybe_window.unwrap();
-
-    let maybe_webview_builder = WebViewBuilder::new(window);
-
-    if !maybe_webview_builder.is_ok() { return 0; }
-
-    let maybe_webview = maybe_webview_builder.unwrap()
-        .with_url(
-            r#"data:text/html,
-            <!doctype html>
-            <html>
-              <body style="font-family: -apple-system, BlinkMacSystemFont, avenir next, avenir, segoe ui, helvetica neue, helvetica, Ubuntu, roboto, noto, arial, sans-serif; background-color:rgba(87,87,87,0.75);"></body>
-              <script>
-                window.onload = function() {
-                  document.body.innerHTML = `<div style="padding: 30px">Transparency Test<br><br>${navigator.userAgent}</div>`;
-                };
-              </script>
-            </html>"#,
-        );
-
-    if !maybe_webview.is_ok() { return 0; }
-
-    let result = maybe_webview.unwrap().build();
-
-    if !result.is_ok() { return 0; }
-
-    // @Incomplete: return window id
-    return 1
   });
+
+  // @Incomplete: return window id
+  return 1
 }
 
 /*

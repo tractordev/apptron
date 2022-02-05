@@ -27,8 +27,10 @@ func go_main_loop(i C.int) {
 }
 
 func Run(user_callback func(event_type int)) {
+	/*
     user_main_loop = user_callback
     C.run(C.closure(C.go_main_loop))
+    */
 }
 
 type Window struct {
@@ -61,12 +63,21 @@ func main() {
 	w := Window{}
 	w.SetTitle("Hello, Sailor!")
 
-	C.window_create(C.int(1280), C.int(720), C.CString("Hey"));
+	event_loop := C.create_event_loop();
+	fmt.Printf("[go] t1: %T\n", event_loop)
+	fmt.Printf("[go] event_loop: %p\n", event_loop);
+
+	C.create_window(event_loop);
+
+	//C.create_window(unsafe.Pointer(&event_loop));
+	//C.window_create(C.int(1280), C.int(720), C.CString("Hey"));
 
 	fmt.Printf("%s\n", w.Title)
 
 	fmt.Println("[go] run");
-	Run(main_loop)
+    user_main_loop = main_loop
+    C.run(event_loop, C.closure(C.go_main_loop))
+	//Run(main_loop)
 
 	fmt.Println("[go] this will never fire");
 }
