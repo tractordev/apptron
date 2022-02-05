@@ -20,14 +20,20 @@ unsafe fn any_as_u8_slice<T: Sized>(p: &T) -> &[u8] {
 #[no_mangle]
 pub extern "C" fn create_event_loop() -> EventLoop<()> {
   //let raw_mt_one_ptr = Box::into_raw(Box::new(mt_one)) as *const c_void;
-  let result = Box::new(EventLoop::new());
+  let result = EventLoop::new();
+  use std::mem::ManuallyDrop;
 
   let bytes: &[u8] = unsafe { any_as_u8_slice(&result) };
   println!("[rust] create_event_loop {:?}", bytes);
 
-  std::mem::forget(result);
+  //std::mem::forget(result);
+  
+  // NOTE(nick): prevent the EventLoop's destructor from being called here
+  let mut r2 = ManuallyDrop::new(result);
 
-  result
+  unsafe {
+    ManuallyDrop::take(&mut r2)
+  }
 }
 
 #[no_mangle]
@@ -38,6 +44,8 @@ pub extern "C" fn create_window(event_loop: EventLoop<()>) -> i32 {
   
   let bytes: &[u8] = unsafe { any_as_u8_slice(&event_loop) };
   println!("[rust] bytes {:?}", bytes);
+
+  std::mem::forget(event_loop);
 
   return 42;
 }
