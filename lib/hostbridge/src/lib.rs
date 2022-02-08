@@ -266,6 +266,7 @@ pub extern "C" fn window_get_dpi_scale(window_id: CInt) -> CDouble {
   result
 }
 
+/*
 #[no_mangle]
 #[allow(improper_ctypes_definitions)]
 pub extern "C" fn quit(event_loop: CEventLoop) {
@@ -273,7 +274,9 @@ pub extern "C" fn quit(event_loop: CEventLoop) {
   forget(event_loop);
 
   let _ = proxy.send_event(AppEvents::PostQuit());
+  //forget(proxy);
 }
+*/
 
 #[no_mangle]
 #[allow(improper_ctypes_definitions)]
@@ -335,9 +338,16 @@ pub extern "C" fn run(event_loop: CEventLoop, user_callback: unsafe extern "C" f
           _ => (),
         }
       },
+      /*
       Event::UserEvent(AppEvents::PostQuit()) => {
         *control_flow = ControlFlow::Exit;
+
+        GLOBAL_WINDOWS.with(|windows| {
+          let mut array = windows.borrow_mut();
+          array.clear();
+        });
       }
+      */
       _ => (),
     }
 

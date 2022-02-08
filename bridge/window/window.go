@@ -12,13 +12,13 @@ import "C"
 import (
 	"sync"
 	"errors"
+	"os"
 )
 
 type Module struct {
-	handles []int
-
 	mu sync.Mutex
 
+	windows []Window
 	event_loop C.Event_Loop
 	should_quit bool
 }
@@ -50,13 +50,25 @@ const (
   Event_Type__Moved         = 5
 )
 
+func _EventName(event_type int) string {
+	if (event_type == Event_Type__None) { return "none"; }
+	if (event_type == Event_Type__Close) { return "close"; }
+	if (event_type == Event_Type__Destroyed) { return "destroyed"; }
+	if (event_type == Event_Type__Focused) { return "focused"; }
+	if (event_type == Event_Type__Resized) { return "resized"; }
+	if (event_type == Event_Type__Moved) { return "moved"; }
+	return "";
+}
+
 type Event struct {
 	Type       int
+	Name       string
 	WindowId   int
 	Dim        Position
 }
 
 type Options struct {
+	/*
 	AlwaysOnTop bool
 	Frameless   bool
 	Fullscreen  bool
@@ -74,6 +86,7 @@ type Options struct {
 	URL         string
 	HTML        string
 	Script      string
+	*/
 }
 
 type Position struct {
@@ -93,15 +106,48 @@ func init() {
 	module.should_quit = false
 }
 
-/*
-func (m *Module) All() (ret []string) {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	ret = make([]string, len(m.handles))
-	copy(ret, m.handles)
-	return ret
+func All() (result []Window) {
+	/*
+	module.mu.Lock()
+	defer module.mu.Unlock()
+	*/
+
+	result = make([]Window, 0)
+
+	for _, it := range module.windows {
+		if (!it.was_destroyed) {
+			result = append(result, it)
+		}
+	}
+
+	return result
 }
-*/
+
+func FindIndexById(window_id int) int {
+	/*
+	module.mu.Lock()
+	defer module.mu.Unlock()
+	*/
+
+	var result int = -1
+
+	for i, v := range module.windows {
+    if v.Id == window_id {
+    	result = i
+    	break
+    }
+	}
+
+	return result
+}
+
+func FindById(window_id int) *Window {
+	index := FindIndexById(window_id)
+	if (index >= 0) {
+		return &module.windows[index]
+	}
+	return nil
+}
 
 type User_Callback func(event Event)
 
@@ -116,6 +162,7 @@ func go_app_main_loop(data C.Event) {
 	if (user_main_loop != nil) {
 		result := Event{}
 		result.Type = int(data.event_type)
+		result.Name = _EventName(result.Type)
 		result.WindowId = int(data.window_id)
 		result.Dim = _MakePosition(data.dim)
 
@@ -134,14 +181,18 @@ func Quit() {
 	if (!module.should_quit) {
 		module.should_quit = true
 
-		C.quit(module.event_loop)
+		os.Exit(0)
 
-		// @MemoryLeak: event_loop destructor needs to be called here
+		// @Incomplete: ideally this would return execution to the main thread
 		// but it seems fine because ControlFlow::Exit actually quits the whole process...
+		//
+		// @MemoryLeak: event_loop destructor needs to be called here if we return execution to go main
 	}
 }
 
-func Create() (Window, error) {
+func Create(options Options) (*Window, error) {
+	// @Incomplete: take options here
+
 	result := C.create_window(module.event_loop)
 	id := int(result)
 
@@ -149,19 +200,27 @@ func Create() (Window, error) {
 	window.Id = id
 
 	if (id >= 0) {
-		module.handles = append(module.handles, id)
-		return window, nil
+		module.windows = append(module.windows, window)
+		return &window, nil
 	}
 
-	return window, errors.New("Failed to create window")
+	return nil, errors.New("Failed to create window")
 }
 
 func (it *Window) Destroy() bool {
-	success := C.destroy_window(C.int(it.Id))
-	result := _ToBool(success)
+	result := false
 
-	if (result) {
-		it.was_destroyed = true
+	if (!it.was_destroyed) {
+		success := C.destroy_window(C.int(it.Id))
+		if (_ToBool(success)) {
+			it.was_destroyed = true
+			result = true
+
+			index := FindIndexById(it.Id)
+			if (index >= 0) {
+				module.windows = append(module.windows[:index], module.windows[index+1:]...)
+			}
+		}
 	}
 
 	return result
