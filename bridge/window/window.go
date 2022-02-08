@@ -42,12 +42,12 @@ type Window struct {
 }
 
 const (
-  Event_Type__None      int = 0
-  Event_Type__Close         = 1
-  Event_Type__Destroyed     = 2
-  Event_Type__Focused       = 3
-  Event_Type__Resized       = 4
-  Event_Type__Moved         = 5
+	Event_Type__None      int = 0
+	Event_Type__Close         = 1
+	Event_Type__Destroyed     = 2
+	Event_Type__Focused       = 3
+	Event_Type__Resized       = 4
+	Event_Type__Moved         = 5
 )
 
 func _EventName(event_type int) string {
@@ -133,10 +133,10 @@ func FindIndexById(window_id int) int {
 	var result int = -1
 
 	for i, v := range module.windows {
-    if v.Id == window_id {
-    	result = i
-    	break
-    }
+		if v.Id == window_id {
+			result = i
+			break
+		}
 	}
 
 	return result
@@ -172,10 +172,10 @@ func go_app_main_loop(data C.Event) {
 }
 
 func Run(user_callback User_Callback) {
-  if (user_callback != nil) {
-	  user_main_loop = user_callback
-	  C.run(module.event_loop, C.closure(C.go_app_main_loop))
-  }
+	if (user_callback != nil) {
+		user_main_loop = user_callback
+		C.run(module.event_loop, C.closure(C.go_app_main_loop))
+	}
 }
 
 func Quit() {
@@ -195,7 +195,7 @@ func Create(options Options) (*Window, error) {
 	c_options := C.Window_Options{
 		transparent: _CBool(options.Transparent),
 		decorations: _CBool(!options.Frameless),
-    html: C.CString(options.HTML),
+		html: C.CString(options.HTML),
 	};
 
 	result := C.create_window(module.event_loop, c_options)

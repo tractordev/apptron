@@ -7,34 +7,34 @@
 #define bool uint8_t
 
 typedef struct Vector2 {
-    double x;
-    double y;
+	double x;
+	double y;
 } Vector2;
 
 typedef enum Event_Type {
-    Event_Type__None      = 0,
-    Event_Type__Close     = 1,
-    Event_Type__Destroyed = 2,
-    Event_Type__Focused   = 3,
-    Event_Type__Resized   = 4,
-    Event_Type__Moved     = 5,
+	Event_Type__None      = 0,
+	Event_Type__Close     = 1,
+	Event_Type__Destroyed = 2,
+	Event_Type__Focused   = 3,
+	Event_Type__Resized   = 4,
+	Event_Type__Moved     = 5,
 } Event_Type;
 
 typedef struct Event {
-    int     event_type;
-    int     window_id;
-    Vector2 dim;
+	int     event_type;
+	int     window_id;
+	Vector2 dim;
 } Event;
 
 // NOTE(nick): this has to be kept in sync with wry's EventLoop struct size
 typedef struct Event_Loop {
-    unsigned char data[40];
+	unsigned char data[40];
 } Event_Loop;
 
 typedef struct Window_Options {
-    bool transparent;
-    bool decorations;
-    char *html;
+	bool transparent;
+	bool decorations;
+	char *html;
 } Window_Options;
 
 //
