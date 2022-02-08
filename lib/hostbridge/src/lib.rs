@@ -50,6 +50,13 @@ pub struct CEvent {
 // so the layout of the data shouldn't matter
 type CEventLoop = EventLoop<()>;
 
+#[repr(C)]
+pub struct CWindowOptions {
+  pub transparent: CBool,
+  pub decorations: CBool,
+  pub html: CString,
+}
+
 thread_local! {
   static GLOBAL_WINDOWS: RefCell<Vec<Window>> = RefCell::new(Vec::new());
 }
@@ -105,10 +112,11 @@ pub extern "C" fn create_event_loop() -> CEventLoop {
 
 #[no_mangle]
 #[allow(improper_ctypes_definitions)]
-pub extern "C" fn create_window(event_loop: CEventLoop) -> i32 {
+pub extern "C" fn create_window(event_loop: CEventLoop, options: CWindowOptions) -> i32 {
   let maybe_window = WindowBuilder::new()
       .with_title("")
-      .with_decorations(true)
+      .with_decorations(options.decorations)
+      .with_transparent(options.transparent)
       .build(&event_loop);
 
   forget(event_loop);
@@ -125,18 +133,11 @@ pub extern "C" fn create_window(event_loop: CEventLoop) -> i32 {
     return -3;
   }
 
+  let html = string_from_cstr(options.html);
+
   let maybe_webview = maybe_webview_builder.unwrap()
-      .with_html(
-          r#"<!doctype html>
-          <html>
-            <body style="font-family: -apple-system, BlinkMacSystemFont, avenir next, avenir, segoe ui, helvetica neue, helvetica, Ubuntu, roboto, noto, arial, sans-serif; background-color:rgba(87,87,87,0.75);"></body>
-            <script>
-              window.onload = function() {
-                document.body.innerHTML = `<div style="padding: 30px">Transparency Test<br><br>${navigator.userAgent}</div>`;
-              };
-            </script>
-          </html>"#,
-      );
+      .with_transparent(options.transparent)
+      .with_html(html);
 
   if !maybe_webview.is_ok() {
     return -4;

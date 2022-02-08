@@ -26,9 +26,9 @@ type Module struct {
 type Window struct {
 	Id          int
 	Title       string
+	Transparent bool
 
 	/*
-	Transparent bool
 	Size        Size
 	Position    Position
 	AlwaysOnTop bool
@@ -51,12 +51,12 @@ const (
 )
 
 func _EventName(event_type int) string {
-	if (event_type == Event_Type__None) { return "none"; }
-	if (event_type == Event_Type__Close) { return "close"; }
+	if (event_type == Event_Type__None)      { return "none"; }
+	if (event_type == Event_Type__Close)     { return "close"; }
 	if (event_type == Event_Type__Destroyed) { return "destroyed"; }
-	if (event_type == Event_Type__Focused) { return "focused"; }
-	if (event_type == Event_Type__Resized) { return "resized"; }
-	if (event_type == Event_Type__Moved) { return "moved"; }
+	if (event_type == Event_Type__Focused)   { return "focused"; }
+	if (event_type == Event_Type__Resized)   { return "resized"; }
+	if (event_type == Event_Type__Moved)     { return "moved"; }
 	return "";
 }
 
@@ -68,10 +68,12 @@ type Event struct {
 }
 
 type Options struct {
+	Transparent bool
+	Frameless   bool
+	HTML        string
+
 	/*
 	AlwaysOnTop bool
-	Frameless   bool
-	Fullscreen  bool
 	Size        Size
 	MinSize     Size
 	MaxSize     Size
@@ -84,7 +86,6 @@ type Options struct {
 	Center      bool
 	Icon        string // bytestream callback
 	URL         string
-	HTML        string
 	Script      string
 	*/
 }
@@ -191,13 +192,18 @@ func Quit() {
 }
 
 func Create(options Options) (*Window, error) {
-	// @Incomplete: take options here
+	c_options := C.Window_Options{
+		transparent: _CBool(options.Transparent),
+		decorations: _CBool(!options.Frameless),
+    html: C.CString(options.HTML),
+	};
 
-	result := C.create_window(module.event_loop)
+	result := C.create_window(module.event_loop, c_options)
 	id := int(result)
 
 	window := Window{}
 	window.Id = id
+	window.Transparent = options.Transparent
 
 	if (id >= 0) {
 		module.windows = append(module.windows, window)

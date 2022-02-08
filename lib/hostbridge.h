@@ -31,6 +31,12 @@ typedef struct Event_Loop {
     unsigned char data[40];
 } Event_Loop;
 
+typedef struct Window_Options {
+    bool transparent;
+    bool decorations;
+    char *html;
+} Window_Options;
+
 //
 // Go Functions
 //
@@ -45,7 +51,7 @@ void go_app_main_loop();
 
 Event_Loop create_event_loop();
 
-int     create_window(Event_Loop event_loop);
+int     create_window(Event_Loop event_loop, Window_Options options);
 bool    destroy_window(int window_id);
 bool    window_set_title(int window_id, char *title);
 bool    window_set_foucs(int window_id, bool is_focused);
