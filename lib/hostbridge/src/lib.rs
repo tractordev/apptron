@@ -1,6 +1,5 @@
 use std::ffi::CStr;
-use std::mem::ManuallyDrop;
-use std::mem::forget;
+use std::mem::{ManuallyDrop, forget, size_of};
 use std::option::Option;
 use std::cell::RefCell;
 
@@ -8,7 +7,7 @@ use wry::{
     application::{
         event::{Event, WindowEvent},
         event_loop::{ControlFlow, EventLoop},
-        window::{WindowBuilder},
+        window::{WindowBuilder, Fullscreen},
     },
     webview::{WebViewBuilder},
 };
@@ -16,6 +15,10 @@ use wry::{
 struct Window {
     id: i32,
     webview: wry::webview::WebView,
+}
+
+pub enum AppEvents {
+  PostQuit(),
 }
 
 type CInt    = libc::c_int;
@@ -29,9 +32,27 @@ pub struct CVector2 {
   pub y: f64,
 }
 
+#[repr(C)]
+#[allow(non_camel_case_types)]
+enum Event_Type {
+    None      = 0,
+    Close     = 1,
+    Destroyed = 2,
+    Focused   = 3,
+    Resized   = 4,
+    Moved     = 5,
+}
+
+#[repr(C)]
+pub struct CEvent {
+  pub event_type: CInt,
+  pub window_id: CInt,
+  pub dim: CVector2,
+}
+
 // NOTE(nick): even though this stuct is not FFI compatible, we use it as an opaque handle on the C/Go side
 // so the layout of the data shouldn't matter
-type CEventLoop = EventLoop<()>;
+type CEventLoop = EventLoop<AppEvents>;
 
 thread_local! {
   static GLOBAL_WINDOWS: RefCell<Vec<Window>> = RefCell::new(Vec::new());
@@ -52,9 +73,9 @@ macro_rules! find_local_window {
 
     GLOBAL_WINDOWS.with(|windows| {
       let array = windows.borrow();
-      let found = find_window_by_id(&array, $window_id);
+      let it = find_window_by_id(&array, $window_id);
 
-      if let Some(it) = found {
+      if let Some(it) = it {
         $func(it);
         result = true;
       }
@@ -67,7 +88,13 @@ macro_rules! find_local_window {
 #[no_mangle]
 #[allow(improper_ctypes_definitions)]
 pub extern "C" fn create_event_loop() -> CEventLoop {
-  let result = EventLoop::new();
+  //
+  // NOTE(nick): If this changes, go and update hostbridge.h EventLoop size
+  // @Robustness: make this a static assertion
+  //
+  assert_eq!(size_of::<CEventLoop>(), 40);
+
+  let result = EventLoop::<AppEvents>::with_user_event();
   
   //
   // NOTE(nick): prevent the EventLoop's destructor from being called here
@@ -91,19 +118,20 @@ pub extern "C" fn create_window(event_loop: CEventLoop) -> i32 {
   forget(event_loop);
 
   if !maybe_window.is_ok() {
-    return 0
+    return -2;
   }
 
   let window = maybe_window.unwrap();
 
   let maybe_webview_builder = WebViewBuilder::new(window);
 
-  if !maybe_webview_builder.is_ok() { return 0; }
+  if !maybe_webview_builder.is_ok() {
+    return -3;
+  }
 
   let maybe_webview = maybe_webview_builder.unwrap()
-      .with_url(
-          r#"data:text/html,
-          <!doctype html>
+      .with_html(
+          r#"<!doctype html>
           <html>
             <body style="font-family: -apple-system, BlinkMacSystemFont, avenir next, avenir, segoe ui, helvetica neue, helvetica, Ubuntu, roboto, noto, arial, sans-serif; background-color:rgba(87,87,87,0.75);"></body>
             <script>
@@ -114,11 +142,15 @@ pub extern "C" fn create_window(event_loop: CEventLoop) -> i32 {
           </html>"#,
       );
 
-  if !maybe_webview.is_ok() { return 0; }
+  if !maybe_webview.is_ok() {
+    return -4;
+  }
 
   let result = maybe_webview.unwrap().build();
 
-  if !result.is_ok() { return 0; }
+  if !result.is_ok() {
+    return -5;
+  }
 
   let webview = result.unwrap();
 
@@ -130,8 +162,6 @@ pub extern "C" fn create_window(event_loop: CEventLoop) -> i32 {
     result = array.len() as i32;
     let the_window = Window{ id: result, webview };
     array.push(the_window);
-
-    //println!("[rust] push new window id {:?}, new windows length: {:?}", result, array.len());
   });
 
   return result;
@@ -139,7 +169,19 @@ pub extern "C" fn create_window(event_loop: CEventLoop) -> i32 {
 
 #[no_mangle]
 pub extern "C" fn destroy_window(window_id: CInt) -> CBool {
-  false
+  let mut result = false;
+
+  GLOBAL_WINDOWS.with(|windows| {
+    let mut array = windows.borrow_mut();
+
+    let found = array.iter().position(|it| it.id == window_id);
+    if let Some(index) = found {
+      array.remove(index);
+      result = true;
+    }
+  });
+
+  result
 }
 
 #[no_mangle]
@@ -151,6 +193,12 @@ pub extern "C" fn window_set_title(window_id: CInt, title: CString) -> CBool {
 #[no_mangle]
 pub extern "C" fn window_set_visible(window_id: CInt, is_visible: CBool) -> CBool {
   find_local_window!(window_id, |it: &Window| it.webview.window().set_visible(is_visible))
+}
+
+#[no_mangle]
+pub extern "C" fn window_set_fullscreen(window_id: CInt, is_fullscreen: CBool) -> CBool {
+  let fullscreen = if is_fullscreen { Some(Fullscreen::Borderless(None)) } else { None };
+  find_local_window!(window_id, |it: &Window| it.webview.window().set_fullscreen(fullscreen))
 }
 
 #[no_mangle]
@@ -220,23 +268,81 @@ pub extern "C" fn window_get_dpi_scale(window_id: CInt) -> CDouble {
 
 #[no_mangle]
 #[allow(improper_ctypes_definitions)]
-pub extern "C" fn run(event_loop: CEventLoop, user_callback: unsafe extern "C" fn(i32)) {
+pub extern "C" fn quit(event_loop: CEventLoop) {
+  let proxy = event_loop.create_proxy();
+  forget(event_loop);
+
+  let _ = proxy.send_event(AppEvents::PostQuit());
+}
+
+#[no_mangle]
+#[allow(improper_ctypes_definitions)]
+pub extern "C" fn run(event_loop: CEventLoop, user_callback: unsafe extern "C" fn(CEvent)) {
   event_loop.run(move |event, _, control_flow| {
     *control_flow = ControlFlow::Poll;
 
-    //println!("{:?}", event);
-
-    let event_type = match event {
-      Event::WindowEvent { event: WindowEvent::Resized{ .. }, .. } => 1,
-      Event::WindowEvent { event: WindowEvent::Moved{ .. }, .. } => 2,
-      Event::WindowEvent { event: WindowEvent::Focused{ .. }, .. } => 3,
-      Event::WindowEvent { event: WindowEvent::MouseInput{ .. }, .. } => 4,
-      Event::WindowEvent { event: WindowEvent::KeyboardInput{ .. }, .. } => 5,
-      _ => 0,
+    let mut result = CEvent{
+      event_type: Event_Type::None as i32,
+      window_id: -1,
+      dim: CVector2{x: 0.0, y: 0.0},
     };
 
+    match event {
+      Event::WindowEvent { event, window_id, .. } => {
+        // @Incomplete: when a window is being destroyed we still want to get its user_window_id
+        // Right now, it will be -1
+        let user_window_id = GLOBAL_WINDOWS.with(|windows| {
+          let array = windows.borrow();
+          let it = array.iter().find(|&it| it.webview.window().id() == window_id);
+
+          if let Some(it) = it {
+            it.id
+          } else {
+            -1
+          }
+        });
+
+        let event_type = match event {
+          WindowEvent::CloseRequested{ .. } => Event_Type::Close as i32,
+          WindowEvent::Destroyed{ .. }      => Event_Type::Destroyed as i32,
+          WindowEvent::Focused{ .. }        => Event_Type::Focused as i32,
+          WindowEvent::Resized{ .. }        => Event_Type::Resized as i32,
+          WindowEvent::Moved{ .. }          => Event_Type::Moved as i32,
+          _ => Event_Type::None as i32,
+        };
+
+        let dim = match event {
+          WindowEvent::Resized(size) => CVector2{x: size.width as f64, y: size.height as f64},
+          WindowEvent::Moved(pos)    => CVector2{x: pos.x as f64, y: pos.y as f64},
+          _ => CVector2{x: 0.0, y: 0.0},
+        };
+
+        result.window_id  = user_window_id;
+        result.event_type = event_type;
+        result.dim        = dim;
+
+        match event {
+          WindowEvent::Resized(_) => {
+            GLOBAL_WINDOWS.with(|windows| {
+              let array = windows.borrow();
+              let it = array.iter().find(|&it| it.webview.window().id() == window_id);
+
+              if let Some(it) = it {
+                let _ = it.webview.resize();
+              }
+            });
+          }
+          _ => (),
+        }
+      },
+      Event::UserEvent(AppEvents::PostQuit()) => {
+        *control_flow = ControlFlow::Exit;
+      }
+      _ => (),
+    }
+
     unsafe {
-      user_callback(event_type);
+      user_callback(result);
     }
   });
 }
