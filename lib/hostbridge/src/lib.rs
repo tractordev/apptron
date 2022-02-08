@@ -17,10 +17,6 @@ struct Window {
     webview: wry::webview::WebView,
 }
 
-pub enum AppEvents {
-  PostQuit(),
-}
-
 type CInt    = libc::c_int;
 type CString = *const libc::c_char;
 type CBool   = bool;
@@ -52,7 +48,7 @@ pub struct CEvent {
 
 // NOTE(nick): even though this stuct is not FFI compatible, we use it as an opaque handle on the C/Go side
 // so the layout of the data shouldn't matter
-type CEventLoop = EventLoop<AppEvents>;
+type CEventLoop = EventLoop<()>;
 
 thread_local! {
   static GLOBAL_WINDOWS: RefCell<Vec<Window>> = RefCell::new(Vec::new());
@@ -94,7 +90,7 @@ pub extern "C" fn create_event_loop() -> CEventLoop {
   //
   assert_eq!(size_of::<CEventLoop>(), 40);
 
-  let result = EventLoop::<AppEvents>::with_user_event();
+  let result = EventLoop::new();
   
   //
   // NOTE(nick): prevent the EventLoop's destructor from being called here
@@ -266,18 +262,6 @@ pub extern "C" fn window_get_dpi_scale(window_id: CInt) -> CDouble {
   result
 }
 
-/*
-#[no_mangle]
-#[allow(improper_ctypes_definitions)]
-pub extern "C" fn quit(event_loop: CEventLoop) {
-  let proxy = event_loop.create_proxy();
-  forget(event_loop);
-
-  let _ = proxy.send_event(AppEvents::PostQuit());
-  //forget(proxy);
-}
-*/
-
 #[no_mangle]
 #[allow(improper_ctypes_definitions)]
 pub extern "C" fn run(event_loop: CEventLoop, user_callback: unsafe extern "C" fn(CEvent)) {
@@ -338,16 +322,6 @@ pub extern "C" fn run(event_loop: CEventLoop, user_callback: unsafe extern "C" f
           _ => (),
         }
       },
-      /*
-      Event::UserEvent(AppEvents::PostQuit()) => {
-        *control_flow = ControlFlow::Exit;
-
-        GLOBAL_WINDOWS.with(|windows| {
-          let mut array = windows.borrow_mut();
-          array.clear();
-        });
-      }
-      */
       _ => (),
     }
 

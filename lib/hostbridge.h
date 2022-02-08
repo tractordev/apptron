@@ -57,4 +57,3 @@ Vector2 window_get_inner_size(int window_id);
 double  window_get_dpi_scale(int window_id);
 
 void run(Event_Loop event_loop, void (*callback)(Event event));
-void quit(Event_Loop event_loop);
