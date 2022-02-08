@@ -1,34 +1,78 @@
 use std::ffi::CStr;
-use std::mem::size_of;
+use std::mem::ManuallyDrop;
+use std::mem::forget;
+use std::option::Option;
+use std::cell::RefCell;
 
 use wry::{
     application::{
         event::{Event, WindowEvent},
-        event_loop::{ControlFlow, EventLoop, EventLoopProxy},
-        window::WindowBuilder,
+        event_loop::{ControlFlow, EventLoop},
+        window::{WindowBuilder},
     },
-    webview::WebViewBuilder,
+    webview::{WebViewBuilder},
 };
 
-unsafe fn any_as_u8_slice<T: Sized>(p: &T) -> &[u8] {
-    ::std::slice::from_raw_parts(
-        (p as *const T) as *const u8,
-        ::std::mem::size_of::<T>(),
-    )
+struct Window {
+    id: i32,
+    webview: wry::webview::WebView,
 }
 
+type CInt    = libc::c_int;
+type CString = *const libc::c_char;
+type CBool   = bool;
+type CDouble = f64;
+
+#[repr(C)]
+pub struct CVector2 {
+  pub x: f64,
+  pub y: f64,
+}
+
+// NOTE(nick): even though this stuct is not FFI compatible, we use it as an opaque handle on the C/Go side
+// so the layout of the data shouldn't matter
+type CEventLoop = EventLoop<()>;
+
+thread_local! {
+  static GLOBAL_WINDOWS: RefCell<Vec<Window>> = RefCell::new(Vec::new());
+}
+
+fn string_from_cstr(cstr: CString) -> String {
+  let buffer = unsafe { CStr::from_ptr(cstr).to_bytes() };
+  String::from_utf8(buffer.to_vec()).unwrap()
+}
+
+fn find_window_by_id(windows: &Vec<Window>, window_id: i32) -> Option<&Window> {
+  return windows.iter().find(|&it| it.id == window_id);
+}
+
+macro_rules! find_local_window {
+  ($window_id: expr, $func: expr) => {{
+    let mut result = false;
+
+    GLOBAL_WINDOWS.with(|windows| {
+      let array = windows.borrow();
+      let found = find_window_by_id(&array, $window_id);
+
+      if let Some(it) = found {
+        $func(it);
+        result = true;
+      }
+    });
+
+    result
+  }};
+} 
+
 #[no_mangle]
-pub extern "C" fn create_event_loop() -> EventLoop<()> {
-  //let raw_mt_one_ptr = Box::into_raw(Box::new(mt_one)) as *const c_void;
+#[allow(improper_ctypes_definitions)]
+pub extern "C" fn create_event_loop() -> CEventLoop {
   let result = EventLoop::new();
-  use std::mem::ManuallyDrop;
-
-  let bytes: &[u8] = unsafe { any_as_u8_slice(&result) };
-  println!("[rust] create_event_loop {:?}", bytes);
-
-  //std::mem::forget(result);
   
+  //
   // NOTE(nick): prevent the EventLoop's destructor from being called here
+  // Other places that take the event_loop as an argument will also need to call `std::mem::forget`
+  //
   let mut r2 = ManuallyDrop::new(result);
 
   unsafe {
@@ -37,51 +81,14 @@ pub extern "C" fn create_event_loop() -> EventLoop<()> {
 }
 
 #[no_mangle]
-//pub extern "C" fn create_window(data: *const libc::c_void) -> i32 {
-pub extern "C" fn create_window(event_loop: EventLoop<()>) -> i32 {
-
-  println!("[rust] event_loop {:?}", event_loop);
-  
-  let bytes: &[u8] = unsafe { any_as_u8_slice(&event_loop) };
-  println!("[rust] bytes {:?}", bytes);
-
-  std::mem::forget(event_loop);
-
-  return 42;
-}
-
-/*
-pub extern "C" fn create_window(event_loop: EventLoop<()>) -> i32 {
-  println!("{:?}", event_loop);
-  
-  return 42;
-}
-*/
-
-fn string_from_cstr(cstr: *const libc::c_char) -> String {
-  let buffer = unsafe { CStr::from_ptr(cstr).to_bytes() };
-  String::from_utf8(buffer.to_vec()).unwrap()
-}
-
-#[no_mangle]
-pub extern "C" fn run(event_loop: EventLoop<()>, user_callback: unsafe extern "C" fn(i32)) -> i32 {
-  println!("{}", size_of::<EventLoop<()>>());
-
-  //GLOBAL_WINDOWS.with(|windows| windows.push(42));
-
-  /*
-  let event_loop21 = EventLoop::new();
-
-  let event_loop = EventLoop::new();
-  */
-
-  println!("[rust] window_create");
-
+#[allow(improper_ctypes_definitions)]
+pub extern "C" fn create_window(event_loop: CEventLoop) -> i32 {
   let maybe_window = WindowBuilder::new()
-      .with_title("Progrium Test")
+      .with_title("")
       .with_decorations(true)
-      //.with_transparent(false)
       .build(&event_loop);
+
+  forget(event_loop);
 
   if !maybe_window.is_ok() {
     return 0
@@ -113,6 +120,107 @@ pub extern "C" fn run(event_loop: EventLoop<()>, user_callback: unsafe extern "C
 
   if !result.is_ok() { return 0; }
 
+  let webview = result.unwrap();
+
+  let mut result: i32 = -1;
+
+  GLOBAL_WINDOWS.with(|windows| {
+    let mut array = windows.borrow_mut();
+
+    result = array.len() as i32;
+    let the_window = Window{ id: result, webview };
+    array.push(the_window);
+
+    //println!("[rust] push new window id {:?}, new windows length: {:?}", result, array.len());
+  });
+
+  return result;
+}
+
+#[no_mangle]
+pub extern "C" fn destroy_window(window_id: CInt) -> CBool {
+  false
+}
+
+#[no_mangle]
+pub extern "C" fn window_set_title(window_id: CInt, title: CString) -> CBool {
+  let title = string_from_cstr(title);
+  find_local_window!(window_id, |it: &Window| it.webview.window().set_title(&title))
+}
+
+#[no_mangle]
+pub extern "C" fn window_set_visible(window_id: CInt, is_visible: CBool) -> CBool {
+  find_local_window!(window_id, |it: &Window| it.webview.window().set_visible(is_visible))
+}
+
+#[no_mangle]
+pub extern "C" fn window_get_outer_position(window_id: CInt) -> CVector2 {
+  let mut result = CVector2{ x: 0.0, y: 0.0 };
+
+  find_local_window!(window_id, |it: &Window| {
+    let position = it.webview.window().outer_position();
+    if position.is_ok() {
+      let position = position.unwrap();
+      result.x = position.x as f64;
+      result.y = position.y as f64;
+    }
+  });
+
+  result
+}
+
+#[no_mangle]
+pub extern "C" fn window_get_outer_size(window_id: CInt) -> CVector2 {
+  let mut result = CVector2{ x: 0.0, y: 0.0 };
+
+  find_local_window!(window_id, |it: &Window| {
+    let size = it.webview.window().outer_size();
+    result.x = size.width as f64;
+    result.y = size.height as f64;
+  });
+
+  result
+}
+
+#[no_mangle]
+pub extern "C" fn window_get_inner_position(window_id: CInt) -> CVector2 {
+  let mut result = CVector2{ x: 0.0, y: 0.0 };
+
+  find_local_window!(window_id, |it: &Window| {
+    let position = it.webview.window().inner_position();
+    if position.is_ok() {
+      let position = position.unwrap();
+      result.x = position.x as f64;
+      result.y = position.y as f64;
+    }
+  });
+
+  result
+}
+
+#[no_mangle]
+pub extern "C" fn window_get_inner_size(window_id: CInt) -> CVector2 {
+  let mut result = CVector2{ x: 0.0, y: 0.0 };
+
+  find_local_window!(window_id, |it: &Window| {
+    let size = it.webview.window().inner_size();
+    result.x = size.width as f64;
+    result.y = size.height as f64;
+  });
+
+  result
+}
+
+#[no_mangle]
+pub extern "C" fn window_get_dpi_scale(window_id: CInt) -> CDouble {
+  let mut result = 1.0;
+  find_local_window!(window_id, |it: &Window| result = it.webview.window().scale_factor());
+  result
+}
+
+#[no_mangle]
+#[allow(improper_ctypes_definitions)]
+pub extern "C" fn run(event_loop: CEventLoop, user_callback: unsafe extern "C" fn(i32)) {
   event_loop.run(move |event, _, control_flow| {
     *control_flow = ControlFlow::Poll;
 
@@ -131,62 +239,4 @@ pub extern "C" fn run(event_loop: EventLoop<()>, user_callback: unsafe extern "C
       user_callback(event_type);
     }
   });
-
-  // @Incomplete: return window id
-  return 1
 }
-
-/*
-#[no_mangle]
-pub extern "C" fn gomain() {
-    oldmain().ok();
-}
-
-fn oldmain() -> wry::Result<()> {
-  use wry::{
-      application::{
-          event::{Event, StartCause, WindowEvent},
-          event_loop::{ControlFlow, EventLoop},
-          window::WindowBuilder,
-      },
-      webview::WebViewBuilder,
-  };
-
-  let event_loop = EventLoop::new();
-  let window = WindowBuilder::new()
-      .with_title("Progrium Test")
-      .with_decorations(false)
-      .with_transparent(true)
-      .build(&event_loop)?;
-
-  let _webview = WebViewBuilder::new(window)?
-      .with_transparent(true)
-      //.with_url("https://progrium.com")?
-      .with_url(
-          r#"data:text/html,
-          <!doctype html>
-          <html>
-            <body style="font-family: -apple-system, BlinkMacSystemFont, avenir next, avenir, segoe ui, helvetica neue, helvetica, Ubuntu, roboto, noto, arial, sans-serif; background-color:rgba(87,87,87,0.5);"></body>
-            <script>
-              window.onload = function() {
-                document.body.innerHTML = `<div style="padding: 30px">Transparency Test<br><br>${navigator.userAgent}</div>`;
-              };
-            </script>
-          </html>"#,
-      )?
-      .build()?;
-
-  event_loop.run(move |event, _, control_flow| {
-      *control_flow = ControlFlow::Wait;
-
-      match event {
-          Event::NewEvents(StartCause::Init) => println!("Started"),
-          Event::WindowEvent {
-              event: WindowEvent::CloseRequested,
-              ..
-          } => *control_flow = ControlFlow::Exit,
-          _ => (),
-      }
-  });
-}
-*/
