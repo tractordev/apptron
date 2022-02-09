@@ -19,7 +19,7 @@ type Module struct {
 	mu sync.Mutex
 
 	windows     []Window
-	eventLoop   C.Event_Loop
+	eventLoop   C.EventLoop
 	shouldQuit  bool
 }
 

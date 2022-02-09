@@ -36,7 +36,7 @@ pub struct CSize {
 
 #[repr(C)]
 #[allow(non_camel_case_types)]
-enum Event_Type {
+enum CEventType {
 	None      = 0,
 	Close     = 1,
 	Destroyed = 2,
@@ -58,7 +58,7 @@ pub struct CEvent {
 type CEventLoop = EventLoop<()>;
 
 #[repr(C)]
-pub struct CWindowOptions {
+pub struct CWindow_Options {
 	pub transparent: CBool,
 	pub decorations: CBool,
 	pub html: CString,
@@ -119,7 +119,7 @@ pub extern "C" fn create_event_loop() -> CEventLoop {
 
 #[no_mangle]
 #[allow(improper_ctypes_definitions)]
-pub extern "C" fn window_create(event_loop: CEventLoop, options: CWindowOptions) -> i32 {
+pub extern "C" fn window_create(event_loop: CEventLoop, options: CWindow_Options) -> i32 {
 	let maybe_window = WindowBuilder::new()
 	.with_title("")
 	.with_decorations(options.decorations)
@@ -277,7 +277,7 @@ pub extern "C" fn run(event_loop: CEventLoop, user_callback: unsafe extern "C" f
 		*control_flow = ControlFlow::Poll;
 
 		let mut result = CEvent{
-			event_type: Event_Type::None as i32,
+			event_type: CEventType::None as i32,
 			window_id: -1,
 			position: CPosition{x: 0.0, y: 0.0},
 			size: CSize{width: 0.0, height: 0.0},
@@ -299,20 +299,24 @@ pub extern "C" fn run(event_loop: CEventLoop, user_callback: unsafe extern "C" f
 				});
 
 				let event_type = match event {
-					WindowEvent::CloseRequested{ .. } => Event_Type::Close as i32,
-					WindowEvent::Destroyed{ .. }      => Event_Type::Destroyed as i32,
-					WindowEvent::Focused{ .. }        => Event_Type::Focused as i32,
-					WindowEvent::Resized{ .. }        => Event_Type::Resized as i32,
-					WindowEvent::Moved{ .. }          => Event_Type::Moved as i32,
-					_ => Event_Type::None as i32,
+					WindowEvent::CloseRequested{ .. } => CEventType::Close as i32,
+					WindowEvent::Destroyed{ .. }      => CEventType::Destroyed as i32,
+					WindowEvent::Focused{ .. }        => CEventType::Focused as i32,
+					WindowEvent::Resized{ .. }        => CEventType::Resized as i32,
+					WindowEvent::Moved{ .. }          => CEventType::Moved as i32,
+					_ => CEventType::None as i32,
 				};
 
 				result.window_id  = user_window_id;
 				result.event_type = event_type;
 
 				match event {
-					WindowEvent::Moved(position)   => { result.position = CPosition{x: position.x as f64, y: position.y as f64} },
-					WindowEvent::Resized(size) => { result.size = CSize{width: size.width as f64, height: size.height as f64} },
+					WindowEvent::Moved(position)   => {
+						result.position = CPosition{x: position.x as f64, y: position.y as f64}
+					},
+					WindowEvent::Resized(size) => {
+						result.size = CSize{width: size.width as f64, height: size.height as f64}
+					},
 					_ => {}
 				};
 
