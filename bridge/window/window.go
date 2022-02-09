@@ -18,13 +18,15 @@ import (
 type Module struct {
 	mu sync.Mutex
 
-	windows []Window
-	event_loop C.Event_Loop
-	should_quit bool
+	windows     []Window
+	eventLoop   C.Event_Loop
+	shouldQuit  bool
 }
 
+type Handle int
+
 type Window struct {
-	Id          int
+	ID          Handle
 	Title       string
 	Transparent bool
 
@@ -38,33 +40,30 @@ type Window struct {
 	Resizable   bool
 	*/
 
-	was_destroyed bool
+	destroyed   bool
 }
 
+type EventType int
+
 const (
-	Event_Type__None      int = 0
-	Event_Type__Close         = 1
-	Event_Type__Destroyed     = 2
-	Event_Type__Focused       = 3
-	Event_Type__Resized       = 4
-	Event_Type__Moved         = 5
+    EventNone       EventType = iota
+    EventClose
+    EventDestroyed
+    EventFocused
+    EventResized
+    EventMoved
 )
 
-func _EventName(event_type int) string {
-	if (event_type == Event_Type__None)      { return "none"; }
-	if (event_type == Event_Type__Close)     { return "close"; }
-	if (event_type == Event_Type__Destroyed) { return "destroyed"; }
-	if (event_type == Event_Type__Focused)   { return "focused"; }
-	if (event_type == Event_Type__Resized)   { return "resized"; }
-	if (event_type == Event_Type__Moved)     { return "moved"; }
-	return "";
+func (e EventType) String() string {
+    return []string{"none", "close", "destroyed", "focused", "resized", "moved"}[e]
 }
 
 type Event struct {
-	Type       int
+	Type       EventType
 	Name       string
-	WindowId   int
-	Dim        Position
+	WindowID   Handle
+	Position   Position
+	Size       Size
 }
 
 type Options struct {
@@ -103,8 +102,8 @@ type Size struct {
 var module Module
 
 func init() {
-	module.event_loop = C.create_event_loop()
-	module.should_quit = false
+	module.eventLoop  = C.create_event_loop()
+	module.shouldQuit = false
 }
 
 func All() (result []Window) {
@@ -113,10 +112,8 @@ func All() (result []Window) {
 	defer module.mu.Unlock()
 	*/
 
-	result = make([]Window, 0)
-
 	for _, it := range module.windows {
-		if (!it.was_destroyed) {
+		if (!it.destroyed) {
 			result = append(result, it)
 		}
 	}
@@ -124,7 +121,7 @@ func All() (result []Window) {
 	return result
 }
 
-func FindIndexById(window_id int) int {
+func FindIndexByID(windowID Handle) int {
 	/*
 	module.mu.Lock()
 	defer module.mu.Unlock()
@@ -133,7 +130,7 @@ func FindIndexById(window_id int) int {
 	var result int = -1
 
 	for i, v := range module.windows {
-		if v.Id == window_id {
+		if v.ID == windowID {
 			result = i
 			break
 		}
@@ -142,67 +139,68 @@ func FindIndexById(window_id int) int {
 	return result
 }
 
-func FindById(window_id int) *Window {
-	index := FindIndexById(window_id)
+func FindByID(windowID Handle) *Window {
+	index := FindIndexByID(windowID)
 	if (index >= 0) {
 		return &module.windows[index]
 	}
 	return nil
 }
 
-type User_Callback func(event Event)
+type Callback func(event Event)
 
-var user_main_loop User_Callback
+var userMainLoop Callback
 
 //export go_app_main_loop
 func go_app_main_loop(data C.Event) {
-	if (module.should_quit) {
+	if (module.shouldQuit) {
 		return
 	}
 
-	if (user_main_loop != nil) {
-		result := Event{}
-		result.Type = int(data.event_type)
-		result.Name = _EventName(result.Type)
-		result.WindowId = int(data.window_id)
-		result.Dim = _MakePosition(data.dim)
+	if (userMainLoop != nil) {
+		event := Event{}
+		event.Type     = EventType(data.event_type)
+		event.Name     = event.Type.String()
+		event.WindowID = Handle(data.window_id)
+		event.Position = makePosition(data.position)
+		event.Size     = makeSize(data.size)
 
-		user_main_loop(result)
+		userMainLoop(event)
 	}
 }
 
-func Run(user_callback User_Callback) {
-	if (user_callback != nil) {
-		user_main_loop = user_callback
-		C.run(module.event_loop, C.closure(C.go_app_main_loop))
+func Run(callback Callback) {
+	if (callback != nil) {
+		userMainLoop = callback
+		C.run(module.eventLoop, C.closure(C.go_app_main_loop))
 	}
 }
 
 func Quit() {
-	if (!module.should_quit) {
-		module.should_quit = true
+	if (!module.shouldQuit) {
+		module.shouldQuit = true
 
 		os.Exit(0)
 
 		// @Incomplete: ideally this would return execution to the main thread
 		// but it seems fine because ControlFlow::Exit actually quits the whole process...
 		//
-		// @MemoryLeak: event_loop destructor needs to be called here if we return execution to go main
+		// @MemoryLeak: eventLoop destructor needs to be called here if we return execution to go main
 	}
 }
 
 func Create(options Options) (*Window, error) {
-	c_options := C.Window_Options{
-		transparent: _CBool(options.Transparent),
-		decorations: _CBool(!options.Frameless),
+	opts := C.Window_Options{
+		transparent: toCBool(options.Transparent),
+		decorations: toCBool(!options.Frameless),
 		html: C.CString(options.HTML),
 	};
 
-	result := C.create_window(module.event_loop, c_options)
+	result := C.window_create(module.eventLoop, opts)
 	id := int(result)
 
 	window := Window{}
-	window.Id = id
+	window.ID          = Handle(id)
 	window.Transparent = options.Transparent
 
 	if (id >= 0) {
@@ -216,13 +214,13 @@ func Create(options Options) (*Window, error) {
 func (it *Window) Destroy() bool {
 	result := false
 
-	if (!it.was_destroyed) {
-		success := C.destroy_window(C.int(it.Id))
-		if (_ToBool(success)) {
-			it.was_destroyed = true
+	if (!it.destroyed) {
+		success := C.window_destroy(C.int(it.ID))
+		if (toGoBool(success)) {
+			it.destroyed = true
 			result = true
 
-			index := FindIndexById(it.Id)
+			index := FindIndexByID(it.ID)
 			if (index >= 0) {
 				module.windows = append(module.windows[:index], module.windows[index+1:]...)
 			}
@@ -233,40 +231,44 @@ func (it *Window) Destroy() bool {
 }
 
 func (it *Window) IsDestroyed() bool {
-	return it.was_destroyed
+	return it.destroyed
 }
 
 func (it *Window) SetTitle(Title string) {
-	success := C.window_set_title(C.int(it.Id), C.CString(Title))
-	if (_ToBool(success)) {
+	success := C.window_set_title(C.int(it.ID), C.CString(Title))
+	if (toGoBool(success)) {
 		it.Title = Title
 	}
 }
 
+func (it *Window) SetVisible(Visible bool) {
+	C.window_set_visible(C.int(it.ID), toCBool(Visible))
+}
+
 func (it *Window) SetFullscreen(Fullscreen bool) {
-	C.window_set_fullscreen(C.int(it.Id), _CBool(Fullscreen))
+	C.window_set_fullscreen(C.int(it.ID), toCBool(Fullscreen))
 }
 
 func (it *Window) GetOuterPosition() Position {
-	result := C.window_get_outer_position(C.int(it.Id))
-	return _MakePosition(result)
+	result := C.window_get_outer_position(C.int(it.ID))
+	return makePosition(result)
 }
 
 func (it *Window) GetOuterSize() Size {
-	result := C.window_get_outer_size(C.int(it.Id))
-	return _MakeSize(result)
+	result := C.window_get_outer_size(C.int(it.ID))
+	return makeSize(result)
 }
 
 
-func _MakePosition(it C.Vector2) Position {
+func makePosition(it C.Position) Position {
 	return Position{ X: float64(it.x), Y: float64(it.y) }
 }
 
-func _MakeSize(it C.Vector2) Size {
-	return Size{ Width: float64(it.x), Height: float64(it.y) }
+func makeSize(it C.Size) Size {
+	return Size{ Width: float64(it.width), Height: float64(it.height) }
 }
 
-func _CBool(it bool) C.uchar {
+func toCBool(it bool) C.uchar {
 	if (it) {
 		return C.uchar(1)
 	}
@@ -274,6 +276,6 @@ func _CBool(it bool) C.uchar {
 	return C.uchar(0)
 }
 
-func _ToBool(it C.uchar) bool {
+func toGoBool(it C.uchar) bool {
 	return int(it) != 0
 }

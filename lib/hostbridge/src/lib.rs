@@ -23,9 +23,15 @@ type CBool   = bool;
 type CDouble = f64;
 
 #[repr(C)]
-pub struct CVector2 {
+pub struct CPosition {
 	pub x: f64,
 	pub y: f64,
+}
+
+#[repr(C)]
+pub struct CSize {
+	pub width: f64,
+	pub height: f64,
 }
 
 #[repr(C)]
@@ -42,8 +48,9 @@ enum Event_Type {
 #[repr(C)]
 pub struct CEvent {
 	pub event_type: CInt,
-	pub window_id: CInt,
-	pub dim: CVector2,
+	pub window_id:  CInt,
+	pub position:   CPosition,
+	pub size:       CSize,
 }
 
 // NOTE(nick): even though this stuct is not FFI compatible, we use it as an opaque handle on the C/Go side
@@ -112,7 +119,7 @@ pub extern "C" fn create_event_loop() -> CEventLoop {
 
 #[no_mangle]
 #[allow(improper_ctypes_definitions)]
-pub extern "C" fn create_window(event_loop: CEventLoop, options: CWindowOptions) -> i32 {
+pub extern "C" fn window_create(event_loop: CEventLoop, options: CWindowOptions) -> i32 {
 	let maybe_window = WindowBuilder::new()
 	.with_title("")
 	.with_decorations(options.decorations)
@@ -165,7 +172,7 @@ pub extern "C" fn create_window(event_loop: CEventLoop, options: CWindowOptions)
 }
 
 #[no_mangle]
-pub extern "C" fn destroy_window(window_id: CInt) -> CBool {
+pub extern "C" fn window_destroy(window_id: CInt) -> CBool {
 	let mut result = false;
 
 	GLOBAL_WINDOWS.with(|windows| {
@@ -199,8 +206,8 @@ pub extern "C" fn window_set_fullscreen(window_id: CInt, is_fullscreen: CBool) -
 }
 
 #[no_mangle]
-pub extern "C" fn window_get_outer_position(window_id: CInt) -> CVector2 {
-	let mut result = CVector2{ x: 0.0, y: 0.0 };
+pub extern "C" fn window_get_outer_position(window_id: CInt) -> CPosition {
+	let mut result = CPosition{ x: 0.0, y: 0.0 };
 
 	find_local_window!(window_id, |it: &Window| {
 		let position = it.webview.window().outer_position();
@@ -215,21 +222,21 @@ pub extern "C" fn window_get_outer_position(window_id: CInt) -> CVector2 {
 }
 
 #[no_mangle]
-pub extern "C" fn window_get_outer_size(window_id: CInt) -> CVector2 {
-	let mut result = CVector2{ x: 0.0, y: 0.0 };
+pub extern "C" fn window_get_outer_size(window_id: CInt) -> CSize {
+	let mut result = CSize{ width: 0.0, height: 0.0 };
 
 	find_local_window!(window_id, |it: &Window| {
 		let size = it.webview.window().outer_size();
-		result.x = size.width as f64;
-		result.y = size.height as f64;
+		result.width = size.width as f64;
+		result.height = size.height as f64;
 	});
 
 	result
 }
 
 #[no_mangle]
-pub extern "C" fn window_get_inner_position(window_id: CInt) -> CVector2 {
-	let mut result = CVector2{ x: 0.0, y: 0.0 };
+pub extern "C" fn window_get_inner_position(window_id: CInt) -> CPosition {
+	let mut result = CPosition{ x: 0.0, y: 0.0 };
 
 	find_local_window!(window_id, |it: &Window| {
 		let position = it.webview.window().inner_position();
@@ -244,13 +251,13 @@ pub extern "C" fn window_get_inner_position(window_id: CInt) -> CVector2 {
 }
 
 #[no_mangle]
-pub extern "C" fn window_get_inner_size(window_id: CInt) -> CVector2 {
-	let mut result = CVector2{ x: 0.0, y: 0.0 };
+pub extern "C" fn window_get_inner_size(window_id: CInt) -> CSize {
+	let mut result = CSize{ width: 0.0, height: 0.0 };
 
 	find_local_window!(window_id, |it: &Window| {
 		let size = it.webview.window().inner_size();
-		result.x = size.width as f64;
-		result.y = size.height as f64;
+		result.width = size.width as f64;
+		result.height = size.height as f64;
 	});
 
 	result
@@ -272,7 +279,8 @@ pub extern "C" fn run(event_loop: CEventLoop, user_callback: unsafe extern "C" f
 		let mut result = CEvent{
 			event_type: Event_Type::None as i32,
 			window_id: -1,
-			dim: CVector2{x: 0.0, y: 0.0},
+			position: CPosition{x: 0.0, y: 0.0},
+			size: CSize{width: 0.0, height: 0.0},
 		};
 
 		match event {
@@ -299,15 +307,15 @@ pub extern "C" fn run(event_loop: CEventLoop, user_callback: unsafe extern "C" f
 					_ => Event_Type::None as i32,
 				};
 
-				let dim = match event {
-					WindowEvent::Resized(size) => CVector2{x: size.width as f64, y: size.height as f64},
-					WindowEvent::Moved(pos)    => CVector2{x: pos.x as f64, y: pos.y as f64},
-					_ => CVector2{x: 0.0, y: 0.0},
-				};
-
 				result.window_id  = user_window_id;
 				result.event_type = event_type;
-				result.dim        = dim;
+
+				match event {
+					WindowEvent::Moved(position)   => { result.position = CPosition{x: position.x as f64, y: position.y as f64} },
+					WindowEvent::Resized(size) => { result.size = CSize{width: size.width as f64, height: size.height as f64} },
+					_ => {}
+				};
+
 
 				match event {
 					WindowEvent::Resized(_) => {
