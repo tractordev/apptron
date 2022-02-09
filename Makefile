@@ -4,13 +4,13 @@ ROOT_DIR := $(dir $(realpath $(lastword $(MAKEFILE_LIST))))
 ffi-static:
 	cd lib/hostbridge && cargo build --release
 	cp lib/hostbridge/target/release/libhostbridge.a lib/
-	go build -o ./ffi-debug ./cmd/ffi-debug/main_static.go
+	go build -a -o ./ffi-debug ./cmd/ffi-debug/main_static.go
 
 .PHONY: ffi-shared
 ffi-shared:
 	cd lib/hostbridge && cargo build --release
 	cp lib/hostbridge/target/release/libhostbridge.dylib lib/
-	go build -o ./ffi-debug -ldflags="-r $(ROOT_DIR)lib" ./cmd/ffi-debug/main_shared.go
+	go build -a -o ./ffi-debug -ldflags="-r $(ROOT_DIR)lib" ./cmd/ffi-debug/main_shared.go
 
 .PHONY: clean
 clean:
