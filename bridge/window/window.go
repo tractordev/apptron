@@ -234,19 +234,19 @@ func (it *Window) IsDestroyed() bool {
 	return it.destroyed
 }
 
-func (it *Window) SetTitle(Title string) {
-	success := C.window_set_title(C.int(it.ID), C.CString(Title))
+func (it *Window) SetTitle(title string) {
+	success := C.window_set_title(C.int(it.ID), C.CString(title))
 	if (toGoBool(success)) {
-		it.Title = Title
+		it.Title = title
 	}
 }
 
-func (it *Window) SetVisible(Visible bool) {
-	C.window_set_visible(C.int(it.ID), toCBool(Visible))
+func (it *Window) SetVisible(visible bool) {
+	C.window_set_visible(C.int(it.ID), toCBool(visible))
 }
 
-func (it *Window) SetFullscreen(Fullscreen bool) {
-	C.window_set_fullscreen(C.int(it.ID), toCBool(Fullscreen))
+func (it *Window) SetFullscreen(fullscreen bool) {
+	C.window_set_fullscreen(C.int(it.ID), toCBool(fullscreen))
 }
 
 func (it *Window) GetOuterPosition() Position {
