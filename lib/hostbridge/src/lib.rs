@@ -314,26 +314,24 @@ pub extern "C" fn run(event_loop: CEventLoop, user_callback: unsafe extern "C" f
 					WindowEvent::Moved(position)   => {
 						result.position = CPosition{x: position.x as f64, y: position.y as f64}
 					},
-					WindowEvent::Resized(size) => {
-						result.size = CSize{width: size.width as f64, height: size.height as f64}
-					},
-					_ => {}
-				};
-
-
-				match event {
 					WindowEvent::Resized(_) => {
+						// NOTE(nick): Resized event doesn't currently return the correct window size
+						// result.size = CSize{width: size.width as f64, height: size.height as f64}
+
 						GLOBAL_WINDOWS.with(|windows| {
 							let array = windows.borrow();
 							let it = array.iter().find(|&it| it.webview.window().id() == window_id);
 
 							if let Some(it) = it {
+								let size = it.webview.inner_size();
+								result.size = CSize{width: size.width as f64, height: size.height as f64};
+
 								let _ = it.webview.resize();
 							}
 						});
-					}
-					_ => (),
-				}
+					},
+					_ => {}
+				};
 			},
 			_ => (),
 		}
