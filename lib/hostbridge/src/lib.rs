@@ -98,23 +98,23 @@ macro_rules! find_local_window {
 #[no_mangle]
 #[allow(improper_ctypes_definitions)]
 pub extern "C" fn create_event_loop() -> CEventLoop {
-  //
-  // NOTE(nick): If this changes, go and update hostbridge.h EventLoop size
-  // @Robustness: make this a static assertion
-  //
-  assert_eq!(size_of::<CEventLoop>(), 40);
+	//
+	// NOTE(nick): If this changes, go and update hostbridge.h EventLoop size
+	// @Robustness: make this a static assertion
+	//
+	assert_eq!(size_of::<CEventLoop>(), 40);
 
-  let result = EventLoop::new();
-  
-  //
-  // NOTE(nick): prevent the EventLoop's destructor from being called here
-  // Other places that take the event_loop as an argument will also need to call `std::mem::forget`
-  //
-  let mut r2 = ManuallyDrop::new(result);
+	let result = EventLoop::new();
+	
+	//
+	// NOTE(nick): prevent the EventLoop's destructor from being called here
+	// Other places that take the event_loop as an argument will also need to call `std::mem::forget`
+	//
+	let mut r2 = ManuallyDrop::new(result);
 
-  unsafe {
-	ManuallyDrop::take(&mut r2)
-  }
+	unsafe {
+		ManuallyDrop::take(&mut r2)
+	}
 }
 
 #[no_mangle]

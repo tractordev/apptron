@@ -10,15 +10,23 @@ import "C"
 import (
 	"sync"
 	"errors"
-	"os"
 )
 
 type Module struct {
 	mu sync.Mutex
 
 	windows     []Window
-	eventLoop   C.EventLoop
 	shouldQuit  bool
+}
+
+type Position struct {
+	X float64
+	Y float64
+}
+
+type Size struct {
+	Width  float64
+	Height float64
 }
 
 type Handle int
@@ -39,29 +47,6 @@ type Window struct {
 	*/
 
 	destroyed   bool
-}
-
-type EventType int
-
-const (
-    EventNone       EventType = iota
-    EventClose
-    EventDestroyed
-    EventFocused
-    EventResized
-    EventMoved
-)
-
-func (e EventType) String() string {
-    return []string{"none", "close", "destroyed", "focused", "resized", "moved"}[e]
-}
-
-type Event struct {
-	Type       EventType
-	Name       string
-	WindowID   Handle
-	Position   Position
-	Size       Size
 }
 
 type Options struct {
@@ -87,21 +72,15 @@ type Options struct {
 	*/
 }
 
-type Position struct {
-	X float64
-	Y float64
-}
+var EventLoop C.EventLoop
 
-type Size struct {
-	Width  float64
-	Height float64
+func init() {
+	EventLoop = C.create_event_loop()
 }
 
 var module Module
 
 func init() {
-	module.eventLoop  = C.create_event_loop()
-	module.shouldQuit = false
 }
 
 func All() (result []Window) {
@@ -145,56 +124,15 @@ func FindByID(windowID Handle) *Window {
 	return nil
 }
 
-type Callback func(event Event)
-
-var userMainLoop Callback
-
-//export go_app_main_loop
-func go_app_main_loop(data C.Event) {
-	if (module.shouldQuit) {
-		return
-	}
-
-	if (userMainLoop != nil) {
-		event := Event{}
-		event.Type     = EventType(data.event_type)
-		event.Name     = event.Type.String()
-		event.WindowID = Handle(data.window_id)
-		event.Position = makePosition(data.position)
-		event.Size     = makeSize(data.size)
-
-		userMainLoop(event)
-	}
-}
-
-func Run(callback Callback) {
-	if (callback != nil) {
-		userMainLoop = callback
-		C.run(module.eventLoop, C.closure(C.go_app_main_loop))
-	}
-}
-
-func Quit() {
-	if (!module.shouldQuit) {
-		module.shouldQuit = true
-
-		os.Exit(0)
-
-		// @Incomplete: ideally this would return execution to the main thread
-		// but it seems fine because ControlFlow::Exit actually quits the whole process...
-		//
-		// @MemoryLeak: eventLoop destructor needs to be called here if we return execution to go main
-	}
-}
-
 func Create(options Options) (*Window, error) {
 	opts := C.Window_Options{
-		transparent: toCBool(options.Transparent),
-		decorations: toCBool(!options.Frameless),
+		transparent: CBool(options.Transparent),
+		decorations: CBool(!options.Frameless),
 		html: C.CString(options.HTML),
 	};
 
-	result := C.window_create(module.eventLoop, opts)
+	result := C.window_create(EventLoop, opts)
+	//result := -1
 	id := int(result)
 
 	window := Window{}
@@ -214,7 +152,7 @@ func (it *Window) Destroy() bool {
 
 	if (!it.destroyed) {
 		success := C.window_destroy(C.int(it.ID))
-		if (toGoBool(success)) {
+		if (ToBool(success)) {
 			it.destroyed = true
 			result = true
 
@@ -234,39 +172,38 @@ func (it *Window) IsDestroyed() bool {
 
 func (it *Window) SetTitle(title string) {
 	success := C.window_set_title(C.int(it.ID), C.CString(title))
-	if (toGoBool(success)) {
+	if (ToBool(success)) {
 		it.Title = title
 	}
 }
 
 func (it *Window) SetVisible(visible bool) {
-	C.window_set_visible(C.int(it.ID), toCBool(visible))
+	C.window_set_visible(C.int(it.ID), CBool(visible))
 }
 
 func (it *Window) SetFullscreen(fullscreen bool) {
-	C.window_set_fullscreen(C.int(it.ID), toCBool(fullscreen))
+	C.window_set_fullscreen(C.int(it.ID), CBool(fullscreen))
 }
 
 func (it *Window) GetOuterPosition() Position {
 	result := C.window_get_outer_position(C.int(it.ID))
-	return makePosition(result)
+	return MakePosition(result)
 }
 
 func (it *Window) GetOuterSize() Size {
 	result := C.window_get_outer_size(C.int(it.ID))
-	return makeSize(result)
+	return MakeSize(result)
 }
 
-
-func makePosition(it C.Position) Position {
+func MakePosition(it C.Position) Position {
 	return Position{ X: float64(it.x), Y: float64(it.y) }
 }
 
-func makeSize(it C.Size) Size {
+func MakeSize(it C.Size) Size {
 	return Size{ Width: float64(it.width), Height: float64(it.height) }
 }
 
-func toCBool(it bool) C.uchar {
+func CBool(it bool) C.uchar {
 	if (it) {
 		return C.uchar(1)
 	}
@@ -274,6 +211,6 @@ func toCBool(it bool) C.uchar {
 	return C.uchar(0)
 }
 
-func toGoBool(it C.uchar) bool {
+func ToBool(it C.uchar) bool {
 	return int(it) != 0
 }

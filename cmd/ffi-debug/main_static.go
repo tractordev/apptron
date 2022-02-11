@@ -1,9 +1,13 @@
 package main
 
 import "fmt"
-import "github.com/progrium/hostbridge/bridge/window"
 
-func tick(event window.Event) {
+import (
+	"github.com/progrium/hostbridge/bridge/window"
+	"github.com/progrium/hostbridge/bridge/app"
+)
+
+func tick(event app.Event) {
 	if (event.Type > 0) {
 		fmt.Println("[tick] event", event)
 
@@ -17,7 +21,7 @@ func tick(event window.Event) {
 			fmt.Println("count of all windows", len(all))
 			if (len(all) == 0) {
 				fmt.Println("  quitting application...")
-				window.Quit()
+				app.Quit()
 			}
 		}
 	}
@@ -44,6 +48,10 @@ func main() {
 
 	fmt.Println("[main] window", w1)
 
+	if (w1 == nil) {
+		return
+	}
+
 	w1.SetTitle("Hello, Sailor!")
 	fmt.Println("[main] window position", w1.GetOuterPosition())
 
@@ -55,7 +63,7 @@ func main() {
 	wasDestroyed := w2.Destroy()
 	fmt.Println("[main] wasDestroyed", wasDestroyed)
 
-	window.Run(tick)
+	app.Run(tick)
 
 	// NOTE(nick): this doesn't appear to be called ever
 	fmt.Println("[main] Goodbye.", w1)
