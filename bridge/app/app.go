@@ -11,12 +11,9 @@ import (
 )
 
 import (
+	"github.com/progrium/hostbridge/bridge/menu"
 	"github.com/progrium/hostbridge/bridge/window"
 )
-
-type Module struct {
-	shouldQuit  bool
-}
 
 type Callback func(event Event)
 
@@ -41,6 +38,11 @@ type Event struct {
 	WindowID   window.Handle
 	Position   window.Position
 	Size       window.Size
+}
+
+type Module struct {
+	shouldQuit  bool
+	menu        menu.Menu
 }
 
 var module Module
@@ -88,4 +90,17 @@ func Quit() {
 		//
 		// @MemoryLeak: window.EventLoop destructor needs to be called here if we return execution to go main
 	}
+}
+
+func Menu() *menu.Menu {
+	if (menu.AppMenuWasSet) {
+		return &menu.AppMenu
+	}
+
+	return nil
+}
+
+func SetMenu(m menu.Menu) {
+	menu.AppMenu       = m
+	menu.AppMenuWasSet = true
 }

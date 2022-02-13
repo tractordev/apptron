@@ -3,8 +3,9 @@ package main
 import "fmt"
 
 import (
-	"github.com/progrium/hostbridge/bridge/window"
 	"github.com/progrium/hostbridge/bridge/app"
+	"github.com/progrium/hostbridge/bridge/menu"
+	"github.com/progrium/hostbridge/bridge/window"
 )
 
 func tick(event app.Event) {
@@ -28,6 +29,36 @@ func tick(event app.Event) {
 }
 
 func main() {
+	items := []menu.Item {
+		{
+			ID: 12,
+			Title: "First Menu",
+			Enabled: true,
+			SubMenu: []menu.Item {
+				{
+					ID: 121,
+					Title: "About",
+					Enabled: true,
+				},
+			},
+		},
+		{
+			ID: 23,
+			Title: "hello world",
+			Enabled: true,
+			SubMenu: []menu.Item {
+				{
+					ID: 121,
+					Title: "About2",
+					Enabled: true,
+				},
+			},
+		},
+	}
+
+	m := menu.New(items)
+	app.SetMenu(m)
+
 	options := window.Options{
 		// NOTE(nick): resizing a transparent window on MacOS seems really slow?
 		// Transparent: true,

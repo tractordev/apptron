@@ -10,6 +10,11 @@ import "C"
 import (
 	"sync"
 	"errors"
+	"unsafe"
+)
+
+import (
+	"github.com/progrium/hostbridge/bridge/menu"
 )
 
 type Module struct {
@@ -126,12 +131,14 @@ func FindByID(windowID Handle) *Window {
 
 func Create(options Options) (*Window, error) {
 	opts := C.Window_Options{
-		transparent: CBool(options.Transparent),
-		decorations: CBool(!options.Frameless),
+		transparent: toCBool(options.Transparent),
+		decorations: toCBool(!options.Frameless),
 		html: C.CString(options.HTML),
 	};
 
-	result := C.window_create(EventLoop, opts)
+
+	appMenu := *(*C.Menu)(unsafe.Pointer(&menu.AppMenu))
+	result := C.window_create(EventLoop, opts, appMenu)
 	//result := -1
 	id := int(result)
 
@@ -152,7 +159,7 @@ func (it *Window) Destroy() bool {
 
 	if (!it.destroyed) {
 		success := C.window_destroy(C.int(it.ID))
-		if (ToBool(success)) {
+		if (toBool(success)) {
 			it.destroyed = true
 			result = true
 
@@ -172,38 +179,30 @@ func (it *Window) IsDestroyed() bool {
 
 func (it *Window) SetTitle(title string) {
 	success := C.window_set_title(C.int(it.ID), C.CString(title))
-	if (ToBool(success)) {
+	if (toBool(success)) {
 		it.Title = title
 	}
 }
 
 func (it *Window) SetVisible(visible bool) {
-	C.window_set_visible(C.int(it.ID), CBool(visible))
+	C.window_set_visible(C.int(it.ID), toCBool(visible))
 }
 
 func (it *Window) SetFullscreen(fullscreen bool) {
-	C.window_set_fullscreen(C.int(it.ID), CBool(fullscreen))
+	C.window_set_fullscreen(C.int(it.ID), toCBool(fullscreen))
 }
 
 func (it *Window) GetOuterPosition() Position {
 	result := C.window_get_outer_position(C.int(it.ID))
-	return MakePosition(result)
+	return Position{ X: float64(result.x), Y: float64(result.y) }
 }
 
 func (it *Window) GetOuterSize() Size {
 	result := C.window_get_outer_size(C.int(it.ID))
-	return MakeSize(result)
+	return Size{ Width: float64(result.width), Height: float64(result.height) }
 }
 
-func MakePosition(it C.Position) Position {
-	return Position{ X: float64(it.x), Y: float64(it.y) }
-}
-
-func MakeSize(it C.Size) Size {
-	return Size{ Width: float64(it.width), Height: float64(it.height) }
-}
-
-func CBool(it bool) C.uchar {
+func toCBool(it bool) C.uchar {
 	if (it) {
 		return C.uchar(1)
 	}
@@ -211,6 +210,6 @@ func CBool(it bool) C.uchar {
 	return C.uchar(0)
 }
 
-func ToBool(it C.uchar) bool {
+func toBool(it C.uchar) bool {
 	return int(it) != 0
 }
