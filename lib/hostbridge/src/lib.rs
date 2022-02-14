@@ -1,12 +1,12 @@
 use std::ffi::CStr;
+use std::str::FromStr;
 use std::mem::{ManuallyDrop, forget, size_of};
 
 use wry::{
 	application::{
-		//accelerator::{Accelerator, SysMods},
+		accelerator::{Accelerator},
 		event::{Event, WindowEvent},
 		event_loop::{ControlFlow, EventLoop},
-		//keyboard::KeyCode,
 	  menu::{MenuBar, MenuItemAttributes},
 		window::{WindowBuilder, Fullscreen},
 	},
@@ -297,30 +297,47 @@ pub extern "C" fn menu_create() -> CMenu {
 #[allow(improper_ctypes_definitions)]
 pub extern "C" fn menu_add_item(mut menu: CMenu, item: CMenu_Item) -> CBool {
 	// @Cleanup: is there a better way to convert from *const libc::c_char -> &str?
+	// :CStrToStr
 	let title = string_from_cstr(item.title);
 	let title: &str = &title[..];
 
 	// @Incomplete: use `role` to handle native items
 	//menu.add_native_item(MenuItem::About("Todos".to_string()));
 
-	menu.add_item(
+	let mut result =
 		MenuItemAttributes::new(title)
 			.with_id(wry::application::menu::MenuId(item.id as u16))
 			.with_enabled(item.enabled)
-			.with_selected(item.selected)
-			// @Incomplete: convert item.accelerator string into Accelerator struct
-			//.with_accelerators(&Accelerator::new(SysMods::Cmd, KeyCode::KeyQ)),
-	);
+			.with_selected(item.selected);
+
+	let accelerator = string_from_cstr(item.accelerator);
+	let mut success = true;
+
+	if accelerator.len() > 0 {
+		// @Cleanup: is there a better way to convert from *const libc::c_char -> &str?
+		// :CStrToStr
+		let accelerator: &str = &accelerator[..];
+		let parsed = Accelerator::from_str(accelerator);
+
+		if let Ok(it) = parsed {
+			result = result.with_accelerators(&it);
+		} else {
+			success = false;
+		}
+	}
+
+	menu.add_item(result);
 
 	forget(menu);
 
-	true
+	success
 }
 
 #[no_mangle]
 #[allow(improper_ctypes_definitions)]
 pub extern "C" fn menu_add_submenu(mut menu: CMenu, title: CString, enabled: CBool, submenu: CMenu) -> CBool {
 	// @Cleanup: is there a better way to convert from *const libc::c_char -> &str?
+	// :CStrToStr
 	let title = string_from_cstr(title);
 	let title: &str = &title[..];
 	menu.add_submenu(title, enabled, submenu);

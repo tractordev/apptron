@@ -8,6 +8,8 @@ import (
 	"github.com/progrium/hostbridge/bridge/window"
 )
 
+var quitId uint16 = 999
+
 func tick(event app.Event) {
 	if (event.Type > 0) {
 		fmt.Println("[tick] event", event)
@@ -26,7 +28,7 @@ func tick(event app.Event) {
 			}
 		}
 
-		if (event.Name == "menu-item") {
+		if (event.Name == "menu-item" && event.MenuID == quitId) {
 			w := window.FindByID(event.WindowID)
 			if (w != nil) {
 				w.Destroy()
@@ -55,6 +57,7 @@ func main() {
 					ID: 121,
 					Title: "About",
 					Enabled: true,
+					Accelerator: "Control+I",
 				},
 				{
 					ID: 122,
@@ -62,10 +65,10 @@ func main() {
 					Enabled: false,
 				},
 				{
-					ID: 99,
+					ID: quitId,
 					Title: "Quit",
 					Enabled: true,
-					//Accelerator: "CommandOrControl+Q",
+					Accelerator: "CommandOrControl+Q",
 				},
 			},
 		},
@@ -76,7 +79,7 @@ func main() {
 			SubMenu: []menu.Item {
 				{
 					ID: 777,
-					Title: "About2",
+					Title: "This is an amazing menu option",
 					Enabled: true,
 				},
 			},
