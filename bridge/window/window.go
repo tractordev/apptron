@@ -139,7 +139,6 @@ func Create(options Options) (*Window, error) {
 
 	appMenu := *(*C.Menu)(unsafe.Pointer(&menu.AppMenu))
 	result := C.window_create(EventLoop, opts, appMenu)
-	//result := -1
 	id := int(result)
 
 	window := Window{}

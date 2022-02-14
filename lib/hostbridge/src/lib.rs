@@ -1,15 +1,13 @@
 use std::ffi::CStr;
 use std::mem::{ManuallyDrop, forget, size_of};
-use std::option::Option;
-use std::cell::RefCell;
 
 use wry::{
 	application::{
-		accelerator::{Accelerator, SysMods},
+		//accelerator::{Accelerator, SysMods},
 		event::{Event, WindowEvent},
 		event_loop::{ControlFlow, EventLoop},
-		keyboard::KeyCode,
-	  menu::{MenuBar, MenuItem, MenuItemAttributes, MenuType},
+		//keyboard::KeyCode,
+	  menu::{MenuBar, MenuItemAttributes},
 		window::{WindowBuilder, Fullscreen},
 	},
 	webview::{WebViewBuilder},
@@ -41,6 +39,7 @@ enum CEventType {
 	Focused   = 3,
 	Resized   = 4,
 	Moved     = 5,
+	MenuItem  = 6,
 }
 
 #[repr(C)]
@@ -49,6 +48,7 @@ pub struct CEvent {
 	pub window_id:  CInt,
 	pub position:   CPosition,
 	pub size:       CSize,
+	pub menu_id:    CInt,
 }
 
 // NOTE(nick): even though this stuct is not FFI compatible, we use it as an opaque handle on the C/Go side
@@ -101,23 +101,6 @@ macro_rules! find_item {
 	}};
 } 
 
-macro_rules! find_item_mut {
-	($array: expr, $id: expr, $func: expr) => {{
-		let mut result = false;
-
-		unsafe {
-			let it = $array.iter_mut().find(|it| it.id == $id);
-
-			if let Some(it) = it {
-				$func(it);
-				result = true;
-			}
-		}
-
-		result
-	}};
-}
-
 #[no_mangle]
 #[allow(improper_ctypes_definitions)]
 pub extern "C" fn create_event_loop() -> CEventLoop {
@@ -143,16 +126,6 @@ pub extern "C" fn create_event_loop() -> CEventLoop {
 #[no_mangle]
 #[allow(improper_ctypes_definitions)]
 pub extern "C" fn window_create(event_loop: CEventLoop, options: CWindow_Options, menu: CMenu) -> i32 {
-	/*
-	let mut first_menu = MenuBar::new();
-  first_menu.add_native_item(MenuItem::About("Todos".to_string()));
-  first_menu.add_native_item(MenuItem::Services);
-  first_menu.add_native_item(MenuItem::Separator);
-  first_menu.add_native_item(MenuItem::Hide);
-  first_menu.add_native_item(MenuItem::HideOthers);
-  first_menu.add_native_item(MenuItem::ShowAll);
-  */
-
 	let maybe_window = WindowBuilder::new()
 		.with_title("")
 		.with_menu(menu)
@@ -162,7 +135,6 @@ pub extern "C" fn window_create(event_loop: CEventLoop, options: CWindow_Options
 
 
 	forget(event_loop);
-	//forget(menu);
 
 	if !maybe_window.is_ok() {
 		return -2;
@@ -194,7 +166,7 @@ pub extern "C" fn window_create(event_loop: CEventLoop, options: CWindow_Options
 
 	let webview = result.unwrap();
 
-	let mut result: i32 = -1;
+	let result: i32;
 
 	unsafe {
 		result = GLOBAL_WINDOWS.len() as i32;
@@ -329,22 +301,20 @@ pub extern "C" fn menu_add_item(mut menu: CMenu, item: CMenu_Item) -> CBool {
 	let title: &str = &title[..];
 
 	// @Incomplete: use `role` to handle native items
-  //menu.add_native_item(MenuItem::About("Todos".to_string()));
+	//menu.add_native_item(MenuItem::About("Todos".to_string()));
 
-  menu.add_item(
-    MenuItemAttributes::new(title)
-    	.with_id(wry::application::menu::MenuId(item.id as u16))
-    	.with_enabled(item.enabled)
-    	.with_selected(item.selected)
-    	// @Incomplete: convert item.accelerator string into Accelerator struct
-      //.with_accelerators(&Accelerator::new(SysMods::Cmd, KeyCode::KeyQ)),
+	menu.add_item(
+		MenuItemAttributes::new(title)
+			.with_id(wry::application::menu::MenuId(item.id as u16))
+			.with_enabled(item.enabled)
+			.with_selected(item.selected)
+			// @Incomplete: convert item.accelerator string into Accelerator struct
+			//.with_accelerators(&Accelerator::new(SysMods::Cmd, KeyCode::KeyQ)),
 	);
-
-	println!("menu_add_item {:?} {:?} {:?} {:?}", item.id as u16, title, item.enabled, item.selected);
 
 	forget(menu);
 
-  true
+	true
 }
 
 #[no_mangle]
@@ -353,11 +323,11 @@ pub extern "C" fn menu_add_submenu(mut menu: CMenu, title: CString, enabled: CBo
 	// @Cleanup: is there a better way to convert from *const libc::c_char -> &str?
 	let title = string_from_cstr(title);
 	let title: &str = &title[..];
-  menu.add_submenu(title, enabled, submenu);
+	menu.add_submenu(title, enabled, submenu);
 
 	forget(menu);
 
-  true
+	true
 }
 
 #[no_mangle]
@@ -371,6 +341,7 @@ pub extern "C" fn run(event_loop: CEventLoop, user_callback: unsafe extern "C" f
 			window_id: -1,
 			position: CPosition{x: 0.0, y: 0.0},
 			size: CSize{width: 0.0, height: 0.0},
+			menu_id: 0,
 		};
 
 		match event {
@@ -421,8 +392,23 @@ pub extern "C" fn run(event_loop: CEventLoop, user_callback: unsafe extern "C" f
 					_ => {}
 				};
 			},
-			Event::MenuEvent { window_id, menu_id, origin, .. } => {
-				println!("{:?} {:?} {:?}", window_id, menu_id, origin);
+			Event::MenuEvent { window_id, menu_id, .. } => {
+				result.event_type = CEventType::MenuItem as i32;
+				result.menu_id = menu_id.0 as i32;
+
+				if let Some(window_id) = window_id {
+					let user_window_id = unsafe {
+						let it = GLOBAL_WINDOWS.iter().find(|&it| it.webview.window().id() == window_id);
+
+						if let Some(it) = it {
+							it.id
+						} else {
+							-1
+						}
+					};
+
+					result.window_id = user_window_id;
+				}
 			},
 			_ => (),
 		}

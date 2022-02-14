@@ -2,7 +2,7 @@ ROOT_DIR := $(dir $(realpath $(lastword $(MAKEFILE_LIST))))
 
 .PHONY: ffi-static
 ffi-static:
-	cd lib/hostbridge && rustup run nightly cargo build --release
+	cd lib/hostbridge && cargo build --release
 	cp lib/hostbridge/target/release/libhostbridge.a lib/
 	CGO_LDFLAGS="./lib/libhostbridge.a -ldl -framework Carbon -framework Cocoa -framework CoreFoundation -framework CoreVideo -framework IOKit -framework WebKit" \
 	go build -a -o ./ffi-debug ./cmd/ffi-debug/main_static.go

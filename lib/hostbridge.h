@@ -23,6 +23,7 @@ typedef enum EventType {
 	EventFocused   = 3,
 	EventResized   = 4,
 	EventMoved     = 5,
+	EventMenuItem  = 6,
 } EventType;
 
 typedef struct Event {
@@ -30,6 +31,7 @@ typedef struct Event {
 	int      window_id;
 	Position position;
 	Size     size;
+	int      menu_id;
 } Event;
 
 // NOTE(nick): this has to be kept in sync with wry's EventLoop struct size
