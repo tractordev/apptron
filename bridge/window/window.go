@@ -1,10 +1,8 @@
 package window
 
 // NOTE: There should be NO space between the comments and the `import "C"` line.
-// The -ldl is necessary to fix the linker errors about `dlsym` that would otherwise appear.
 
 /*
-#cgo LDFLAGS: ./lib/libhostbridge.a -ldl -framework Carbon -framework Cocoa -framework CoreFoundation -framework CoreVideo -framework IOKit -framework WebKit
 #include "../../lib/hostbridge.h"
 */
 import "C"
@@ -12,15 +10,28 @@ import "C"
 import (
 	"sync"
 	"errors"
-	"os"
+	"unsafe"
+)
+
+import (
+	"github.com/progrium/hostbridge/bridge/menu"
 )
 
 type Module struct {
 	mu sync.Mutex
 
 	windows     []Window
-	eventLoop   C.EventLoop
 	shouldQuit  bool
+}
+
+type Position struct {
+	X float64
+	Y float64
+}
+
+type Size struct {
+	Width  float64
+	Height float64
 }
 
 type Handle int
@@ -41,29 +52,6 @@ type Window struct {
 	*/
 
 	destroyed   bool
-}
-
-type EventType int
-
-const (
-    EventNone       EventType = iota
-    EventClose
-    EventDestroyed
-    EventFocused
-    EventResized
-    EventMoved
-)
-
-func (e EventType) String() string {
-    return []string{"none", "close", "destroyed", "focused", "resized", "moved"}[e]
-}
-
-type Event struct {
-	Type       EventType
-	Name       string
-	WindowID   Handle
-	Position   Position
-	Size       Size
 }
 
 type Options struct {
@@ -89,21 +77,15 @@ type Options struct {
 	*/
 }
 
-type Position struct {
-	X float64
-	Y float64
-}
+var EventLoop C.EventLoop
 
-type Size struct {
-	Width  float64
-	Height float64
+func init() {
+	EventLoop = C.create_event_loop()
 }
 
 var module Module
 
 func init() {
-	module.eventLoop  = C.create_event_loop()
-	module.shouldQuit = false
 }
 
 func All() (result []Window) {
@@ -147,48 +129,6 @@ func FindByID(windowID Handle) *Window {
 	return nil
 }
 
-type Callback func(event Event)
-
-var userMainLoop Callback
-
-//export go_app_main_loop
-func go_app_main_loop(data C.Event) {
-	if (module.shouldQuit) {
-		return
-	}
-
-	if (userMainLoop != nil) {
-		event := Event{}
-		event.Type     = EventType(data.event_type)
-		event.Name     = event.Type.String()
-		event.WindowID = Handle(data.window_id)
-		event.Position = makePosition(data.position)
-		event.Size     = makeSize(data.size)
-
-		userMainLoop(event)
-	}
-}
-
-func Run(callback Callback) {
-	if (callback != nil) {
-		userMainLoop = callback
-		C.run(module.eventLoop, C.closure(C.go_app_main_loop))
-	}
-}
-
-func Quit() {
-	if (!module.shouldQuit) {
-		module.shouldQuit = true
-
-		os.Exit(0)
-
-		// @Incomplete: ideally this would return execution to the main thread
-		// but it seems fine because ControlFlow::Exit actually quits the whole process...
-		//
-		// @MemoryLeak: eventLoop destructor needs to be called here if we return execution to go main
-	}
-}
-
 func Create(options Options) (*Window, error) {
 	opts := C.Window_Options{
 		transparent: toCBool(options.Transparent),
@@ -196,7 +136,9 @@ func Create(options Options) (*Window, error) {
 		html: C.CString(options.HTML),
 	};
 
-	result := C.window_create(module.eventLoop, opts)
+
+	appMenu := *(*C.Menu)(unsafe.Pointer(&menu.AppMenu))
+	result := C.window_create(EventLoop, opts, appMenu)
 	id := int(result)
 
 	window := Window{}
@@ -216,7 +158,7 @@ func (it *Window) Destroy() bool {
 
 	if (!it.destroyed) {
 		success := C.window_destroy(C.int(it.ID))
-		if (toGoBool(success)) {
+		if (toBool(success)) {
 			it.destroyed = true
 			result = true
 
@@ -236,7 +178,7 @@ func (it *Window) IsDestroyed() bool {
 
 func (it *Window) SetTitle(title string) {
 	success := C.window_set_title(C.int(it.ID), C.CString(title))
-	if (toGoBool(success)) {
+	if (toBool(success)) {
 		it.Title = title
 	}
 }
@@ -251,21 +193,12 @@ func (it *Window) SetFullscreen(fullscreen bool) {
 
 func (it *Window) GetOuterPosition() Position {
 	result := C.window_get_outer_position(C.int(it.ID))
-	return makePosition(result)
+	return Position{ X: float64(result.x), Y: float64(result.y) }
 }
 
 func (it *Window) GetOuterSize() Size {
 	result := C.window_get_outer_size(C.int(it.ID))
-	return makeSize(result)
-}
-
-
-func makePosition(it C.Position) Position {
-	return Position{ X: float64(it.x), Y: float64(it.y) }
-}
-
-func makeSize(it C.Size) Size {
-	return Size{ Width: float64(it.width), Height: float64(it.height) }
+	return Size{ Width: float64(result.width), Height: float64(result.height) }
 }
 
 func toCBool(it bool) C.uchar {
@@ -276,6 +209,6 @@ func toCBool(it bool) C.uchar {
 	return C.uchar(0)
 }
 
-func toGoBool(it C.uchar) bool {
+func toBool(it C.uchar) bool {
 	return int(it) != 0
 }
