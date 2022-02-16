@@ -7,7 +7,9 @@ use wry::{
 		accelerator::{Accelerator},
 		event::{Event, WindowEvent},
 		event_loop::{ControlFlow, EventLoop},
-	  menu::{MenuBar, MenuItemAttributes},
+		//global_shortcut::ShortcutManager,
+	  menu::{ContextMenu, MenuBar, MenuItemAttributes},
+	  system_tray::SystemTrayBuilder,
 		window::{WindowBuilder, Fullscreen},
 	},
 	webview::{WebViewBuilder},
@@ -55,6 +57,7 @@ pub struct CEvent {
 // so the layout of the data shouldn't matter
 type CEventLoop = EventLoop<()>;
 type CMenu = MenuBar;
+type CContextMenu = ContextMenu;
 
 #[repr(C)]
 pub struct CWindow_Options {
@@ -70,6 +73,12 @@ pub struct CMenu_Item {
 	pub enabled: CBool,
 	pub selected: CBool,
 	pub accelerator: CString,
+}
+
+#[repr(C)]
+pub struct CIcon {
+	pub data: *mut u8,
+	pub size: CInt,
 }
 
 struct Window {
@@ -275,6 +284,7 @@ pub extern "C" fn window_get_dpi_scale(window_id: CInt) -> CDouble {
 	result
 }
 
+
 #[no_mangle]
 #[allow(improper_ctypes_definitions)]
 pub extern "C" fn menu_create() -> CMenu {
@@ -296,6 +306,7 @@ pub extern "C" fn menu_create() -> CMenu {
 #[no_mangle]
 #[allow(improper_ctypes_definitions)]
 pub extern "C" fn menu_add_item(mut menu: CMenu, item: CMenu_Item) -> CBool {
+	// @Copypaste
 	// @Cleanup: is there a better way to convert from *const libc::c_char -> &str?
 	// :CStrToStr
 	let title = string_from_cstr(item.title);
@@ -343,6 +354,104 @@ pub extern "C" fn menu_add_submenu(mut menu: CMenu, title: CString, enabled: CBo
 	menu.add_submenu(title, enabled, submenu);
 
 	forget(menu);
+
+	true
+}
+
+#[no_mangle]
+#[allow(improper_ctypes_definitions)]
+pub extern "C" fn context_menu_create() -> CContextMenu {
+	//
+	// NOTE(nick): If this changes, go and update hostbridge.h Menu size
+	// @Robustness: make this a static assertion
+	//
+	assert_eq!(size_of::<CContextMenu>(), 16);
+
+	let result = CContextMenu::new();
+	
+	let mut result = ManuallyDrop::new(result);
+
+	unsafe {
+		ManuallyDrop::take(&mut result)
+	}
+}
+
+#[no_mangle]
+#[allow(improper_ctypes_definitions)]
+pub extern "C" fn context_menu_add_item(mut menu: CContextMenu, item: CMenu_Item) -> CBool {
+	// @Copypaste
+	// @Cleanup: is there a better way to convert from *const libc::c_char -> &str?
+	// :CStrToStr
+	let title = string_from_cstr(item.title);
+	let title: &str = &title[..];
+
+	// @Incomplete: use `role` to handle native items
+	//menu.add_native_item(MenuItem::About("Todos".to_string()));
+
+	let mut result =
+		MenuItemAttributes::new(title)
+			.with_id(wry::application::menu::MenuId(item.id as u16))
+			.with_enabled(item.enabled)
+			.with_selected(item.selected);
+
+	let accelerator = string_from_cstr(item.accelerator);
+	let mut success = true;
+
+	if accelerator.len() > 0 {
+		// @Cleanup: is there a better way to convert from *const libc::c_char -> &str?
+		// :CStrToStr
+		let accelerator: &str = &accelerator[..];
+		let parsed = Accelerator::from_str(accelerator);
+
+		if let Ok(it) = parsed {
+			result = result.with_accelerators(&it);
+
+			/*
+			let mut shortcut_manager = ShortcutManager::new(&event_loop);
+			shortcut_manager.register(it.clone()).unwrap();
+			// @MemoryLeak
+			forget(shortcut_manager);
+			*/
+		} else {
+			success = false;
+		}
+	}
+
+	menu.add_item(result);
+
+	forget(menu);
+
+	success
+}
+
+#[no_mangle]
+#[allow(improper_ctypes_definitions)]
+pub extern "C" fn context_menu_add_submenu(mut menu: CContextMenu, title: CString, enabled: CBool, submenu: CContextMenu) -> CBool {
+	// @Cleanup: is there a better way to convert from *const libc::c_char -> &str?
+	// :CStrToStr
+	let title = string_from_cstr(title);
+	let title: &str = &title[..];
+	menu.add_submenu(title, enabled, submenu);
+
+	forget(menu);
+
+	true
+}
+
+#[no_mangle]
+#[allow(improper_ctypes_definitions)]
+pub extern "C" fn tray_set_system_tray(event_loop: CEventLoop, icon: CIcon, tray_menu: CContextMenu) -> CBool {
+	let icon = unsafe { Vec::<u8>::from_raw_parts(icon.data, icon.size as usize, icon.size as usize) };
+
+	// NOTE(nick): confusingly, calling SystemTrayBuilder::new also sets it as the active system tray
+	// ideally we would probably want these two concepets to be decoupled in the future?
+	let _system_tray = SystemTrayBuilder::new(icon.clone(), Some(tray_menu)).build(&event_loop).unwrap();
+
+	// @Incomplete: in the future we will want to store teh system_tray somewhere (probably in Go), so that
+	// you can call system_tray.set_icon to change the icon dynamically
+
+	forget(event_loop);
+	forget(icon);
 
 	true
 }
@@ -426,6 +535,11 @@ pub extern "C" fn run(event_loop: CEventLoop, user_callback: unsafe extern "C" f
 
 					result.window_id = user_window_id;
 				}
+			},
+			Event::GlobalShortcutEvent(hotkey_id) => {
+				// @Incomplete: need a way to match these hotkey_id's back to their original MenuItems (or possibly keyboard shortcuts)
+				// that triggered them
+				println!("GlobalShortcutEvent {:?}", hotkey_id);
 			},
 			_ => (),
 		}

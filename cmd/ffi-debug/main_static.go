@@ -1,6 +1,10 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"io/ioutil"
+	"runtime"
+)
 
 import (
 	"github.com/progrium/hostbridge/bridge/app"
@@ -9,6 +13,7 @@ import (
 )
 
 var quitId uint16 = 999
+var quitAllId uint16 = 9999
 
 func tick(event app.Event) {
 	if (event.Type > 0) {
@@ -41,11 +46,15 @@ func tick(event app.Event) {
 				app.Quit()
 			}
 		}
+
+		if (event.Name == "menu-item" && event.MenuID == quitAllId) {
+			app.Quit()
+		}
 	}
 }
 
 func main() {
-	items := []menu.Item {
+	menuTemplate := []menu.Item {
 		{
 			// NOTE(nick): when setting the window menu with wry, the first item title will always be the name of the executable on MacOS
 			// so, this property is ignored:
@@ -86,8 +95,49 @@ func main() {
 		},
 	}
 
-	m := menu.New(items)
+	m := menu.New(menuTemplate)
 	app.SetMenu(m)
+
+	trayTemplate := []menu.Item {
+		{
+			Title: "Click on this here thing",
+			Enabled: true,
+		},
+		{
+			Title: "Secret stuff",
+			Enabled: true,
+			SubMenu: []menu.Item {
+				{
+					ID: 42,
+					Title: "I'm nested!!",
+					Enabled: true,
+				},
+				{
+					ID: 101,
+					Title: "Can't touch this",
+					Enabled: false,
+				},
+			},
+		},
+		{
+			ID: quitAllId,
+			Title: "Quit App",
+			Enabled: true,
+			Accelerator: "Command+T",
+		},
+	}
+
+	iconPath 	:= "assets/icon.png"
+	if runtime.GOOS == "windows" {
+		iconPath = "assets/icon.ico"
+	}
+
+	iconData, err := ioutil.ReadFile(iconPath)
+	if (err != nil) {
+		fmt.Println("Error reading icon file:", err)
+	}
+	
+	app.NewIndicator(iconData, trayTemplate)
 
 	options := window.Options{
 		// NOTE(nick): resizing a transparent window on MacOS seems really slow?
