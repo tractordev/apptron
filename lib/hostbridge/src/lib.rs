@@ -292,6 +292,9 @@ pub extern "C" fn menu_create() -> CMenu {
 	// NOTE(nick): If this changes, go and update hostbridge.h Menu size
 	// @Robustness: make this a static assertion
 	//
+	#[cfg(target_os = "macos")]
+	assert_eq!(size_of::<CMenu>(), 16);
+	#[cfg(target_os = "windows")]
 	assert_eq!(size_of::<CMenu>(), 64);
 
 	let result = MenuBar::new();
@@ -365,6 +368,9 @@ pub extern "C" fn context_menu_create() -> CContextMenu {
 	// NOTE(nick): If this changes, go and update hostbridge.h Menu size
 	// @Robustness: make this a static assertion
 	//
+	#[cfg(target_os = "macos")]
+	assert_eq!(size_of::<CContextMenu>(), 16);
+	#[cfg(target_os = "windows")]
 	assert_eq!(size_of::<CContextMenu>(), 64);
 
 	let result = CContextMenu::new();
@@ -449,8 +455,8 @@ pub extern "C" fn tray_set_system_tray(event_loop: CEventLoop, icon: CIcon, tray
 	// you can call system_tray.set_icon to change the icon dynamically
 
 	forget(event_loop);
-	forget(icon);
-	forget(system_tray);
+	forget(icon); // NOTE(nick): prevent rust from trying to dealloc something it doesn't own
+	forget(system_tray); // @MemoryLeak
 
 	true
 }

@@ -6,6 +6,15 @@
 
 #define bool uint8_t
 
+#if defined(_WIN32)
+  #define OS_WINDOWS 1
+#elif defined(__APPLE__)
+  #define OS_MACOS 1
+#else
+  //#define OS_LINUX 1
+  #error "[os.h] Unsuported operating system!"
+#endif
+
 typedef struct Position {
 	double x;
 	double y;
@@ -41,12 +50,20 @@ typedef struct EventLoop {
 
 // NOTE(nick): this has to be kept in sync with wry's Menu struct size
 typedef struct Menu {
+	#ifdef OS_MACOS
 	unsigned char data[16];
+	#elif OS_WINDOWS
+	unsigned char data[64];
+	#endif
 } Menu;
 
 // NOTE(nick): this has to be kept in sync with wry's ContextMenu struct size
 typedef struct ContextMenu {
+	#ifdef OS_MACOS
 	unsigned char data[16];
+	#elif OS_WINDOWS
+	unsigned char data[64];
+	#endif
 } ContextMenu;
 
 typedef struct Window_Options {
