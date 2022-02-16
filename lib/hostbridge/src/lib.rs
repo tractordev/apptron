@@ -292,7 +292,7 @@ pub extern "C" fn menu_create() -> CMenu {
 	// NOTE(nick): If this changes, go and update hostbridge.h Menu size
 	// @Robustness: make this a static assertion
 	//
-	assert_eq!(size_of::<CMenu>(), 16);
+	assert_eq!(size_of::<CMenu>(), 64);
 
 	let result = MenuBar::new();
 	
@@ -365,7 +365,7 @@ pub extern "C" fn context_menu_create() -> CContextMenu {
 	// NOTE(nick): If this changes, go and update hostbridge.h Menu size
 	// @Robustness: make this a static assertion
 	//
-	assert_eq!(size_of::<CContextMenu>(), 16);
+	assert_eq!(size_of::<CContextMenu>(), 64);
 
 	let result = CContextMenu::new();
 	
@@ -443,15 +443,14 @@ pub extern "C" fn context_menu_add_submenu(mut menu: CContextMenu, title: CStrin
 pub extern "C" fn tray_set_system_tray(event_loop: CEventLoop, icon: CIcon, tray_menu: CContextMenu) -> CBool {
 	let icon = unsafe { Vec::<u8>::from_raw_parts(icon.data, icon.size as usize, icon.size as usize) };
 
-	// NOTE(nick): confusingly, calling SystemTrayBuilder::new also sets it as the active system tray
-	// ideally we would probably want these two concepets to be decoupled in the future?
-	let _system_tray = SystemTrayBuilder::new(icon.clone(), Some(tray_menu)).build(&event_loop).unwrap();
+	let system_tray = SystemTrayBuilder::new(icon.clone(), Some(tray_menu)).build(&event_loop).unwrap();
 
-	// @Incomplete: in the future we will want to store teh system_tray somewhere (probably in Go), so that
+	// @Incomplete: in the future we will want to store the system_tray somewhere (probably in Go), so that
 	// you can call system_tray.set_icon to change the icon dynamically
 
 	forget(event_loop);
 	forget(icon);
+	forget(system_tray);
 
 	true
 }
