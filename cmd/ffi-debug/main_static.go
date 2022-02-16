@@ -103,6 +103,22 @@ func main() {
 			Enabled: true,
 		},
 		{
+			Title: "Secret stuff",
+			Enabled: true,
+			SubMenu: []menu.Item {
+				{
+					ID: 42,
+					Title: "I'm nested!!",
+					Enabled: true,
+				},
+				{
+					ID: 101,
+					Title: "Can't touch this",
+					Enabled: false,
+				},
+			},
+		},
+		{
 			ID: quitAllId,
 			Title: "Quit App",
 			Enabled: true,

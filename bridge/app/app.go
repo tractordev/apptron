@@ -118,17 +118,24 @@ func NewIndicator(icon []byte, items []menu.Item) {
 		cicon = C.Icon{ data: (*C.uchar)(nil), size: C.int(0) }
 	}
 
-	trayTemplate := make([]C.Menu_Item, len(items))
-	for i, it := range items {
-		trayTemplate[i] = buildCMenuItem(it)
+	trayMenu := NewContextMenu(items)
+
+	C.tray_set_system_tray(eventLoop, cicon, trayMenu)
+}
+
+func NewContextMenu(items []menu.Item) C.ContextMenu {
+	result := C.context_menu_create()
+
+	for _, it := range items {
+		if (len(it.SubMenu) > 0) {
+			submenu := NewContextMenu(it.SubMenu)
+			C.context_menu_add_submenu(result, C.CString(it.Title), toCBool(it.Enabled), submenu)
+		} else {
+			C.context_menu_add_item(result, buildCMenuItem(it))
+		}
 	}
 
-	C.tray_set_system_tray(
-		eventLoop,
-		cicon,
-		(*C.Menu_Item)(unsafe.Pointer(&trayTemplate[0])),
-		C.int(len(trayTemplate)),
-	)
+	return result
 }
 
 func buildCMenuItem(item menu.Item) C.Menu_Item {

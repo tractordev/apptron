@@ -44,6 +44,11 @@ typedef struct Menu {
 	unsigned char data[16];
 } Menu;
 
+// NOTE(nick): this has to be kept in sync with wry's Menu struct size
+typedef struct ContextMenu {
+	unsigned char data[16];
+} ContextMenu;
+
 typedef struct Window_Options {
 	bool transparent;
 	bool decorations;
@@ -91,9 +96,13 @@ double   window_get_dpi_scale(int window_id);
 Menu menu_create();
 bool menu_add_item(Menu menu, Menu_Item item);
 bool menu_add_submenu(Menu menu, char *title, bool enabled, Menu submenu);
-bool menu_set_application_menu(Menu menu);
 
-bool tray_set_system_tray(EventLoop event_loop, Icon icon, Menu_Item *item_data, int item_count);
+ContextMenu context_menu_create();
+bool context_menu_add_item(ContextMenu menu, Menu_Item item);
+bool context_menu_add_submenu(ContextMenu menu, char *title, bool enabled, ContextMenu submenu);
+
+bool tray_set_system_tray(EventLoop event_loop, Icon icon, ContextMenu menu);
+//bool tray_set_system_tray(EventLoop event_loop, Icon icon, Menu_Item *item_data, int item_count);
 
 void run(EventLoop event_loop, void (*callback)(Event event));
 
