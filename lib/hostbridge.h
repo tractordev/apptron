@@ -58,6 +58,11 @@ typedef struct Menu_Item {
 	char *accelerator;
 } Menu_Item;
 
+typedef struct Icon {
+	unsigned char *data;
+	int size;
+} Icon;
+
 //
 // Go Functions
 //
@@ -87,6 +92,8 @@ Menu menu_create();
 bool menu_add_item(Menu menu, Menu_Item item);
 bool menu_add_submenu(Menu menu, char *title, bool enabled, Menu submenu);
 bool menu_set_application_menu(Menu menu);
+
+bool tray_set_system_tray(EventLoop event_loop, Icon icon, Menu_Item *item_data, int item_count);
 
 void run(EventLoop event_loop, void (*callback)(Event event));
 
