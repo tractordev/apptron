@@ -7,8 +7,8 @@ use wry::{
 		accelerator::{Accelerator},
 		event::{Event, WindowEvent},
 		event_loop::{ControlFlow, EventLoop},
-		global_shortcut::ShortcutManager,
-	  menu::{ContextMenu, MenuBar, MenuItem, MenuItemAttributes},
+		//global_shortcut::ShortcutManager,
+	  menu::{ContextMenu, MenuBar, MenuItemAttributes},
 	  system_tray::SystemTrayBuilder,
 		window::{WindowBuilder, Fullscreen},
 	},
@@ -451,6 +451,7 @@ pub extern "C" fn tray_set_system_tray(event_loop: CEventLoop, icon: CIcon, tray
 	// you can call system_tray.set_icon to change the icon dynamically
 
 	forget(event_loop);
+	forget(icon);
 
 	true
 }

@@ -15,10 +15,6 @@ type Menu struct {
 	Handle C.Menu
 }
 
-type TrayMenu struct {
-	//Handle C.Tray
-}
-
 type Item struct {
 	ID          uint16
 	Title       string

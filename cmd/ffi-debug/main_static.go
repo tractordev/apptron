@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"io/ioutil"
+	"runtime"
 )
 
 import (
@@ -126,12 +127,17 @@ func main() {
 		},
 	}
 
-	buf, err := ioutil.ReadFile("icon.png")
+	iconPath 	:= "assets/icon.png"
+	if runtime.GOOS == "windows" {
+		iconPath = "assets/icon.ico"
+	}
+
+	iconData, err := ioutil.ReadFile(iconPath)
 	if (err != nil) {
 		fmt.Println("Error reading icon file:", err)
 	}
 	
-	app.NewIndicator(buf, trayTemplate)
+	app.NewIndicator(iconData, trayTemplate)
 
 	options := window.Options{
 		// NOTE(nick): resizing a transparent window on MacOS seems really slow?
