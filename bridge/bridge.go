@@ -3,7 +3,6 @@ package bridge
 import (
 	"unsafe"
 
-	"github.com/mitchellh/mapstructure"
 	"github.com/progrium/qtalk-go/codec"
 	"github.com/progrium/qtalk-go/fn"
 	"github.com/progrium/qtalk-go/rpc"
@@ -20,17 +19,12 @@ type ret struct {
 func NewServer() *rpc.Server {
 	mux := rpc.NewRespondMux()
 
-	// most of this cruft can be eliminated when qtalk gets mapstructure support
-	// and libhostbridge becomes thread-safe.
-	mux.Handle("window.Create", fn.HandlerFrom(func(opts map[string]interface{}) (uintptr, error) {
-		var wopts window.Options
-		err := mapstructure.Decode(opts, &wopts)
-		if err != nil {
-			return 0, err
-		}
+	// most of this cruft can be eliminated when libhostbridge becomes thread-safe.
+	// ideal: mux.Handle("window", fn.HandlerFrom(window.Module))
+	mux.Handle("window.Create", fn.HandlerFrom(func(opts window.Options) (uintptr, error) {
 		rchan := make(chan ret)
 		app.Dispatch(func() {
-			w, err := window.Create(wopts)
+			w, err := window.Create(opts)
 			rchan <- ret{V: w, E: err}
 		})
 		r := <-rchan

@@ -5,7 +5,6 @@ import (
 	"net"
 	"runtime"
 	"testing"
-	"time"
 
 	"github.com/progrium/hostbridge/bridge/app"
 	"github.com/progrium/hostbridge/bridge/window"
@@ -60,5 +59,5 @@ func TestBridge(t *testing.T) {
 	}
 
 	// uncomment to see visually
-	time.Sleep(1 * time.Second)
+	//time.Sleep(2 * time.Second)
 }
