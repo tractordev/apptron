@@ -1,3 +1,5 @@
+github.com/mitchellh/mapstructure v1.4.3 h1:OVowDSCllw/YjdLkam3/sm7wEtOy59d8ndGgCcyj8cs=
+github.com/mitchellh/mapstructure v1.4.3/go.mod h1:bFUtVrKA4DC2yAKiSyO/QUcy7e+RRV2QTWOzhPopBRo=
 github.com/progrium/qtalk-go v0.5.0 h1:4ZWIWQtDuYx/l89Jyf//xQWbomoctA/7mTkMj588gqI=
 github.com/progrium/qtalk-go v0.5.0/go.mod h1:vBfnZmpi9OTX/xNKQ6VOeq6uiaG3B4mhXI39K62bvn8=
 github.com/rs/xid v1.3.0 h1:6NjYksEUlhurdVehpc7S7dk6DAmcKv8V9gG0FsVN2U4=
