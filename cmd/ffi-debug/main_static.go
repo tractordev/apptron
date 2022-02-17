@@ -7,6 +7,7 @@ import (
 
 	"github.com/progrium/hostbridge/bridge/app"
 	"github.com/progrium/hostbridge/bridge/menu"
+	"github.com/progrium/hostbridge/bridge/shell"
 	"github.com/progrium/hostbridge/bridge/window"
 )
 
@@ -171,6 +172,12 @@ func main() {
 
 	wasDestroyed := window.Module.Destroy(w2)
 	fmt.Println("[main] wasDestroyed", wasDestroyed)
+
+	shell.ShowNotification(shell.Notification{
+		Title:    "Title: Hello, world",
+		Subtitle: "Subtitle: MacOS only",
+		Body:     "Body: This is the body",
+	})
 
 	app.Run(tick)
 

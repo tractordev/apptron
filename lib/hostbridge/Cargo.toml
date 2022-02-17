@@ -9,3 +9,4 @@ crate-type = ["cdylib", "staticlib"]
 [dependencies]
 libc = "0.2.2"
 wry = { version = "0.13.1", default-features = false, features = ["tray"] }
+notify-rust = "4.5.6"

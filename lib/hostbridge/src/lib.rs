@@ -328,7 +328,6 @@ pub extern "C" fn menu_add_item(mut menu: CMenu, item: CMenu_Item) -> CBool {
 	let mut success = true;
 
 	if accelerator.len() > 0 {
-		// @Cleanup: is there a better way to convert from *const libc::c_char -> &str?
 		// :CStrToStr
 		let accelerator: &str = &accelerator[..];
 		let parsed = Accelerator::from_str(accelerator);
@@ -350,7 +349,6 @@ pub extern "C" fn menu_add_item(mut menu: CMenu, item: CMenu_Item) -> CBool {
 #[no_mangle]
 #[allow(improper_ctypes_definitions)]
 pub extern "C" fn menu_add_submenu(mut menu: CMenu, title: CString, enabled: CBool, submenu: CMenu) -> CBool {
-	// @Cleanup: is there a better way to convert from *const libc::c_char -> &str?
 	// :CStrToStr
 	let title = string_from_cstr(title);
 	let title: &str = &title[..];
@@ -386,7 +384,6 @@ pub extern "C" fn context_menu_create() -> CContextMenu {
 #[allow(improper_ctypes_definitions)]
 pub extern "C" fn context_menu_add_item(mut menu: CContextMenu, item: CMenu_Item) -> CBool {
 	// @Copypaste
-	// @Cleanup: is there a better way to convert from *const libc::c_char -> &str?
 	// :CStrToStr
 	let title = string_from_cstr(item.title);
 	let title: &str = &title[..];
@@ -404,7 +401,6 @@ pub extern "C" fn context_menu_add_item(mut menu: CContextMenu, item: CMenu_Item
 	let mut success = true;
 
 	if accelerator.len() > 0 {
-		// @Cleanup: is there a better way to convert from *const libc::c_char -> &str?
 		// :CStrToStr
 		let accelerator: &str = &accelerator[..];
 		let parsed = Accelerator::from_str(accelerator);
@@ -433,7 +429,6 @@ pub extern "C" fn context_menu_add_item(mut menu: CContextMenu, item: CMenu_Item
 #[no_mangle]
 #[allow(improper_ctypes_definitions)]
 pub extern "C" fn context_menu_add_submenu(mut menu: CContextMenu, title: CString, enabled: CBool, submenu: CContextMenu) -> CBool {
-	// @Cleanup: is there a better way to convert from *const libc::c_char -> &str?
 	// :CStrToStr
 	let title = string_from_cstr(title);
 	let title: &str = &title[..];
@@ -459,6 +454,29 @@ pub extern "C" fn tray_set_system_tray(event_loop: CEventLoop, icon: CIcon, tray
 	forget(system_tray); // @MemoryLeak
 
 	true
+}
+
+#[no_mangle]
+pub extern fn shell_show_notification(title: CString, subtitle: CString, body: CString) -> CBool {
+	// :CStrToStr
+	let title = string_from_cstr(title);
+	let title: &str = &title[..];
+
+	// :CStrToStr
+	let subtitle = string_from_cstr(subtitle);
+	let subtitle: &str = &subtitle[..];
+
+	// :CStrToStr
+	let body = string_from_cstr(body);
+	let body: &str = &body[..];
+
+	let result = notify_rust::Notification::new()
+		.summary(title)
+		.subtitle(subtitle)
+		.body(body)
+		.show();
+
+	result.is_ok()
 }
 
 #[no_mangle]

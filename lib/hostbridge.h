@@ -98,6 +98,7 @@ void go_app_main_loop();
 //
 
 EventLoop create_event_loop();
+void run(EventLoop event_loop, void (*callback)(Event event));
 
 int      window_create(EventLoop event_loop, Window_Options options, Menu menu);
 bool     window_destroy(int window_id);
@@ -120,5 +121,4 @@ bool context_menu_add_submenu(ContextMenu menu, char *title, bool enabled, Conte
 
 bool tray_set_system_tray(EventLoop event_loop, Icon icon, ContextMenu menu);
 
-void run(EventLoop event_loop, void (*callback)(Event event));
-
+bool shell_show_notification(char *title, char *subtitle, char *body);
