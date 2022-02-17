@@ -8,19 +8,26 @@ import "C"
 import (
 	"os"
 	"unsafe"
-)
 
-import (
 	"github.com/progrium/hostbridge/bridge/menu"
 	"github.com/progrium/hostbridge/bridge/window"
 )
+
+var dispatchQueue chan func()
+var module Module
+var userMainLoop Callback
+
+func init() {
+	module.shouldQuit = false
+	dispatchQueue = make(chan func(), 1)
+}
 
 type Callback func(event Event)
 
 type EventType int
 
 const (
-	EventNone       EventType = iota
+	EventNone EventType = iota
 	EventClose
 	EventDestroyed
 	EventFocused
@@ -34,56 +41,56 @@ func (e EventType) String() string {
 }
 
 type Event struct {
-	Type       EventType
-	Name       string
-	WindowID   window.Handle
-	Position   window.Position
-	Size       window.Size
-	MenuID     uint16
+	Type     EventType
+	Name     string
+	WindowID window.Handle
+	Position window.Position
+	Size     window.Size
+	MenuID   uint16
 }
 
 type Module struct {
-	shouldQuit  bool
-	menu        menu.Menu
+	shouldQuit bool
+	menu       menu.Menu
 }
-
-var module Module
-
-func init() {
-	module.shouldQuit = false
-}
-
-var userMainLoop Callback
 
 //export go_app_main_loop
 func go_app_main_loop(data C.Event) {
-	if (module.shouldQuit) {
+	if module.shouldQuit {
 		return
 	}
 
-	if (userMainLoop != nil) {
+	select {
+	case fn := <-dispatchQueue:
+		fn()
+	default:
+	}
+
+	if userMainLoop != nil {
 		event := Event{}
-		event.Type     = EventType(data.event_type)
-		event.Name     = event.Type.String()
+		event.Type = EventType(data.event_type)
+		event.Name = event.Type.String()
 		event.WindowID = window.Handle(data.window_id)
-		event.Position = window.Position{ X: float64(data.position.x), Y: float64(data.position.y) }
-		event.Size     = window.Size{ Width: float64(data.size.width), Height: float64(data.size.height) }
-		event.MenuID   = uint16(data.menu_id)
+		event.Position = window.Position{X: float64(data.position.x), Y: float64(data.position.y)}
+		event.Size = window.Size{Width: float64(data.size.width), Height: float64(data.size.height)}
+		event.MenuID = uint16(data.menu_id)
 
 		userMainLoop(event)
 	}
 }
 
+func Dispatch(fn func()) {
+	dispatchQueue <- fn
+}
+
 func Run(callback Callback) {
-	if (callback != nil) {
-		userMainLoop = callback
-		eventLoop := *(*C.EventLoop)(unsafe.Pointer(&window.EventLoop))
-		C.run(eventLoop, C.closure(C.go_app_main_loop))
-	}
+	userMainLoop = callback
+	eventLoop := *(*C.EventLoop)(unsafe.Pointer(&window.EventLoop))
+	C.run(eventLoop, C.closure(C.go_app_main_loop))
 }
 
 func Quit() {
-	if (!module.shouldQuit) {
+	if !module.shouldQuit {
 		module.shouldQuit = true
 
 		os.Exit(0)
@@ -96,7 +103,7 @@ func Quit() {
 }
 
 func Menu() *menu.Menu {
-	if (menu.AppMenuWasSet) {
+	if menu.AppMenuWasSet {
 		return &menu.AppMenu
 	}
 
@@ -104,7 +111,7 @@ func Menu() *menu.Menu {
 }
 
 func SetMenu(m menu.Menu) {
-	menu.AppMenu       = m
+	menu.AppMenu = m
 	menu.AppMenuWasSet = true
 }
 
@@ -112,10 +119,10 @@ func NewIndicator(icon []byte, items []menu.Item) {
 	eventLoop := *(*C.EventLoop)(unsafe.Pointer(&window.EventLoop))
 
 	var cicon C.Icon
-	if (len(icon) > 0) {
-		cicon = C.Icon{ data: (*C.uchar)(unsafe.Pointer(&icon[0])), size: C.int(len(icon)) }
+	if len(icon) > 0 {
+		cicon = C.Icon{data: (*C.uchar)(unsafe.Pointer(&icon[0])), size: C.int(len(icon))}
 	} else {
-		cicon = C.Icon{ data: (*C.uchar)(nil), size: C.int(0) }
+		cicon = C.Icon{data: (*C.uchar)(nil), size: C.int(0)}
 	}
 
 	trayMenu := NewContextMenu(items)
@@ -127,7 +134,7 @@ func NewContextMenu(items []menu.Item) C.ContextMenu {
 	result := C.context_menu_create()
 
 	for _, it := range items {
-		if (len(it.SubMenu) > 0) {
+		if len(it.SubMenu) > 0 {
 			submenu := NewContextMenu(it.SubMenu)
 			C.context_menu_add_submenu(result, C.CString(it.Title), toCBool(it.Enabled), submenu)
 		} else {
@@ -139,7 +146,7 @@ func NewContextMenu(items []menu.Item) C.ContextMenu {
 }
 
 func buildCMenuItem(item menu.Item) C.Menu_Item {
-	return C.Menu_Item {
+	return C.Menu_Item{
 		id:          C.int(item.ID),
 		title:       C.CString(item.Title),
 		enabled:     toCBool(item.Enabled),
@@ -149,7 +156,7 @@ func buildCMenuItem(item menu.Item) C.Menu_Item {
 }
 
 func toCBool(it bool) C.uchar {
-	if (it) {
+	if it {
 		return C.uchar(1)
 	}
 
