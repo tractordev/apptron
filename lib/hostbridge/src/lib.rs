@@ -107,8 +107,8 @@ fn string_from_cstr(cstr: CString) -> String {
 }
 
 fn str_from_cstr(cstr: CString) -> &'static str {
-  let result: &CStr = unsafe { CStr::from_ptr(cstr) };
-  result.to_str().unwrap()
+	let result: &CStr = unsafe { CStr::from_ptr(cstr) };
+	result.to_str().unwrap()
 }
 
 macro_rules! find_item {
@@ -594,7 +594,7 @@ pub extern fn shell_show_file_picker(title: CString, directory: CString, filenam
 				TEMPORARY_STORAGE.write("\0");
 
 				Arena::copy(std::mem::transmute(&ptr), (result.data as usize + (size_of::<usize>() * i)) as *mut u8, size_of::<usize>());
-		  }
+			}
 		}
 	}
 
