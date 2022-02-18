@@ -88,9 +88,39 @@ struct Window {
 
 static mut GLOBAL_WINDOWS: Vec<Window> = Vec::new();
 
+/*
+struct Arena {
+	pub data: *mut u8,
+	pub offset: u64,
+	pub size: u64,
+}
+
+impl Arena {
+	const fn new(data: *mut u8, size: u64) -> Arena {
+		Arena { data, size, offset: 0 }
+	}
+
+	fn push(&mut self, size: u64) -> *mut u8 {
+		let current = self.offset;
+		self.size += size;
+		unsafe { self.data.offset(current as isize) }
+	}
+}
+
+const GLOBAL_STORAGE_SIZE: usize = 1024;
+static mut GLOBAL_STORAGE_BUFFER: [u8; GLOBAL_STORAGE_SIZE] = [0; GLOBAL_STORAGE_SIZE];
+
+static mut TEMPORARY_STORAGE: Arena = unsafe { Arena::new(&GLOBAL_STORAGE_BUFFER as *const u8 as *mut u8, GLOBAL_STORAGE_SIZE as u64) };
+*/
+
 fn string_from_cstr(cstr: CString) -> String {
 	let buffer = unsafe { CStr::from_ptr(cstr).to_bytes() };
 	String::from_utf8(buffer.to_vec()).unwrap()
+}
+
+fn str_from_cstr(cstr: CString) -> &'static str {
+  let result: &CStr = unsafe { CStr::from_ptr(cstr) };
+  result.to_str().unwrap()
 }
 
 macro_rules! find_item {
@@ -310,10 +340,7 @@ pub extern "C" fn menu_create() -> CMenu {
 #[allow(improper_ctypes_definitions)]
 pub extern "C" fn menu_add_item(mut menu: CMenu, item: CMenu_Item) -> CBool {
 	// @Copypaste
-	// @Cleanup: is there a better way to convert from *const libc::c_char -> &str?
-	// :CStrToStr
-	let title = string_from_cstr(item.title);
-	let title: &str = &title[..];
+	let title = str_from_cstr(item.title);
 
 	// @Incomplete: use `role` to handle native items
 	//menu.add_native_item(MenuItem::About("Todos".to_string()));
@@ -328,7 +355,6 @@ pub extern "C" fn menu_add_item(mut menu: CMenu, item: CMenu_Item) -> CBool {
 	let mut success = true;
 
 	if accelerator.len() > 0 {
-		// :CStrToStr
 		let accelerator: &str = &accelerator[..];
 		let parsed = Accelerator::from_str(accelerator);
 
@@ -349,9 +375,7 @@ pub extern "C" fn menu_add_item(mut menu: CMenu, item: CMenu_Item) -> CBool {
 #[no_mangle]
 #[allow(improper_ctypes_definitions)]
 pub extern "C" fn menu_add_submenu(mut menu: CMenu, title: CString, enabled: CBool, submenu: CMenu) -> CBool {
-	// :CStrToStr
-	let title = string_from_cstr(title);
-	let title: &str = &title[..];
+	let title = str_from_cstr(title);
 	menu.add_submenu(title, enabled, submenu);
 
 	forget(menu);
@@ -383,10 +407,7 @@ pub extern "C" fn context_menu_create() -> CContextMenu {
 #[no_mangle]
 #[allow(improper_ctypes_definitions)]
 pub extern "C" fn context_menu_add_item(mut menu: CContextMenu, item: CMenu_Item) -> CBool {
-	// @Copypaste
-	// :CStrToStr
-	let title = string_from_cstr(item.title);
-	let title: &str = &title[..];
+	let title = str_from_cstr(item.title);
 
 	// @Incomplete: use `role` to handle native items
 	//menu.add_native_item(MenuItem::About("Todos".to_string()));
@@ -401,7 +422,6 @@ pub extern "C" fn context_menu_add_item(mut menu: CContextMenu, item: CMenu_Item
 	let mut success = true;
 
 	if accelerator.len() > 0 {
-		// :CStrToStr
 		let accelerator: &str = &accelerator[..];
 		let parsed = Accelerator::from_str(accelerator);
 
@@ -429,9 +449,7 @@ pub extern "C" fn context_menu_add_item(mut menu: CContextMenu, item: CMenu_Item
 #[no_mangle]
 #[allow(improper_ctypes_definitions)]
 pub extern "C" fn context_menu_add_submenu(mut menu: CContextMenu, title: CString, enabled: CBool, submenu: CContextMenu) -> CBool {
-	// :CStrToStr
-	let title = string_from_cstr(title);
-	let title: &str = &title[..];
+	let title = str_from_cstr(title);
 	menu.add_submenu(title, enabled, submenu);
 
 	forget(menu);
@@ -458,17 +476,9 @@ pub extern "C" fn tray_set_system_tray(event_loop: CEventLoop, icon: CIcon, tray
 
 #[no_mangle]
 pub extern fn shell_show_notification(title: CString, subtitle: CString, body: CString) -> CBool {
-	// :CStrToStr
-	let title = string_from_cstr(title);
-	let title: &str = &title[..];
-
-	// :CStrToStr
-	let subtitle = string_from_cstr(subtitle);
-	let subtitle: &str = &subtitle[..];
-
-	// :CStrToStr
-	let body = string_from_cstr(body);
-	let body: &str = &body[..];
+	let title = str_from_cstr(title);
+	let subtitle = str_from_cstr(subtitle);
+	let body = str_from_cstr(body);
 
 	let result = notify_rust::Notification::new()
 		.summary(title)
@@ -477,6 +487,90 @@ pub extern fn shell_show_notification(title: CString, subtitle: CString, body: C
 		.show();
 
 	result.is_ok()
+}
+
+#[no_mangle]
+pub extern fn shell_show_dialog(title: CString, body: CString, level: CString, buttons: CString) -> CBool {
+	let title = str_from_cstr(title);
+	let body = str_from_cstr(body);
+	let level = str_from_cstr(level);
+	let buttons = str_from_cstr(buttons);
+
+	let level = match level {
+		"info" => rfd::MessageLevel::Info,
+		"warning" => rfd::MessageLevel::Warning,
+		"error" => rfd::MessageLevel::Error,
+		_ => rfd::MessageLevel::Info,
+	};
+
+	let buttons = match buttons {
+		"ok" => rfd::MessageButtons::Ok,
+		"okcancel" => rfd::MessageButtons::OkCancel,
+		"yesno" => rfd::MessageButtons::YesNo,
+		_ => rfd::MessageButtons::Ok,
+	};
+
+	let result = rfd::MessageDialog::new()
+		.set_title(title)
+		.set_description(body)
+		.set_buttons(buttons)
+		.set_level(level)
+		.show();
+
+	result
+}
+
+#[no_mangle]
+pub extern fn shell_show_file_picker(title: CString, directory: CString, filename: CString, mode: CString) -> CString {
+	let title = str_from_cstr(title);
+	let directory = str_from_cstr(directory);
+	let filename = str_from_cstr(filename);
+	let mode = str_from_cstr(mode);
+
+	let mut picker = rfd::FileDialog::new();
+
+	if title.len() > 0 {
+		picker = picker.set_title(title);
+	}
+
+	if directory.len() > 0 {
+		picker = picker.set_directory(&directory);
+	}
+
+	if filename.len() > 0 {
+		picker = picker.set_file_name(filename);
+	}
+
+	let mut result: Vec<std::path::PathBuf> = Vec::new();
+
+	match mode {
+		"pickfolder" => {
+			let res = picker.pick_folder();
+			if res.is_some() { result.push(res.unwrap()); }
+		},
+		"savefile" => {
+			let res = picker.save_file();
+			if res.is_some() { result.push(res.unwrap()); }
+		},
+		"pickfiles" => {
+			let res = picker.pick_files();
+			if res.is_some() { result.append(&mut res.unwrap()); }
+		},
+		_ => { // "pickfile"
+			let res = picker.pick_file();
+			if res.is_some() { result.push(res.unwrap()); }
+		},
+	};
+
+	println!("{:?}", result);
+
+	/*
+	let path = result.get(0).unwrap();
+  let path_cstr = std::ffi::CString::new(path.as_ref().as_os_str().as_bytes()).unwrap();
+  path_cstr.as_ptr()
+  */
+
+  "Hello".as_ptr() as *const i8
 }
 
 #[no_mangle]

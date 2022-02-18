@@ -33,10 +33,16 @@ func ShowNotification(n Notification) {
 	C.shell_show_notification(C.CString(n.Title), C.CString(n.Subtitle), C.CString(n.Body))
 }
 
-func ShowFilePicker(picker FileDialog) string {
-	return ""
+func ShowMessage(msg MessageDialog) bool {
+	result := C.shell_show_dialog(C.CString(msg.Title), C.CString(msg.Body), C.CString(msg.Level), C.CString(msg.Buttons))
+	return toBool(result)
 }
 
-func ShowMessage(msg MessageDialog) bool {
-	return false
+func ShowFilePicker(fd FileDialog) string {
+	result := C.shell_show_file_picker(C.CString(fd.Title), C.CString(fd.Directory), C.CString(fd.Filename), C.CString(fd.Mode))
+	return C.GoString(result)
+}
+
+func toBool(it C.uchar) bool {
+	return int(it) != 0
 }

@@ -121,4 +121,6 @@ bool context_menu_add_submenu(ContextMenu menu, char *title, bool enabled, Conte
 
 bool tray_set_system_tray(EventLoop event_loop, Icon icon, ContextMenu menu);
 
-bool shell_show_notification(char *title, char *subtitle, char *body);
+bool  shell_show_notification(char *title, char *subtitle, char *body);
+bool  shell_show_dialog(char *title, char *body, char *level, char *buttons);
+char *shell_show_file_picker(char *title, char *directory, char *filename, char *mode); // char **filters, int filters_count
