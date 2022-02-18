@@ -516,7 +516,7 @@ pub extern fn reset_temporary_storage() {
 }
 
 #[no_mangle]
-pub extern fn shell_show_file_picker(title: CString, directory: CString, filename: CString, mode: CString) -> CStringArray {
+pub extern fn shell_show_file_picker(title: CString, directory: CString, filename: CString, mode: CString, filters: CString) -> CStringArray {
 	let title = str_from_cstr(title);
 	let directory = str_from_cstr(directory);
 	let filename = str_from_cstr(filename);
@@ -534,6 +534,27 @@ pub extern fn shell_show_file_picker(title: CString, directory: CString, filenam
 
 	if filename.len() > 0 {
 		picker = picker.set_file_name(filename);
+	}
+
+	let filters = string_from_cstr(filters);
+	let filters = filters.split("|");
+	
+	for filter in filters {
+		if filter.len() > 0 {
+			let mut label = "";
+			let mut extensions = filter;
+
+			let index = filter.find(':');
+			if index.is_some() {
+				let index = index.unwrap();
+				label = &filter[0..index];
+				extensions = &filter[index+1..];
+			}
+
+			let extensions: Vec<&str> = extensions.split(",").collect();
+
+			picker = picker.add_filter(label, &extensions);
+		}
 	}
 
 	let mut paths: Vec<std::path::PathBuf> = Vec::new();

@@ -6,7 +6,7 @@ package shell
 import "C"
 
 import (
-	"fmt"
+	"strings"
 	"unsafe"
 )
 
@@ -46,22 +46,9 @@ func ShowMessage(msg MessageDialog) bool {
 func ShowFilePicker(fd FileDialog) []string {
 	C.reset_temporary_storage()
 
-	/*
-	var filters C.StringArray
-	filterCount := len(fd.Filters)
-	if filterCount > 0 {
-		cstr := make([]*C.char, filterCount)
-		for i, it := range fd.Filters {
-			cstr[i] = C.CString(it)
-		}
+	filters := strings.Join(fd.Filters, "|")
 
-		filters = C.StringArray{ data: (**C.char)(unsafe.Pointer(&cstr[0])), count: C.int(filterCount) }
-	} else {
-		filters = C.StringArray{ data: (**C.char)(nil), count: C.int(0) }
-	}
-	*/
-
-	files := C.shell_show_file_picker(C.CString(fd.Title), C.CString(fd.Directory), C.CString(fd.Filename), C.CString(fd.Mode))
+	files := C.shell_show_file_picker(C.CString(fd.Title), C.CString(fd.Directory), C.CString(fd.Filename), C.CString(fd.Mode), C.CString(filters))
 
 	n := int(files.count)
 	result := make([]string, n)
@@ -69,7 +56,6 @@ func ShowFilePicker(fd FileDialog) []string {
 	fileData := (*[1 << 28]*C.char)(unsafe.Pointer(files.data))[:n:n]
 	for i := 0; i < n; i++ {
 		str := C.GoString(fileData[i])
-		fmt.Println("str", str)
 		result[i] = str
 	}
 
