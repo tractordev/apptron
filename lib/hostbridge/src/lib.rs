@@ -1,3 +1,6 @@
+mod memory;
+use memory::*;
+
 use std::ffi::CStr;
 use std::str::FromStr;
 use std::mem::{ManuallyDrop, forget, size_of};
@@ -81,6 +84,12 @@ pub struct CIcon {
 	pub size: CInt,
 }
 
+#[repr(C)]
+pub struct CStringArray {
+	pub data: *mut *mut u8,
+	pub count: CInt,
+}
+
 struct Window {
 	id: i32,
 	webview: wry::webview::WebView,
@@ -88,9 +97,18 @@ struct Window {
 
 static mut GLOBAL_WINDOWS: Vec<Window> = Vec::new();
 
+const STORAGE_SIZE: usize = kilobytes!(256);
+static mut STORAGE_BUFFER: [u8; STORAGE_SIZE] = [0; STORAGE_SIZE];
+static mut TEMPORARY_STORAGE: Arena = unsafe { Arena::new(&STORAGE_BUFFER as *const u8 as *mut u8, STORAGE_SIZE) };
+
 fn string_from_cstr(cstr: CString) -> String {
 	let buffer = unsafe { CStr::from_ptr(cstr).to_bytes() };
 	String::from_utf8(buffer.to_vec()).unwrap()
+}
+
+fn str_from_cstr(cstr: CString) -> &'static str {
+	let result: &CStr = unsafe { CStr::from_ptr(cstr) };
+	result.to_str().unwrap()
 }
 
 macro_rules! find_item {
@@ -310,10 +328,7 @@ pub extern "C" fn menu_create() -> CMenu {
 #[allow(improper_ctypes_definitions)]
 pub extern "C" fn menu_add_item(mut menu: CMenu, item: CMenu_Item) -> CBool {
 	// @Copypaste
-	// @Cleanup: is there a better way to convert from *const libc::c_char -> &str?
-	// :CStrToStr
-	let title = string_from_cstr(item.title);
-	let title: &str = &title[..];
+	let title = str_from_cstr(item.title);
 
 	// @Incomplete: use `role` to handle native items
 	//menu.add_native_item(MenuItem::About("Todos".to_string()));
@@ -328,7 +343,6 @@ pub extern "C" fn menu_add_item(mut menu: CMenu, item: CMenu_Item) -> CBool {
 	let mut success = true;
 
 	if accelerator.len() > 0 {
-		// :CStrToStr
 		let accelerator: &str = &accelerator[..];
 		let parsed = Accelerator::from_str(accelerator);
 
@@ -349,9 +363,7 @@ pub extern "C" fn menu_add_item(mut menu: CMenu, item: CMenu_Item) -> CBool {
 #[no_mangle]
 #[allow(improper_ctypes_definitions)]
 pub extern "C" fn menu_add_submenu(mut menu: CMenu, title: CString, enabled: CBool, submenu: CMenu) -> CBool {
-	// :CStrToStr
-	let title = string_from_cstr(title);
-	let title: &str = &title[..];
+	let title = str_from_cstr(title);
 	menu.add_submenu(title, enabled, submenu);
 
 	forget(menu);
@@ -383,10 +395,7 @@ pub extern "C" fn context_menu_create() -> CContextMenu {
 #[no_mangle]
 #[allow(improper_ctypes_definitions)]
 pub extern "C" fn context_menu_add_item(mut menu: CContextMenu, item: CMenu_Item) -> CBool {
-	// @Copypaste
-	// :CStrToStr
-	let title = string_from_cstr(item.title);
-	let title: &str = &title[..];
+	let title = str_from_cstr(item.title);
 
 	// @Incomplete: use `role` to handle native items
 	//menu.add_native_item(MenuItem::About("Todos".to_string()));
@@ -401,7 +410,6 @@ pub extern "C" fn context_menu_add_item(mut menu: CContextMenu, item: CMenu_Item
 	let mut success = true;
 
 	if accelerator.len() > 0 {
-		// :CStrToStr
 		let accelerator: &str = &accelerator[..];
 		let parsed = Accelerator::from_str(accelerator);
 
@@ -429,9 +437,7 @@ pub extern "C" fn context_menu_add_item(mut menu: CContextMenu, item: CMenu_Item
 #[no_mangle]
 #[allow(improper_ctypes_definitions)]
 pub extern "C" fn context_menu_add_submenu(mut menu: CContextMenu, title: CString, enabled: CBool, submenu: CContextMenu) -> CBool {
-	// :CStrToStr
-	let title = string_from_cstr(title);
-	let title: &str = &title[..];
+	let title = str_from_cstr(title);
 	menu.add_submenu(title, enabled, submenu);
 
 	forget(menu);
@@ -458,17 +464,9 @@ pub extern "C" fn tray_set_system_tray(event_loop: CEventLoop, icon: CIcon, tray
 
 #[no_mangle]
 pub extern fn shell_show_notification(title: CString, subtitle: CString, body: CString) -> CBool {
-	// :CStrToStr
-	let title = string_from_cstr(title);
-	let title: &str = &title[..];
-
-	// :CStrToStr
-	let subtitle = string_from_cstr(subtitle);
-	let subtitle: &str = &subtitle[..];
-
-	// :CStrToStr
-	let body = string_from_cstr(body);
-	let body: &str = &body[..];
+	let title = str_from_cstr(title);
+	let subtitle = str_from_cstr(subtitle);
+	let body = str_from_cstr(body);
 
 	let result = notify_rust::Notification::new()
 		.summary(title)
@@ -477,6 +475,130 @@ pub extern fn shell_show_notification(title: CString, subtitle: CString, body: C
 		.show();
 
 	result.is_ok()
+}
+
+#[no_mangle]
+pub extern fn shell_show_dialog(title: CString, body: CString, level: CString, buttons: CString) -> CBool {
+	let title = str_from_cstr(title);
+	let body = str_from_cstr(body);
+	let level = str_from_cstr(level);
+	let buttons = str_from_cstr(buttons);
+
+	let level = match level {
+		"info" => rfd::MessageLevel::Info,
+		"warning" => rfd::MessageLevel::Warning,
+		"error" => rfd::MessageLevel::Error,
+		_ => rfd::MessageLevel::Info,
+	};
+
+	let buttons = match buttons {
+		"ok" => rfd::MessageButtons::Ok,
+		"okcancel" => rfd::MessageButtons::OkCancel,
+		"yesno" => rfd::MessageButtons::YesNo,
+		_ => rfd::MessageButtons::Ok,
+	};
+
+	let result = rfd::MessageDialog::new()
+		.set_title(title)
+		.set_description(body)
+		.set_buttons(buttons)
+		.set_level(level)
+		.show();
+
+	result
+}
+
+#[no_mangle]
+pub extern fn reset_temporary_storage() {
+	unsafe {
+		TEMPORARY_STORAGE.reset();
+	}
+}
+
+#[no_mangle]
+pub extern fn shell_show_file_picker(title: CString, directory: CString, filename: CString, mode: CString, filters: CString) -> CStringArray {
+	let title = str_from_cstr(title);
+	let directory = str_from_cstr(directory);
+	let filename = str_from_cstr(filename);
+	let mode = str_from_cstr(mode);
+
+	let mut picker = rfd::FileDialog::new();
+
+	if title.len() > 0 {
+		picker = picker.set_title(title);
+	}
+
+	if directory.len() > 0 {
+		picker = picker.set_directory(&directory);
+	}
+
+	if filename.len() > 0 {
+		picker = picker.set_file_name(filename);
+	}
+
+	let filters = string_from_cstr(filters);
+	let filters = filters.split("|");
+	
+	for filter in filters {
+		if filter.len() > 0 {
+			let mut label = "";
+			let mut extensions = filter;
+
+			let index = filter.find(':');
+			if index.is_some() {
+				let index = index.unwrap();
+				label = &filter[0..index];
+				extensions = &filter[index+1..];
+			}
+
+			let extensions: Vec<&str> = extensions.split(",").collect();
+
+			picker = picker.add_filter(label, &extensions);
+		}
+	}
+
+	let mut paths: Vec<std::path::PathBuf> = Vec::new();
+
+	match mode {
+		"pickfolder" => {
+			let res = picker.pick_folder();
+			if res.is_some() { paths.push(res.unwrap()); }
+		},
+		"savefile" => {
+			let res = picker.save_file();
+			if res.is_some() { paths.push(res.unwrap()); }
+		},
+		"pickfiles" => {
+			let res = picker.pick_files();
+			if res.is_some() { paths.append(&mut res.unwrap()); }
+		},
+		_ => { // "pickfile"
+			let res = picker.pick_file();
+			if res.is_some() { paths.push(res.unwrap()); }
+		},
+	};
+
+	let count = paths.len();
+	let array = unsafe { TEMPORARY_STORAGE.push(size_of::<usize>() * count) };
+
+	let result: CStringArray = CStringArray { data: array as *mut *mut u8, count: count as i32 };
+
+	for (i, path) in paths.iter().enumerate() {
+		let path = path.clone().into_os_string().into_string();
+
+		if path.is_ok() {
+			let path = path.unwrap();
+
+			unsafe {
+				let ptr = TEMPORARY_STORAGE.write(path.as_str());
+				TEMPORARY_STORAGE.write("\0");
+
+				Arena::copy(std::mem::transmute(&ptr), (result.data as usize + (size_of::<usize>() * i)) as *mut u8, size_of::<usize>());
+			}
+		}
+	}
+
+	result
 }
 
 #[no_mangle]

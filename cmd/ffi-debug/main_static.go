@@ -179,6 +179,25 @@ func main() {
 		Body:     "Body: This is the body",
 	})
 
+	if false {
+		ok := shell.ShowMessage(shell.MessageDialog{
+			Title:   "Title: what do you think?",
+			Body:    "Body: about this description text",
+			Level:   "warning",
+			Buttons: "okcancel",
+		})
+
+		fmt.Println("ShowMessage ok", ok)
+	}
+
+	files := shell.ShowFilePicker(shell.FileDialog{
+		Title:   "Title: please pick a file...",
+		Mode:    "pickfiles",
+		Filters: []string{"txt,rs,cpp", "image:png,jpg,jpeg"},
+	})
+
+	fmt.Println("ShowFilePicker files", files, len(files))
+
 	app.Run(tick)
 
 	// NOTE(nick): this doesn't appear to be called ever

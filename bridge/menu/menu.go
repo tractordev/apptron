@@ -9,7 +9,7 @@ type Handle int
 
 type Menu struct {
 	/*
-	Items []Item
+		Items []Item
 	*/
 
 	Handle C.Menu
@@ -23,18 +23,18 @@ type Item struct {
 	Accelerator string
 
 	/*
-	Role        string // for wry's add_native_item (see Electron's MenuItem role for examples)
-	Type        string // normal, separator, submenu, checkbox or radio
+		Role        string // for wry's add_native_item (see Electron's MenuItem role for examples)
+		Type        string // normal, separator, submenu, checkbox or radio
 	*/
 
-	SubMenu     []Item
+	SubMenu []Item
 }
 
-var AppMenu       Menu
+var AppMenu Menu
 var AppMenuWasSet bool
 
 func init() {
-	AppMenu = New([]Item {})
+	AppMenu = New([]Item{})
 	AppMenuWasSet = false
 }
 
@@ -42,7 +42,7 @@ func New(items []Item) Menu {
 	menu := C.menu_create()
 
 	for _, it := range items {
-		if (len(it.SubMenu) > 0) {
+		if len(it.SubMenu) > 0 {
 			submenu := New(it.SubMenu)
 			C.menu_add_submenu(menu, C.CString(it.Title), toCBool(it.Enabled), submenu.Handle)
 		} else {
@@ -57,7 +57,7 @@ func New(items []Item) Menu {
 }
 
 func buildCMenuItem(item Item) C.Menu_Item {
-	return C.Menu_Item {
+	return C.Menu_Item{
 		id:          C.int(item.ID),
 		title:       C.CString(item.Title),
 		enabled:     toCBool(item.Enabled),
@@ -67,7 +67,7 @@ func buildCMenuItem(item Item) C.Menu_Item {
 }
 
 func toCBool(it bool) C.uchar {
-	if (it) {
+	if it {
 		return C.uchar(1)
 	}
 
