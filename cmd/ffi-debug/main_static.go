@@ -191,8 +191,8 @@ func main() {
 	}
 
 	files := shell.ShowFilePicker(shell.FileDialog{
-		Title: "Title: please pick a file...",
-		Mode:  "files",
+		Title:   "Title: please pick a file...",
+		Mode:    "pickfiles",
 		Filters: []string{"txt,rs,cpp", "image:png,jpg,jpeg"},
 	})
 
