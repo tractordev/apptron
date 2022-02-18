@@ -81,6 +81,12 @@ pub struct CIcon {
 	pub size: CInt,
 }
 
+#[repr(C)]
+pub struct CStringArray {
+	pub data: *mut *mut u8,
+	pub count: CInt,
+}
+
 struct Window {
 	id: i32,
 	webview: wry::webview::WebView,
@@ -90,16 +96,16 @@ static mut GLOBAL_WINDOWS: Vec<Window> = Vec::new();
 
 struct Arena {
 	pub data: *mut u8,
-	pub offset: u64,
-	pub size: u64,
+	pub offset: usize,
+	pub size: usize,
 }
 
 impl Arena {
-	const fn new(data: *mut u8, size: u64) -> Arena {
+	const fn new(data: *mut u8, size: usize) -> Arena {
 		Arena { data, size, offset: 0 }
 	}
 
-	fn push(&mut self, count: u64) -> *mut u8 {
+	fn push(&mut self, count: usize) -> *mut u8 {
 		assert!(count + self.offset < self.size);
 
 		let prev_offset = self.offset;
@@ -111,32 +117,34 @@ impl Arena {
 		self.offset = 0;
 	}
 
-	fn write_raw(&mut self, ptr: *mut u8, size: u64) -> *mut u8 {
-		let result = self.push(size);
-		Arena::copy(ptr, result, size);
+	fn write_raw(&mut self, ptr: *mut u8, count: usize) -> *mut u8 {
+		let result = self.push(count);
+		Arena::copy(ptr, result, count);
 		result
 	}
 
 	fn write(&mut self, str: &str) -> *mut u8 {
-		self.write_raw(str.as_ptr() as *mut u8, str.len() as u64)
+		self.write_raw(str.as_ptr() as *mut u8, str.len())
 	}
 
-	fn copy(from: *mut u8, to: *mut u8, size: u64) {
+	fn copy(from: *mut u8, to: *mut u8, size: usize) {
 		unsafe {
 			libc::memcpy(to as *mut libc::c_void, from as *mut libc::c_void, size as usize);
 		}
 	}
 
-	fn at(&mut self, offset: u64) -> *mut u8 {
+	fn at(&mut self, offset: usize) -> *mut u8 {
 		assert!(offset < self.size);
 
 		unsafe { self.data.offset(offset as isize) }
 	}
 }
 
-const STORAGE_SIZE: usize = 1024;
+macro_rules! kilobytes { ($x: expr) => { $x * 1024 } }
+
+const STORAGE_SIZE: usize = kilobytes!(256);
 static mut STORAGE_BUFFER: [u8; STORAGE_SIZE] = [0; STORAGE_SIZE];
-static mut TEMPORARY_STORAGE: Arena = unsafe { Arena::new(&STORAGE_BUFFER as *const u8 as *mut u8, STORAGE_SIZE as u64) };
+static mut TEMPORARY_STORAGE: Arena = unsafe { Arena::new(&STORAGE_BUFFER as *const u8 as *mut u8, STORAGE_SIZE) };
 
 fn string_from_cstr(cstr: CString) -> String {
 	let buffer = unsafe { CStr::from_ptr(cstr).to_bytes() };
@@ -553,7 +561,7 @@ pub extern fn reset_temporary_storage() {
 }
 
 #[no_mangle]
-pub extern fn shell_show_file_picker(title: CString, directory: CString, filename: CString, mode: CString) -> CString {
+pub extern fn shell_show_file_picker(title: CString, directory: CString, filename: CString, mode: CString) -> CStringArray {
 	let title = str_from_cstr(title);
 	let directory = str_from_cstr(directory);
 	let filename = str_from_cstr(filename);
@@ -594,25 +602,32 @@ pub extern fn shell_show_file_picker(title: CString, directory: CString, filenam
 		},
 	};
 
-	println!("{:?}", paths);
+	println!("paths {:?}", paths);
 
-	let path = paths.get(0);
+	let count = paths.len();
+	let array = unsafe { TEMPORARY_STORAGE.push(size_of::<usize>() * count) };
 
-	if path.is_some() {
-		let path = path.unwrap();
+	let result: CStringArray = CStringArray { data: array as *mut *mut u8, count: count as i32 };
+
+	println!("count: {}", count);
+
+	for path in paths {
 		let path = path.clone().into_os_string().into_string();
 
 		if path.is_ok() {
 			let path = path.unwrap();
+			println!("path: {:?}", path);
 
 			unsafe {
-				let result = TEMPORARY_STORAGE.write_raw(path.as_ptr() as *mut u8, path.len() as u64);
-				return result as *const i8;
+				let ptr = TEMPORARY_STORAGE.write_raw(path.as_ptr() as *mut u8, path.len());
+				Arena::copy(ptr, result.data as *mut u8, size_of::<usize>());
+
+				//TEMPORARY_STORAGE.write("\0");
 		  }
 		}
 	}
 
-	"".as_ptr() as *const i8
+	result
 }
 
 #[no_mangle]

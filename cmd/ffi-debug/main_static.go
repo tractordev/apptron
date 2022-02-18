@@ -190,11 +190,12 @@ func main() {
 		fmt.Println("ShowMessage ok", ok)
 	}
 
-	file := shell.ShowFilePicker(shell.FileDialog{
+	files := shell.ShowFilePicker(shell.FileDialog{
 		Title: "Title: please pick a file...",
+		Mode:  "pickfiles",
 	})
 
-	fmt.Println("ShowFilePicker file", file)
+	fmt.Println("ShowFilePicker files", files, len(files))
 
 	app.Run(tick)
 

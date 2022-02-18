@@ -5,6 +5,11 @@ package shell
 */
 import "C"
 
+import (
+	"fmt"
+	"unsafe"
+)
+
 type Notification struct {
 	Title    string
 	Subtitle string // for MacOS only
@@ -38,11 +43,34 @@ func ShowMessage(msg MessageDialog) bool {
 	return toBool(result)
 }
 
-func ShowFilePicker(fd FileDialog) string {
+func ShowFilePicker(fd FileDialog) []string {
 	C.reset_temporary_storage()
 
-	result := C.shell_show_file_picker(C.CString(fd.Title), C.CString(fd.Directory), C.CString(fd.Filename), C.CString(fd.Mode))
-	return C.GoString(result)
+	/*
+		files := C.test()
+
+		n := int(files.count)
+		result := make([]string, n)
+
+		fileData := (*[1 << 28]*C.char)(unsafe.Pointer(&files.data))[:n:n]
+		for _, cstr := range fileData {
+			fmt.Println(cstr)
+		}
+	*/
+
+	files := C.shell_show_file_picker(C.CString(fd.Title), C.CString(fd.Directory), C.CString(fd.Filename), C.CString(fd.Mode))
+
+	n := int(files.count)
+	result := make([]string, n)
+
+	fileData := (*[1 << 28]*C.char)(unsafe.Pointer(&files.data))[:n:n]
+	for i := 0; i < n; i++ {
+		str := C.GoString(fileData[i])
+		fmt.Println("str", str)
+		result[i] = str
+	}
+
+	return result
 }
 
 func toBool(it C.uchar) bool {
