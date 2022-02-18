@@ -130,4 +130,4 @@ bool tray_set_system_tray(EventLoop event_loop, Icon icon, ContextMenu menu);
 
 bool        shell_show_notification(char *title, char *subtitle, char *body);
 bool        shell_show_dialog(char *title, char *body, char *level, char *buttons);
-StringArray shell_show_file_picker(char *title, char *directory, char *filename, char *mode); // char **filters, int filters_count
+StringArray shell_show_file_picker(char *title, char *directory, char *filename, char *mode);

@@ -1,3 +1,6 @@
+mod memory;
+use memory::*;
+
 use std::ffi::CStr;
 use std::str::FromStr;
 use std::mem::{ManuallyDrop, forget, size_of};
@@ -93,54 +96,6 @@ struct Window {
 }
 
 static mut GLOBAL_WINDOWS: Vec<Window> = Vec::new();
-
-struct Arena {
-	pub data: *mut u8,
-	pub offset: usize,
-	pub size: usize,
-}
-
-impl Arena {
-	const fn new(data: *mut u8, size: usize) -> Arena {
-		Arena { data, size, offset: 0 }
-	}
-
-	fn push(&mut self, count: usize) -> *mut u8 {
-		assert!(count + self.offset < self.size);
-
-		let prev_offset = self.offset;
-		self.offset += count;
-		self.at(prev_offset)
-	}
-
-	fn reset(&mut self) {
-		self.offset = 0;
-	}
-
-	fn write_raw(&mut self, ptr: *mut u8, count: usize) -> *mut u8 {
-		let result = self.push(count);
-		Arena::copy(ptr, result, count);
-		result
-	}
-
-	fn write(&mut self, str: &str) -> *mut u8 {
-		self.write_raw(str.as_ptr() as *mut u8, str.len())
-	}
-
-	fn copy(from: *mut u8, to: *mut u8, size: usize) {
-		unsafe {
-			libc::memcpy(to as *mut libc::c_void, from as *mut libc::c_void, size as usize);
-		}
-	}
-
-	fn at(&mut self, offset: usize) -> *mut u8 {
-		assert!(offset < self.size);
-
-		unsafe { self.data.offset(offset as isize) }
-	}
-}
-
-macro_rules! kilobytes { ($x: expr) => { $x * 1024 } }
 
 const STORAGE_SIZE: usize = kilobytes!(256);
 static mut STORAGE_BUFFER: [u8; STORAGE_SIZE] = [0; STORAGE_SIZE];
@@ -602,27 +557,22 @@ pub extern fn shell_show_file_picker(title: CString, directory: CString, filenam
 		},
 	};
 
-	println!("paths {:?}", paths);
-
 	let count = paths.len();
 	let array = unsafe { TEMPORARY_STORAGE.push(size_of::<usize>() * count) };
 
 	let result: CStringArray = CStringArray { data: array as *mut *mut u8, count: count as i32 };
 
-	println!("count: {}", count);
-
-	for path in paths {
+	for (i, path) in paths.iter().enumerate() {
 		let path = path.clone().into_os_string().into_string();
 
 		if path.is_ok() {
 			let path = path.unwrap();
-			println!("path: {:?}", path);
 
 			unsafe {
-				let ptr = TEMPORARY_STORAGE.write_raw(path.as_ptr() as *mut u8, path.len());
-				Arena::copy(ptr, result.data as *mut u8, size_of::<usize>());
+				let ptr = TEMPORARY_STORAGE.write(path.as_str());
+				TEMPORARY_STORAGE.write("\0");
 
-				//TEMPORARY_STORAGE.write("\0");
+				Arena::copy(std::mem::transmute(&ptr), (result.data as usize + (size_of::<usize>() * i)) as *mut u8, size_of::<usize>());
 		  }
 		}
 	}
