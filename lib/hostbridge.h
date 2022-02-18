@@ -100,6 +100,8 @@ void go_app_main_loop();
 EventLoop create_event_loop();
 void run(EventLoop event_loop, void (*callback)(Event event));
 
+void reset_temporary_storage();
+
 int      window_create(EventLoop event_loop, Window_Options options, Menu menu);
 bool     window_destroy(int window_id);
 bool     window_set_title(int window_id, char *title);

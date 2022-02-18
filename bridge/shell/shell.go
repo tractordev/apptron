@@ -39,6 +39,8 @@ func ShowMessage(msg MessageDialog) bool {
 }
 
 func ShowFilePicker(fd FileDialog) string {
+	C.reset_temporary_storage()
+
 	result := C.shell_show_file_picker(C.CString(fd.Title), C.CString(fd.Directory), C.CString(fd.Filename), C.CString(fd.Mode))
 	return C.GoString(result)
 }

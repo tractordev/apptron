@@ -88,7 +88,6 @@ struct Window {
 
 static mut GLOBAL_WINDOWS: Vec<Window> = Vec::new();
 
-/*
 struct Arena {
 	pub data: *mut u8,
 	pub offset: u64,
@@ -100,18 +99,44 @@ impl Arena {
 		Arena { data, size, offset: 0 }
 	}
 
-	fn push(&mut self, size: u64) -> *mut u8 {
-		let current = self.offset;
-		self.size += size;
-		unsafe { self.data.offset(current as isize) }
+	fn push(&mut self, count: u64) -> *mut u8 {
+		assert!(count + self.offset < self.size);
+
+		let prev_offset = self.offset;
+		self.offset += count;
+		self.at(prev_offset)
+	}
+
+	fn reset(&mut self) {
+		self.offset = 0;
+	}
+
+	fn write_raw(&mut self, ptr: *mut u8, size: u64) -> *mut u8 {
+		let result = self.push(size);
+		Arena::copy(ptr, result, size);
+		result
+	}
+
+	fn write(&mut self, str: &str) -> *mut u8 {
+		self.write_raw(str.as_ptr() as *mut u8, str.len() as u64)
+	}
+
+	fn copy(from: *mut u8, to: *mut u8, size: u64) {
+		unsafe {
+			libc::memcpy(to as *mut libc::c_void, from as *mut libc::c_void, size as usize);
+		}
+	}
+
+	fn at(&mut self, offset: u64) -> *mut u8 {
+		assert!(offset < self.size);
+
+		unsafe { self.data.offset(offset as isize) }
 	}
 }
 
-const GLOBAL_STORAGE_SIZE: usize = 1024;
-static mut GLOBAL_STORAGE_BUFFER: [u8; GLOBAL_STORAGE_SIZE] = [0; GLOBAL_STORAGE_SIZE];
-
-static mut TEMPORARY_STORAGE: Arena = unsafe { Arena::new(&GLOBAL_STORAGE_BUFFER as *const u8 as *mut u8, GLOBAL_STORAGE_SIZE as u64) };
-*/
+const STORAGE_SIZE: usize = 1024;
+static mut STORAGE_BUFFER: [u8; STORAGE_SIZE] = [0; STORAGE_SIZE];
+static mut TEMPORARY_STORAGE: Arena = unsafe { Arena::new(&STORAGE_BUFFER as *const u8 as *mut u8, STORAGE_SIZE as u64) };
 
 fn string_from_cstr(cstr: CString) -> String {
 	let buffer = unsafe { CStr::from_ptr(cstr).to_bytes() };
@@ -521,6 +546,13 @@ pub extern fn shell_show_dialog(title: CString, body: CString, level: CString, b
 }
 
 #[no_mangle]
+pub extern fn reset_temporary_storage() {
+	unsafe {
+		TEMPORARY_STORAGE.reset();
+	}
+}
+
+#[no_mangle]
 pub extern fn shell_show_file_picker(title: CString, directory: CString, filename: CString, mode: CString) -> CString {
 	let title = str_from_cstr(title);
 	let directory = str_from_cstr(directory);
@@ -541,36 +573,46 @@ pub extern fn shell_show_file_picker(title: CString, directory: CString, filenam
 		picker = picker.set_file_name(filename);
 	}
 
-	let mut result: Vec<std::path::PathBuf> = Vec::new();
+	let mut paths: Vec<std::path::PathBuf> = Vec::new();
 
 	match mode {
 		"pickfolder" => {
 			let res = picker.pick_folder();
-			if res.is_some() { result.push(res.unwrap()); }
+			if res.is_some() { paths.push(res.unwrap()); }
 		},
 		"savefile" => {
 			let res = picker.save_file();
-			if res.is_some() { result.push(res.unwrap()); }
+			if res.is_some() { paths.push(res.unwrap()); }
 		},
 		"pickfiles" => {
 			let res = picker.pick_files();
-			if res.is_some() { result.append(&mut res.unwrap()); }
+			if res.is_some() { paths.append(&mut res.unwrap()); }
 		},
 		_ => { // "pickfile"
 			let res = picker.pick_file();
-			if res.is_some() { result.push(res.unwrap()); }
+			if res.is_some() { paths.push(res.unwrap()); }
 		},
 	};
 
-	println!("{:?}", result);
+	println!("{:?}", paths);
 
-	/*
-	let path = result.get(0).unwrap();
-  let path_cstr = std::ffi::CString::new(path.as_ref().as_os_str().as_bytes()).unwrap();
-  path_cstr.as_ptr()
-  */
+	let path = paths.get(0);
 
-  "Hello".as_ptr() as *const i8
+	if path.is_some() {
+		let path = path.unwrap();
+		let path = path.clone().into_os_string().into_string();
+
+		if path.is_ok() {
+			let path = path.unwrap();
+
+			unsafe {
+				let result = TEMPORARY_STORAGE.write_raw(path.as_ptr() as *mut u8, path.len() as u64);
+				return result as *const i8;
+		  }
+		}
+	}
+
+	"".as_ptr() as *const i8
 }
 
 #[no_mangle]
