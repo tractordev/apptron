@@ -8,6 +8,7 @@ import (
 	"github.com/progrium/hostbridge/bridge/app"
 	"github.com/progrium/hostbridge/bridge/menu"
 	"github.com/progrium/hostbridge/bridge/shell"
+	"github.com/progrium/hostbridge/bridge/screen"
 	"github.com/progrium/hostbridge/bridge/window"
 )
 
@@ -166,12 +167,14 @@ func main() {
 	w1.SetTitle("Hello, Sailor!")
 	fmt.Println("[main] window position", w1.GetOuterPosition())
 
+	/*
 	w2, _ := window.Module.Create(options)
 	window.Module.SetTitle(w2, "YO!")
 	window.Module.SetFullscreen(w2, true)
 
 	wasDestroyed := window.Module.Destroy(w2)
 	fmt.Println("[main] wasDestroyed", wasDestroyed)
+	*/
 
 	shell.ShowNotification(shell.Notification{
 		Title:    "Title: Hello, world",
@@ -190,13 +193,18 @@ func main() {
 		fmt.Println("ShowMessage ok", ok)
 	}
 
-	files := shell.ShowFilePicker(shell.FileDialog{
-		Title:   "Title: please pick a file...",
-		Mode:    "pickfiles",
-		Filters: []string{"txt,rs,cpp", "image:png,jpg,jpeg"},
-	})
+	if false {
+		files := shell.ShowFilePicker(shell.FileDialog{
+			Title:   "Title: please pick a file...",
+			Mode:    "pickfiles",
+			Filters: []string{"txt,rs,cpp", "image:png,jpg,jpeg"},
+		})
 
-	fmt.Println("ShowFilePicker files", files, len(files))
+		fmt.Println("ShowFilePicker files", files, len(files))
+	}
+
+	displays := screen.Displays()
+	fmt.Println(displays)
 
 	app.Run(tick)
 

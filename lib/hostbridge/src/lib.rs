@@ -90,6 +90,14 @@ pub struct CStringArray {
 	pub count: CInt,
 }
 
+#[repr(C)]
+pub struct CDisplay {
+	pub name: CString,
+	pub size: CSize,
+	pub position: CPosition,
+	pub scale_factor: f64,
+}
+
 struct Window {
 	id: i32,
 	webview: wry::webview::WebView,
@@ -109,6 +117,11 @@ fn string_from_cstr(cstr: CString) -> String {
 fn str_from_cstr(cstr: CString) -> &'static str {
 	let result: &CStr = unsafe { CStr::from_ptr(cstr) };
 	result.to_str().unwrap()
+}
+
+fn cstr_from_string(it: String) -> CString {
+	let ptr = unsafe { TEMPORARY_STORAGE.write(it.as_str()) };
+	ptr as *const libc::c_char
 }
 
 macro_rules! find_item {
@@ -596,6 +609,54 @@ pub extern fn shell_show_file_picker(title: CString, directory: CString, filenam
 				Arena::copy(std::mem::transmute(&ptr), (result.data as usize + (size_of::<usize>() * i)) as *mut u8, size_of::<usize>());
 			}
 		}
+	}
+
+	result
+}
+
+#[no_mangle]
+pub extern "C" fn screen_get_available_displays() -> CDisplay {
+	let mut monitors: Vec<wry::application::monitor::MonitorHandle> = Vec::new();
+
+	let first_user_window = unsafe { GLOBAL_WINDOWS.first() };
+
+	if let Some(first_user_window) = first_user_window {
+		let window = first_user_window.webview.window();
+		monitors = window.available_monitors().collect::<Vec<_>>();
+	} else {
+		// @Incomplete: does this cause any visual artifcats on any operating systems?
+		let event_loop = EventLoop::new();
+
+		let window_builder = WindowBuilder::new()
+			.with_visible(false)
+			.with_decorations(false)
+			.with_transparent(true)
+			.build(&event_loop);
+
+		if window_builder.is_ok() {
+			let window = window_builder.unwrap();
+			monitors = window.available_monitors().collect::<Vec<_>>();
+		}
+	}
+
+	let mut result = CDisplay{
+		name: cstr_from_string("".to_string()),
+		size: CSize{width: 0.0, height: 0.0},
+		position: CPosition{x: 0.0, y: 0.0},
+		scale_factor: 1.0,
+	};
+
+	for it in &mut monitors {
+		let name = it.name().unwrap();
+		let size = it.size();
+		let position = it.position();
+
+		result = CDisplay{
+			name: cstr_from_string(name),
+			size: CSize{width: size.width as f64, height: size.height as f64},
+			position: CPosition{x: position.x as f64, y: position.y as f64},
+			scale_factor: it.scale_factor(),
+		};
 	}
 
 	result

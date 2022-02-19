@@ -90,6 +90,18 @@ typedef struct StringArray {
 	int count;
 } StringArray;
 
+typedef struct Display {
+	char *   name;
+	Size     size;
+	Position position;
+	double   scale_factor;
+} Display;
+
+typedef struct DisplayArray {
+	Display *data;
+	int      count;
+} DisplayArray;
+
 //
 // Go Functions
 //
@@ -131,3 +143,5 @@ bool tray_set_system_tray(EventLoop event_loop, Icon icon, ContextMenu menu);
 bool        shell_show_notification(char *title, char *subtitle, char *body);
 bool        shell_show_dialog(char *title, char *body, char *level, char *buttons);
 StringArray shell_show_file_picker(char *title, char *directory, char *filename, char *mode, char *filters);
+
+Display screen_get_available_displays();
