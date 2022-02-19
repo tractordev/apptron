@@ -7,6 +7,7 @@ import (
 
 	"github.com/progrium/hostbridge/bridge/app"
 	"github.com/progrium/hostbridge/bridge/menu"
+	"github.com/progrium/hostbridge/bridge/screen"
 	"github.com/progrium/hostbridge/bridge/shell"
 	"github.com/progrium/hostbridge/bridge/window"
 )
@@ -166,12 +167,14 @@ func main() {
 	w1.SetTitle("Hello, Sailor!")
 	fmt.Println("[main] window position", w1.GetOuterPosition())
 
-	w2, _ := window.Module.Create(options)
-	window.Module.SetTitle(w2, "YO!")
-	window.Module.SetFullscreen(w2, true)
+	/*
+		w2, _ := window.Module.Create(options)
+		window.Module.SetTitle(w2, "YO!")
+		window.Module.SetFullscreen(w2, true)
 
-	wasDestroyed := window.Module.Destroy(w2)
-	fmt.Println("[main] wasDestroyed", wasDestroyed)
+		wasDestroyed := window.Module.Destroy(w2)
+		fmt.Println("[main] wasDestroyed", wasDestroyed)
+	*/
 
 	shell.ShowNotification(shell.Notification{
 		Title:    "Title: Hello, world",
@@ -204,6 +207,16 @@ func main() {
 	fmt.Println("Wrote clipboard data:", success)
 
 	fmt.Println("Read clipboard data:", shell.ReadClipboard())
+
+	displays := screen.Displays()
+	fmt.Println("Displays:")
+
+	for _, it := range displays {
+		fmt.Println("", it.Name)
+		fmt.Println("  Size:", it.Size)
+		fmt.Println("  Position:", it.Position)
+		fmt.Println("  ScaleFactor:", it.ScaleFactor)
+	}
 
 	app.Run(tick)
 

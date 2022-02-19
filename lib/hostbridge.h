@@ -85,10 +85,28 @@ typedef struct Icon {
 	int size;
 } Icon;
 
+typedef struct Display {
+	char *   name;
+	Size     size;
+	Position position;
+	double   scale_factor;
+} Display;
+
+// @Cleanup: do we just want to make these be all be the generic Array?
+typedef struct Array {
+	void *data;
+	int count;
+} Array;
+
 typedef struct StringArray {
 	char **data;
 	int count;
 } StringArray;
+
+typedef struct DisplayArray {
+	Display *data;
+	int      count;
+} DisplayArray;
 
 //
 // Go Functions
@@ -131,6 +149,7 @@ bool tray_set_system_tray(EventLoop event_loop, Icon icon, ContextMenu menu);
 bool        shell_show_notification(char *title, char *subtitle, char *body);
 bool        shell_show_dialog(char *title, char *body, char *level, char *buttons);
 StringArray shell_show_file_picker(char *title, char *directory, char *filename, char *mode, char *filters);
+bool        shell_write_clipboard(char *text);
+char *      shell_read_clipboard();
 
-bool  shell_write_clipboard(char *text);
-char *shell_read_clipboard();
+DisplayArray screen_get_available_displays();

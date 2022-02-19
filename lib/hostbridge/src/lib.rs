@@ -3,7 +3,7 @@ use memory::*;
 
 use std::ffi::CStr;
 use std::str::FromStr;
-use std::mem::{ManuallyDrop, forget, size_of};
+use std::mem::{ManuallyDrop, forget, size_of, transmute};
 
 use wry::{
 	application::{
@@ -85,10 +85,19 @@ pub struct CIcon {
 	pub size: CInt,
 }
 
+// NOTE(nick): generic array return value (can be cast into any other typed array)
 #[repr(C)]
-pub struct CStringArray {
-	pub data: *mut *mut u8,
+pub struct CArray {
+	pub data: *mut libc::c_void,
 	pub count: CInt,
+}
+
+#[repr(C)]
+pub struct CDisplay {
+	pub name: CString,
+	pub size: CSize,
+	pub position: CPosition,
+	pub scale_factor: CDouble,
 }
 
 struct Window {
@@ -110,6 +119,53 @@ fn string_from_cstr(cstr: CString) -> String {
 fn str_from_cstr(cstr: CString) -> &'static str {
 	let result: &CStr = unsafe { CStr::from_ptr(cstr) };
 	result.to_str().unwrap()
+}
+
+fn cstr_from_string(it: String) -> CString {
+	let ptr = unsafe {
+		let result = TEMPORARY_STORAGE.write(it.as_str());
+		TEMPORARY_STORAGE.write("\0");
+		result
+	};
+
+	ptr as *const libc::c_char
+}
+
+fn carray_from_string_array(vec: Vec<String>) -> CArray {
+	let count = vec.len();
+	let array = unsafe { TEMPORARY_STORAGE.push_aligned(size_of::<usize>() * count, 8) };
+
+	let result = CArray { data: array as *mut libc::c_void, count: count as i32 };
+
+	for (index, it) in vec.iter().enumerate() {
+		unsafe {
+			let ptr = TEMPORARY_STORAGE.write(it.as_str());
+			TEMPORARY_STORAGE.write("\0");
+
+			Arena::copy(transmute(&ptr), (result.data as usize + (size_of::<usize>() * index)) as *mut u8, size_of::<usize>());
+		}
+	}
+
+	result
+}
+
+fn carray_from_vec<T>(vec: Vec<T>) -> CArray {
+	unsafe {
+		// @Robustness: what should this alignment be?
+		TEMPORARY_STORAGE.set_alignment(16);
+	}
+
+	let array = unsafe { TEMPORARY_STORAGE.write_ptr() };
+
+	for (index, it) in vec.iter().enumerate() {
+		unsafe {
+			TEMPORARY_STORAGE.write_raw(transmute(it), size_of::<T>());
+		}
+	}
+
+	let count = vec.len();
+	let result = CArray { data: array as *mut libc::c_void, count: count as i32 };
+	result
 }
 
 macro_rules! find_item {
@@ -517,7 +573,7 @@ pub extern fn reset_temporary_storage() {
 }
 
 #[no_mangle]
-pub extern fn shell_show_file_picker(title: CString, directory: CString, filename: CString, mode: CString, filters: CString) -> CStringArray {
+pub extern fn shell_show_file_picker(title: CString, directory: CString, filename: CString, mode: CString, filters: CString) -> CArray {
 	let title = str_from_cstr(title);
 	let directory = str_from_cstr(directory);
 	let filename = str_from_cstr(filename);
@@ -579,27 +635,50 @@ pub extern fn shell_show_file_picker(title: CString, directory: CString, filenam
 		},
 	};
 
-	let count = paths.len();
-	let array = unsafe { TEMPORARY_STORAGE.push(size_of::<usize>() * count) };
+	let array: Vec<String> = paths.into_iter().map(|it| it.clone().into_os_string().into_string().unwrap()).collect();
+	carray_from_string_array(array)
+}
 
-	let result: CStringArray = CStringArray { data: array as *mut *mut u8, count: count as i32 };
+#[no_mangle]
+pub extern "C" fn screen_get_available_displays() -> CArray {
+	let mut monitors: Vec<wry::application::monitor::MonitorHandle> = Vec::new();
 
-	for (i, path) in paths.iter().enumerate() {
-		let path = path.clone().into_os_string().into_string();
+	let first_user_window = unsafe { GLOBAL_WINDOWS.first() };
 
-		if path.is_ok() {
-			let path = path.unwrap();
+	if let Some(first_user_window) = first_user_window {
+		let window = first_user_window.webview.window();
+		monitors = window.available_monitors().collect::<Vec<_>>();
+	} else {
+		// @Incomplete: does this cause any visual artifcats on any operating systems?
+		let event_loop = EventLoop::new();
 
-			unsafe {
-				let ptr = TEMPORARY_STORAGE.write(path.as_str());
-				TEMPORARY_STORAGE.write("\0");
+		let window_builder = WindowBuilder::new()
+			.with_visible(false)
+			.with_decorations(false)
+			.with_transparent(true)
+			.build(&event_loop);
 
-				Arena::copy(std::mem::transmute(&ptr), (result.data as usize + (size_of::<usize>() * i)) as *mut u8, size_of::<usize>());
-			}
+		if window_builder.is_ok() {
+			let window = window_builder.unwrap();
+			monitors = window.available_monitors().collect::<Vec<_>>();
 		}
 	}
 
-	result
+	let array: Vec<CDisplay> = monitors.into_iter().map(|it| {
+		let name = it.name().unwrap();
+		let size = it.size();
+		let position = it.position();
+		let scale_factor = it.scale_factor();
+
+		CDisplay{
+			name: cstr_from_string(name),
+			size: CSize{width: size.width as f64, height: size.height as f64},
+			position: CPosition{x: position.x as f64, y: position.y as f64},
+			scale_factor,
+		}
+	}).collect();
+
+	carray_from_vec::<CDisplay>(array)
 }
 
 #[no_mangle]
