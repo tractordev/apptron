@@ -186,15 +186,12 @@ func (it *Window) IsDestroyed() bool {
 	return it.destroyed
 }
 
-func (m *module) SetTitle(w *Window, title string) {
-	w.SetTitle(title)
+func (m *module) Focus(w *Window) {
+	w.Focus()
 }
 
-func (it *Window) SetTitle(title string) {
-	success := C.window_set_title(C.int(it.ID), C.CString(title))
-	if toBool(success) {
-		it.Title = title
-	}
+func (it *Window) Focus() {
+	C.window_set_focused(C.int(it.ID))
 }
 
 func (m *module) SetVisible(w *Window, visible bool) {
@@ -205,12 +202,100 @@ func (it *Window) SetVisible(visible bool) {
 	C.window_set_visible(C.int(it.ID), toCBool(visible))
 }
 
+func (m *module) IsVisible(w *Window) bool {
+	return w.IsVisible()
+}
+
+func (it *Window) IsVisible() bool {
+	result := C.window_is_visible(C.int(it.ID))
+	return toBool(result)
+}
+
+func (m *module) SetMaximized(w *Window, maximized bool) {
+	w.SetMaximized(maximized)
+}
+
+func (it *Window) SetMaximized(maximized bool) {
+	C.window_set_maximized(C.int(it.ID), toCBool(maximized))
+}
+
+func (m *module) SetMinimized(w *Window, minimized bool) {
+	w.SetMinimized(minimized)
+}
+
+func (it *Window) SetMinimized(minimized bool) {
+	C.window_set_minimized(C.int(it.ID), toCBool(minimized))
+}
+
 func (m *module) SetFullscreen(w *Window, fullscreen bool) {
 	w.SetFullscreen(fullscreen)
 }
 
 func (it *Window) SetFullscreen(fullscreen bool) {
 	C.window_set_fullscreen(C.int(it.ID), toCBool(fullscreen))
+}
+
+func (m *module) SetSize(w *Window, size Size) {
+	w.SetSize(size)
+}
+
+func (it *Window) SetSize(size Size) {
+	arg := C.Size{width: C.double(size.Width), height: C.double(size.Height)}
+	C.window_set_size(C.int(it.ID), arg)
+}
+
+func (m *module) SetMinSize(w *Window, size Size) {
+	w.SetMinSize(size)
+}
+
+func (it *Window) SetMinSize(size Size) {
+	arg := C.Size{width: C.double(size.Width), height: C.double(size.Height)}
+	C.window_set_min_size(C.int(it.ID), arg)
+}
+
+func (m *module) SetMaxSize(w *Window, size Size) {
+	w.SetMaxSize(size)
+}
+
+func (it *Window) SetMaxSize(size Size) {
+	arg := C.Size{width: C.double(size.Width), height: C.double(size.Height)}
+	C.window_set_max_size(C.int(it.ID), arg)
+}
+
+func (m *module) SetResizable(w *Window, resizable bool) {
+	w.SetResizable(resizable)
+}
+
+func (it *Window) SetResizable(resizable bool) {
+	C.window_set_resizable(C.int(it.ID), toCBool(resizable))
+}
+
+func (m *module) SetAlwaysOnTop(w *Window, always bool) {
+	w.SetAlwaysOnTop(always)
+}
+
+func (it *Window) SetAlwaysOnTop(always bool) {
+	C.window_set_always_on_top(C.int(it.ID), toCBool(always))
+}
+
+func (m *module) SetPosition(w *Window, position Position) {
+	w.SetPosition(position)
+}
+
+func (it *Window) SetPosition(position Position) {
+	arg := C.Position{x: C.double(position.X), y: C.double(position.Y)}
+	C.window_set_position(C.int(it.ID), arg)
+}
+
+func (m *module) SetTitle(w *Window, title string) {
+	w.SetTitle(title)
+}
+
+func (it *Window) SetTitle(title string) {
+	success := C.window_set_title(C.int(it.ID), C.CString(title))
+	if toBool(success) {
+		it.Title = title
+	}
 }
 
 func (m *module) GetOuterPosition(w *Window) Position {

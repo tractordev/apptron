@@ -9,6 +9,7 @@ use wry::{
 	application::{
 		accelerator::{Accelerator},
 		clipboard::Clipboard,
+		dpi::{LogicalSize, LogicalPosition},
 		event::{Event, WindowEvent},
 		event_loop::{ControlFlow, EventLoop},
 		//global_shortcut::ShortcutManager,
@@ -155,15 +156,8 @@ fn carray_from_vec<T>(vec: Vec<T>) -> CArray {
 		TEMPORARY_STORAGE.set_alignment(16);
 	}
 
-	let array = unsafe { TEMPORARY_STORAGE.write_ptr() };
-
-	for (index, it) in vec.iter().enumerate() {
-		unsafe {
-			TEMPORARY_STORAGE.write_raw(transmute(it), size_of::<T>());
-		}
-	}
-
 	let count = vec.len();
+	let array = unsafe { TEMPORARY_STORAGE.write_raw(vec.as_ptr() as *mut u8, size_of::<T>() * count as usize) };
 	let result = CArray { data: array as *mut libc::c_void, count: count as i32 };
 	result
 }
@@ -289,9 +283,61 @@ pub extern "C" fn window_set_visible(window_id: CInt, is_visible: CBool) -> CBoo
 }
 
 #[no_mangle]
+pub extern "C" fn window_set_focused(window_id: CInt) -> CBool {
+	find_item!(GLOBAL_WINDOWS, window_id, |it: &Window| {
+		it.webview.focus();
+		it.webview.window().set_focus();
+	})
+}
+
+#[no_mangle]
 pub extern "C" fn window_set_fullscreen(window_id: CInt, is_fullscreen: CBool) -> CBool {
 	let fullscreen = if is_fullscreen { Some(Fullscreen::Borderless(None)) } else { None };
 	find_item!(GLOBAL_WINDOWS, window_id, |it: &Window| it.webview.window().set_fullscreen(fullscreen))
+}
+
+#[no_mangle]
+pub extern "C" fn window_set_maximized(window_id: CInt, is_maximized: CBool) -> CBool {
+	find_item!(GLOBAL_WINDOWS, window_id, |it: &Window| it.webview.window().set_maximized(is_maximized))
+}
+
+#[no_mangle]
+pub extern "C" fn window_set_minimized(window_id: CInt, is_minimized: CBool) -> CBool {
+	find_item!(GLOBAL_WINDOWS, window_id, |it: &Window| it.webview.window().set_minimized(is_minimized))
+}
+
+#[no_mangle]
+pub extern "C" fn window_set_size(window_id: CInt, size: CSize) -> CBool {
+	let size = LogicalSize::new(size.width, size.height);
+	find_item!(GLOBAL_WINDOWS, window_id, |it: &Window| it.webview.window().set_inner_size(size))
+}
+
+#[no_mangle]
+pub extern "C" fn window_set_min_size(window_id: CInt, size: CSize) -> CBool {
+	let size = LogicalSize::new(size.width, size.height);
+	find_item!(GLOBAL_WINDOWS, window_id, |it: &Window| it.webview.window().set_min_inner_size(Some(size)))
+}
+
+#[no_mangle]
+pub extern "C" fn window_set_max_size(window_id: CInt, size: CSize) -> CBool {
+	let size = LogicalSize::new(size.width, size.height);
+	find_item!(GLOBAL_WINDOWS, window_id, |it: &Window| it.webview.window().set_max_inner_size(Some(size)))
+}
+
+#[no_mangle]
+pub extern "C" fn window_set_resizable(window_id: CInt, is_resizable: CBool) -> CBool {
+	find_item!(GLOBAL_WINDOWS, window_id, |it: &Window| it.webview.window().set_resizable(is_resizable))
+}
+
+#[no_mangle]
+pub extern "C" fn window_set_always_on_top(window_id: CInt, is_on_top: CBool) -> CBool {
+	find_item!(GLOBAL_WINDOWS, window_id, |it: &Window| it.webview.window().set_always_on_top(is_on_top))
+}
+
+#[no_mangle]
+pub extern "C" fn window_set_position(window_id: CInt, position: CPosition) -> CBool {
+	let position = LogicalPosition::new(position.x, position.y);
+	find_item!(GLOBAL_WINDOWS, window_id, |it: &Window| it.webview.window().set_outer_position(position))
 }
 
 #[no_mangle]
@@ -356,6 +402,13 @@ pub extern "C" fn window_get_inner_size(window_id: CInt) -> CSize {
 pub extern "C" fn window_get_dpi_scale(window_id: CInt) -> CDouble {
 	let mut result = 1.0;
 	find_item!(GLOBAL_WINDOWS, window_id, |it: &Window| result = it.webview.window().scale_factor());
+	result
+}
+
+#[no_mangle]
+pub extern "C" fn window_is_visible(window_id: CInt) -> CBool {
+	let mut result = false;
+	find_item!(GLOBAL_WINDOWS, window_id, |it: &Window| result = it.webview.window().is_visible());
 	result
 }
 
