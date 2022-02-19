@@ -149,5 +149,7 @@ bool tray_set_system_tray(EventLoop event_loop, Icon icon, ContextMenu menu);
 bool        shell_show_notification(char *title, char *subtitle, char *body);
 bool        shell_show_dialog(char *title, char *body, char *level, char *buttons);
 StringArray shell_show_file_picker(char *title, char *directory, char *filename, char *mode, char *filters);
+bool        shell_write_clipboard(char *text);
+char *      shell_read_clipboard();
 
 DisplayArray screen_get_available_displays();

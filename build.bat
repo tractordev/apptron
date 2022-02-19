@@ -19,6 +19,8 @@ pushd %build_folder%
   %cargo_exe%\cargo.exe build --release
 popd
 
+IF %errorlevel% NEQ 0 (goto end)
+
 :: NOTE(nick): these need to be in the same directory as the final executable
 copy /y %build_folder%\target\release\hostbridge.dll %project_root%
 copy /y %build_folder%\target\release\hostbridge.lib %project_root%
@@ -29,3 +31,7 @@ pushd %project_root%
 
   %go_path%\go.exe build -a -o ./ffi-debug.exe ./cmd/ffi-debug/main_static.go
 popd
+
+
+:end
+exit /B %errorlevel%

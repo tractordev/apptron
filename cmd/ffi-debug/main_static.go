@@ -203,6 +203,11 @@ func main() {
 		fmt.Println("ShowFilePicker files", files, len(files))
 	}
 
+	success := shell.WriteClipboard("Hello from Go!")
+	fmt.Println("Wrote clipboard data:", success)
+
+	fmt.Println("Read clipboard data:", shell.ReadClipboard())
+
 	displays := screen.Displays()
 	fmt.Println("Displays:")
 
