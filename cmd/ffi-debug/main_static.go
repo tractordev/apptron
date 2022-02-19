@@ -204,7 +204,14 @@ func main() {
 	}
 
 	displays := screen.Displays()
-	fmt.Println("Displays:", displays)
+	fmt.Println("Displays:")
+
+	for _, it := range displays {
+		fmt.Println("Display: ", it.Name)
+		fmt.Println("  Size:", it.Size)
+		fmt.Println("  Position:", it.Position)
+		fmt.Println("  ScaleFactor:", it.ScaleFactor)
+	}
 
 	app.Run(tick)
 

@@ -42,9 +42,14 @@ impl Arena {
 		self.offset = 0;
 	}
 
+	pub fn write_raw_aligned(&mut self, ptr: *mut u8, size: usize, alignment: usize) -> *mut u8 {
+		let result = self.push_aligned(size, alignment);
+		Arena::copy(ptr, result, size);
+		result
+	}
+
 	pub fn write_raw(&mut self, ptr: *mut u8, size: usize) -> *mut u8 {
-		let result = self.push_aligned(size, 1);
-		//let result = self.push(size);
+		let result = self.push(size);
 		Arena::copy(ptr, result, size);
 		result
 	}
@@ -57,6 +62,14 @@ impl Arena {
 		unsafe {
 			libc::memcpy(to as *mut libc::c_void, from as *mut libc::c_void, size as usize);
 		}
+	}
+
+	pub fn set_alignment(&mut self, alignment: usize) {
+		self.push_aligned(0, alignment);
+	}
+
+	pub fn write_ptr(&mut self) -> *mut u8 {
+		unsafe { self.data.offset(self.offset as isize) }
 	}
 
 	pub fn at(&mut self, offset: usize) -> *mut u8 {

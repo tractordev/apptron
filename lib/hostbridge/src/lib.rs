@@ -3,7 +3,7 @@ use memory::*;
 
 use std::ffi::CStr;
 use std::str::FromStr;
-use std::mem::{ManuallyDrop, forget, size_of};
+use std::mem::{ManuallyDrop, forget, size_of, transmute};
 
 use wry::{
 	application::{
@@ -132,7 +132,7 @@ fn cstr_from_string(it: String) -> CString {
 
 fn carray_from_string_array(vec: Vec<String>) -> CArray {
 	let count = vec.len();
-	let array = unsafe { TEMPORARY_STORAGE.push(size_of::<usize>() * count) };
+	let array = unsafe { TEMPORARY_STORAGE.push_aligned(size_of::<usize>() * count, 8) };
 
 	let result = CArray { data: array as *mut libc::c_void, count: count as i32 };
 
@@ -141,7 +141,7 @@ fn carray_from_string_array(vec: Vec<String>) -> CArray {
 			let ptr = TEMPORARY_STORAGE.write(it.as_str());
 			TEMPORARY_STORAGE.write("\0");
 
-			Arena::copy(std::mem::transmute(&ptr), (result.data as usize + (size_of::<usize>() * index)) as *mut u8, size_of::<usize>());
+			Arena::copy(transmute(&ptr), (result.data as usize + (size_of::<usize>() * index)) as *mut u8, size_of::<usize>());
 		}
 	}
 
@@ -149,19 +149,21 @@ fn carray_from_string_array(vec: Vec<String>) -> CArray {
 }
 
 fn carray_from_vec<T>(vec: Vec<T>) -> CArray {
-	let count = vec.len();
-	let array = unsafe { TEMPORARY_STORAGE.push(size_of::<usize>() * count) };
+	unsafe {
+		// @Robustness: what should this alignment be?
+		TEMPORARY_STORAGE.set_alignment(16);
+	}
 
-	let result = CArray { data: array as *mut libc::c_void, count: count as i32 };
+	let array = unsafe { TEMPORARY_STORAGE.write_ptr() };
 
 	for (index, it) in vec.iter().enumerate() {
 		unsafe {
-			let ptr = TEMPORARY_STORAGE.write_raw(std::mem::transmute(it), size_of::<T>());
-
-			Arena::copy(std::mem::transmute(&ptr), (result.data as usize + (size_of::<usize>() * index)) as *mut u8, size_of::<usize>());
+			TEMPORARY_STORAGE.write_raw(transmute(it), size_of::<T>());
 		}
 	}
 
+	let count = vec.len();
+	let result = CArray { data: array as *mut libc::c_void, count: count as i32 };
 	result
 }
 
@@ -665,12 +667,13 @@ pub extern "C" fn screen_get_available_displays() -> CArray {
 		let name = it.name().unwrap();
 		let size = it.size();
 		let position = it.position();
+		let scale_factor = it.scale_factor();
 
 		CDisplay{
 			name: cstr_from_string(name),
 			size: CSize{width: size.width as f64, height: size.height as f64},
 			position: CPosition{x: position.x as f64, y: position.y as f64},
-			scale_factor: it.scale_factor(),
+			scale_factor,
 		}
 	}).collect();
 

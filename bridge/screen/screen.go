@@ -27,8 +27,7 @@ type Size struct {
 }
 
 func Displays() []Display {
-
-  array := C.screen_get_available_displays()
+	array := C.screen_get_available_displays()
 
 	n := int(array.count)
 	result := make([]Display, n)
