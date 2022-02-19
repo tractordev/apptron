@@ -190,13 +190,20 @@ func main() {
 		fmt.Println("ShowMessage ok", ok)
 	}
 
-	files := shell.ShowFilePicker(shell.FileDialog{
-		Title:   "Title: please pick a file...",
-		Mode:    "pickfiles",
-		Filters: []string{"txt,rs,cpp", "image:png,jpg,jpeg"},
-	})
+	if false {
+		files := shell.ShowFilePicker(shell.FileDialog{
+			Title:   "Title: please pick a file...",
+			Mode:    "pickfiles",
+			Filters: []string{"txt,rs,cpp", "image:png,jpg,jpeg"},
+		})
 
-	fmt.Println("ShowFilePicker files", files, len(files))
+		fmt.Println("ShowFilePicker files", files, len(files))
+	}
+
+	success := shell.WriteClipboard("Hello from Go!")
+	fmt.Println("Wrote clipboard data:", success)
+
+	fmt.Println("Read clipboard data:", shell.ReadClipboard())
 
 	app.Run(tick)
 

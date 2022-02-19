@@ -44,6 +44,7 @@ func ShowMessage(msg MessageDialog) bool {
 }
 
 func ShowFilePicker(fd FileDialog) []string {
+	// @Cleanup: reset these at frame boundaries in the event loop?
 	C.reset_temporary_storage()
 
 	filters := strings.Join(fd.Filters, "|")
@@ -60,6 +61,18 @@ func ShowFilePicker(fd FileDialog) []string {
 	}
 
 	return result
+}
+
+func ReadClipboard() string {
+	C.reset_temporary_storage()
+
+	result := C.shell_read_clipboard()
+	return C.GoString(result)
+}
+
+func WriteClipboard(text string) bool {
+	result := C.shell_write_clipboard(C.CString(text))
+	return toBool(result)
 }
 
 func toBool(it C.uchar) bool {
