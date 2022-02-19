@@ -8,6 +8,7 @@ use std::mem::{ManuallyDrop, forget, size_of};
 use wry::{
 	application::{
 		accelerator::{Accelerator},
+		clipboard::Clipboard,
 		event::{Event, WindowEvent},
 		event_loop::{ControlFlow, EventLoop},
 		//global_shortcut::ShortcutManager,
@@ -599,6 +600,43 @@ pub extern fn shell_show_file_picker(title: CString, directory: CString, filenam
 	}
 
 	result
+}
+
+#[no_mangle]
+pub extern "C" fn shell_read_clipboard() -> CString {
+	let cliboard = Clipboard::new();
+	let content = cliboard.read_text();
+
+	if !content.is_some() {
+		return std::ptr::null();
+	}
+
+	let content = content.unwrap();
+
+	let ptr = unsafe {
+		let result = TEMPORARY_STORAGE.write(content.as_str());
+		TEMPORARY_STORAGE.write("\0");
+		result
+	};
+
+	ptr as *mut i8
+}
+
+#[no_mangle]
+pub extern "C" fn shell_write_clipboard(text: CString) -> CBool {
+	let mut clipboard = Clipboard::new();
+
+	let text = str_from_cstr(text);
+	clipboard.write_text(&text);
+
+	// @Speed: don't most OSs tell you if this succeeds? At least windows does
+	let written = clipboard.read_text();
+	if written.is_some() {
+		let written = written.unwrap();
+		return written == text;
+	}
+
+	false
 }
 
 #[no_mangle]
