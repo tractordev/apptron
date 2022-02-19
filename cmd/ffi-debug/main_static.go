@@ -204,7 +204,7 @@ func main() {
 	}
 
 	displays := screen.Displays()
-	fmt.Println(displays)
+	fmt.Println("Displays:", displays)
 
 	app.Run(tick)
 

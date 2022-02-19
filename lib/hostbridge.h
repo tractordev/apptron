@@ -85,17 +85,23 @@ typedef struct Icon {
 	int size;
 } Icon;
 
-typedef struct StringArray {
-	char **data;
-	int count;
-} StringArray;
-
 typedef struct Display {
 	char *   name;
 	Size     size;
 	Position position;
 	double   scale_factor;
 } Display;
+
+// @Cleanup: do we just want to make these be all be the generic Array?
+typedef struct Array {
+	void *data;
+	int count;
+} Array;
+
+typedef struct StringArray {
+	char **data;
+	int count;
+} StringArray;
 
 typedef struct DisplayArray {
 	Display *data;
@@ -144,4 +150,4 @@ bool        shell_show_notification(char *title, char *subtitle, char *body);
 bool        shell_show_dialog(char *title, char *body, char *level, char *buttons);
 StringArray shell_show_file_picker(char *title, char *directory, char *filename, char *mode, char *filters);
 
-Display screen_get_available_displays();
+DisplayArray screen_get_available_displays();

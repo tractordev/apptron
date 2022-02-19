@@ -84,9 +84,10 @@ pub struct CIcon {
 	pub size: CInt,
 }
 
+// NOTE(nick): generic array return value (can be cast into any other typed array)
 #[repr(C)]
-pub struct CStringArray {
-	pub data: *mut *mut u8,
+pub struct CArray {
+	pub data: *mut libc::c_void,
 	pub count: CInt,
 }
 
@@ -95,7 +96,7 @@ pub struct CDisplay {
 	pub name: CString,
 	pub size: CSize,
 	pub position: CPosition,
-	pub scale_factor: f64,
+	pub scale_factor: CDouble,
 }
 
 struct Window {
@@ -120,8 +121,48 @@ fn str_from_cstr(cstr: CString) -> &'static str {
 }
 
 fn cstr_from_string(it: String) -> CString {
-	let ptr = unsafe { TEMPORARY_STORAGE.write(it.as_str()) };
+	let ptr = unsafe {
+		let result = TEMPORARY_STORAGE.write(it.as_str());
+		TEMPORARY_STORAGE.write("\0");
+		result
+	};
+
 	ptr as *const libc::c_char
+}
+
+fn carray_from_string_array(vec: Vec<String>) -> CArray {
+	let count = vec.len();
+	let array = unsafe { TEMPORARY_STORAGE.push(size_of::<usize>() * count) };
+
+	let result = CArray { data: array as *mut libc::c_void, count: count as i32 };
+
+	for (index, it) in vec.iter().enumerate() {
+		unsafe {
+			let ptr = TEMPORARY_STORAGE.write(it.as_str());
+			TEMPORARY_STORAGE.write("\0");
+
+			Arena::copy(std::mem::transmute(&ptr), (result.data as usize + (size_of::<usize>() * index)) as *mut u8, size_of::<usize>());
+		}
+	}
+
+	result
+}
+
+fn carray_from_vec<T>(vec: Vec<T>) -> CArray {
+	let count = vec.len();
+	let array = unsafe { TEMPORARY_STORAGE.push(size_of::<usize>() * count) };
+
+	let result = CArray { data: array as *mut libc::c_void, count: count as i32 };
+
+	for (index, it) in vec.iter().enumerate() {
+		unsafe {
+			let ptr = TEMPORARY_STORAGE.write_raw(std::mem::transmute(it), size_of::<T>());
+
+			Arena::copy(std::mem::transmute(&ptr), (result.data as usize + (size_of::<usize>() * index)) as *mut u8, size_of::<usize>());
+		}
+	}
+
+	result
 }
 
 macro_rules! find_item {
@@ -529,7 +570,7 @@ pub extern fn reset_temporary_storage() {
 }
 
 #[no_mangle]
-pub extern fn shell_show_file_picker(title: CString, directory: CString, filename: CString, mode: CString, filters: CString) -> CStringArray {
+pub extern fn shell_show_file_picker(title: CString, directory: CString, filename: CString, mode: CString, filters: CString) -> CArray {
 	let title = str_from_cstr(title);
 	let directory = str_from_cstr(directory);
 	let filename = str_from_cstr(filename);
@@ -591,31 +632,12 @@ pub extern fn shell_show_file_picker(title: CString, directory: CString, filenam
 		},
 	};
 
-	let count = paths.len();
-	let array = unsafe { TEMPORARY_STORAGE.push(size_of::<usize>() * count) };
-
-	let result: CStringArray = CStringArray { data: array as *mut *mut u8, count: count as i32 };
-
-	for (i, path) in paths.iter().enumerate() {
-		let path = path.clone().into_os_string().into_string();
-
-		if path.is_ok() {
-			let path = path.unwrap();
-
-			unsafe {
-				let ptr = TEMPORARY_STORAGE.write(path.as_str());
-				TEMPORARY_STORAGE.write("\0");
-
-				Arena::copy(std::mem::transmute(&ptr), (result.data as usize + (size_of::<usize>() * i)) as *mut u8, size_of::<usize>());
-			}
-		}
-	}
-
-	result
+	let array: Vec<String> = paths.into_iter().map(|it| it.clone().into_os_string().into_string().unwrap()).collect();
+	carray_from_string_array(array)
 }
 
 #[no_mangle]
-pub extern "C" fn screen_get_available_displays() -> CDisplay {
+pub extern "C" fn screen_get_available_displays() -> CArray {
 	let mut monitors: Vec<wry::application::monitor::MonitorHandle> = Vec::new();
 
 	let first_user_window = unsafe { GLOBAL_WINDOWS.first() };
@@ -639,27 +661,20 @@ pub extern "C" fn screen_get_available_displays() -> CDisplay {
 		}
 	}
 
-	let mut result = CDisplay{
-		name: cstr_from_string("".to_string()),
-		size: CSize{width: 0.0, height: 0.0},
-		position: CPosition{x: 0.0, y: 0.0},
-		scale_factor: 1.0,
-	};
-
-	for it in &mut monitors {
+	let array: Vec<CDisplay> = monitors.into_iter().map(|it| {
 		let name = it.name().unwrap();
 		let size = it.size();
 		let position = it.position();
 
-		result = CDisplay{
+		CDisplay{
 			name: cstr_from_string(name),
 			size: CSize{width: size.width as f64, height: size.height as f64},
 			position: CPosition{x: position.x as f64, y: position.y as f64},
 			scale_factor: it.scale_factor(),
-		};
-	}
+		}
+	}).collect();
 
-	result
+	carray_from_vec::<CDisplay>(array)
 }
 
 #[no_mangle]
