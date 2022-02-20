@@ -42,20 +42,20 @@ impl Arena {
 		self.offset = 0;
 	}
 
-	pub fn write_raw_aligned(&mut self, ptr: *mut u8, size: usize, alignment: usize) -> *mut u8 {
+	pub fn write_aligned(&mut self, ptr: *mut u8, size: usize, alignment: usize) -> *mut u8 {
 		let result = self.push_aligned(size, alignment);
 		Arena::copy(ptr, result, size);
 		result
 	}
 
-	pub fn write_raw(&mut self, ptr: *mut u8, size: usize) -> *mut u8 {
+	pub fn write(&mut self, ptr: *mut u8, size: usize) -> *mut u8 {
 		let result = self.push(size);
 		Arena::copy(ptr, result, size);
 		result
 	}
 
-	pub fn write(&mut self, str: &str) -> *mut u8 {
-		self.write_raw(str.as_ptr() as *mut u8, str.len())
+	pub fn write_str(&mut self, str: &str) -> *mut u8 {
+		self.write(str.as_ptr() as *mut u8, str.len())
 	}
 
 	pub fn copy(from: *mut u8, to: *mut u8, size: usize) {
