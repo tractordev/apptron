@@ -42,7 +42,7 @@ typedef struct Event {
 	Position position;
 	Size     size;
 	int      menu_id;
-	//char *   accelerator;
+	char *   shortcut;
 } Event;
 
 // NOTE(nick): this has to be kept in sync with wry's EventLoop struct size

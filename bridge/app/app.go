@@ -48,6 +48,7 @@ type Event struct {
 	Position window.Position
 	Size     window.Size
 	MenuID   uint16
+	Shortcut string
 }
 
 type Module struct {
@@ -75,6 +76,7 @@ func go_app_main_loop(data C.Event) {
 		event.Position = window.Position{X: float64(data.position.x), Y: float64(data.position.y)}
 		event.Size = window.Size{Width: float64(data.size.width), Height: float64(data.size.height)}
 		event.MenuID = uint16(data.menu_id)
+		event.Shortcut = C.GoString(data.shortcut)
 
 		userMainLoop(event)
 	}

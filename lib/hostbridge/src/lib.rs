@@ -62,6 +62,7 @@ pub struct CEvent {
 	pub position:   CPosition,
 	pub size:       CSize,
 	pub menu_id:    CInt,
+	pub shortcut:   CString,
 }
 
 // NOTE(nick): even though this stuct is not FFI compatible, we use it as an opaque handle on the C/Go side
@@ -916,6 +917,7 @@ pub extern "C" fn run(event_loop: CEventLoop, user_callback: unsafe extern "C" f
 			position: CPosition{x: 0.0, y: 0.0},
 			size: CSize{width: 0.0, height: 0.0},
 			menu_id: 0,
+			shortcut: std::ptr::null(),
 		};
 
 		match event {
@@ -991,16 +993,14 @@ pub extern "C" fn run(event_loop: CEventLoop, user_callback: unsafe extern "C" f
 					let it = SHORTCUTS.get(&id);
 
 					if let Some(it) = it {
-						println!("{:?}", it.menu_id);
-
-						// @Incomplete: right now we emit MenuItem event's for GlobalShortcuts bound to a menu
-						// do we need some way to distinguish these in the future?
 						if it.menu_id == 0 {
 							result.event_type = CEventType::Shortcut as i32;
 						} else {
 							result.event_type = CEventType::MenuItem as i32;
 							result.menu_id = it.menu_id as i32;
 						}
+
+						result.shortcut = cstr_from_string(it.accelerator.clone());
 					}
 				}
 			},
