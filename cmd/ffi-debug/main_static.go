@@ -218,6 +218,15 @@ func main() {
 		fmt.Println("  ScaleFactor:", it.ScaleFactor)
 	}
 
+	didRegister1 := shell.RegisterShortcut("Control+Shift+R")
+	fmt.Println("didRegister", didRegister1)
+
+	didRegister2 := shell.RegisterShortcut("Control+Shift+T")
+	fmt.Println("didRegister", didRegister2)
+
+	didUnregister := shell.UnregisterShortcut("Control+Shift+T")
+	fmt.Println("didUnregister", didUnregister)
+
 	app.Run(tick)
 
 	// NOTE(nick): this doesn't appear to be called ever

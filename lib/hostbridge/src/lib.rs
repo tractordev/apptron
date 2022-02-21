@@ -1,7 +1,8 @@
 mod memory;
 use memory::*;
 
-use std::ffi::CStr;
+use std::collections::HashMap;
+use once_cell::unsync::Lazy;
 use std::str::FromStr;
 use std::mem::{ManuallyDrop, forget, size_of, transmute};
 
@@ -12,13 +13,17 @@ use wry::{
 		dpi::{LogicalSize, LogicalPosition},
 		event::{Event, WindowEvent},
 		event_loop::{ControlFlow, EventLoop},
-		//global_shortcut::ShortcutManager,
+		global_shortcut::ShortcutManager,
 	  menu::{ContextMenu, MenuBar, MenuItemAttributes},
 	  system_tray::SystemTrayBuilder,
 		window::{WindowBuilder, Fullscreen},
 	},
 	webview::{WebViewBuilder},
 };
+
+//
+// C Types
+//
 
 type CInt    = libc::c_int;
 type CString = *const libc::c_char;
@@ -47,6 +52,7 @@ enum CEventType {
 	Resized   = 4,
 	Moved     = 5,
 	MenuItem  = 6,
+	Shortcut  = 7,
 }
 
 #[repr(C)]
@@ -56,6 +62,7 @@ pub struct CEvent {
 	pub position:   CPosition,
 	pub size:       CSize,
 	pub menu_id:    CInt,
+	pub shortcut:   CString,
 }
 
 // NOTE(nick): even though this stuct is not FFI compatible, we use it as an opaque handle on the C/Go side
@@ -101,31 +108,52 @@ pub struct CDisplay {
 	pub scale_factor: CDouble,
 }
 
+//
+// Globals
+//
+
 struct Window {
 	id: i32,
 	webview: wry::webview::WebView,
 }
 
-static mut GLOBAL_WINDOWS: Vec<Window> = Vec::new();
+struct Shortcut {
+	id: u16,
+	accelerator: String,
+	shortcut: wry::application::global_shortcut::GlobalShortcut,
+	menu_id: i32,
+}
+
+static mut WINDOWS: Vec<Window> = Vec::new();
+static mut SHORTCUT_MANAGER: Option<ShortcutManager> = None;
+static mut SHORTCUTS: Lazy<HashMap<u16, Shortcut>> = Lazy::new(|| {
+  HashMap::new()
+});
 
 const STORAGE_SIZE: usize = kilobytes!(256);
 static mut STORAGE_BUFFER: [u8; STORAGE_SIZE] = [0; STORAGE_SIZE];
 static mut TEMPORARY_STORAGE: Arena = unsafe { Arena::new(&STORAGE_BUFFER as *const u8 as *mut u8, STORAGE_SIZE) };
 
+//
+// Helpers
+//
+
 fn string_from_cstr(cstr: CString) -> String {
+	use std::ffi::CStr;
 	let buffer = unsafe { CStr::from_ptr(cstr).to_bytes() };
 	String::from_utf8(buffer.to_vec()).unwrap()
 }
 
 fn str_from_cstr(cstr: CString) -> &'static str {
+	use std::ffi::CStr;
 	let result: &CStr = unsafe { CStr::from_ptr(cstr) };
 	result.to_str().unwrap()
 }
 
 fn cstr_from_string(it: String) -> CString {
 	let ptr = unsafe {
-		let result = TEMPORARY_STORAGE.write(it.as_str());
-		TEMPORARY_STORAGE.write("\0");
+		let result = TEMPORARY_STORAGE.write_str(it.as_str());
+		TEMPORARY_STORAGE.write_str("\0");
 		result
 	};
 
@@ -140,8 +168,8 @@ fn carray_from_string_array(vec: Vec<String>) -> CArray {
 
 	for (index, it) in vec.iter().enumerate() {
 		unsafe {
-			let ptr = TEMPORARY_STORAGE.write(it.as_str());
-			TEMPORARY_STORAGE.write("\0");
+			let ptr = TEMPORARY_STORAGE.write_str(it.as_str());
+			TEMPORARY_STORAGE.write_str("\0");
 
 			Arena::copy(transmute(&ptr), (result.data as usize + (size_of::<usize>() * index)) as *mut u8, size_of::<usize>());
 		}
@@ -151,13 +179,9 @@ fn carray_from_string_array(vec: Vec<String>) -> CArray {
 }
 
 fn carray_from_vec<T>(vec: Vec<T>) -> CArray {
-	unsafe {
-		// @Robustness: what should this alignment be?
-		TEMPORARY_STORAGE.set_alignment(16);
-	}
-
+	// @Robustness: what should this alignment be?
 	let count = vec.len();
-	let array = unsafe { TEMPORARY_STORAGE.write_raw(vec.as_ptr() as *mut u8, size_of::<T>() * count as usize) };
+	let array = unsafe { TEMPORARY_STORAGE.write_aligned(vec.as_ptr() as *mut u8, size_of::<T>() * count as usize, 16) };
 	let result = CArray { data: array as *mut libc::c_void, count: count as i32 };
 	result
 }
@@ -179,6 +203,36 @@ macro_rules! find_item {
 	}};
 } 
 
+fn register_shortcut(accel_str: &'static str, menu_id: i32) -> (bool, u16, Option<Accelerator>) {
+	unsafe {
+		if SHORTCUT_MANAGER.is_none() {
+			println!("SHORTCUT_MANAGER not initialized!");
+			return (false, 0, None);
+		}
+	}
+
+	let accelerator = Accelerator::from_str(accel_str);
+
+	if accelerator.is_ok() {
+		let accelerator = accelerator.unwrap();
+		let id = accelerator.clone().id().0;
+		let result = unsafe { SHORTCUT_MANAGER.as_mut().unwrap().register(accelerator.clone()) };
+
+		if result.is_ok() {
+			let item = Shortcut{ id: id as u16, menu_id, shortcut: result.unwrap(), accelerator: accel_str.to_string() };
+			unsafe { SHORTCUTS.insert(id, item); };
+
+			return (true, id, Some(accelerator));
+		}
+	}
+
+	(false, 0, None)
+}
+
+//
+// API
+//
+
 #[no_mangle]
 #[allow(improper_ctypes_definitions)]
 pub extern "C" fn create_event_loop() -> CEventLoop {
@@ -189,6 +243,15 @@ pub extern "C" fn create_event_loop() -> CEventLoop {
 	assert_eq!(size_of::<CEventLoop>(), 40);
 
 	let result = EventLoop::new();
+
+
+	// @Cleanup: move this to a app_init() method or something?
+	// Calling this multiple times will be result in the wrong ShortcutManager being used
+	unsafe {
+		if SHORTCUT_MANAGER.is_none() {
+			SHORTCUT_MANAGER = Some(ShortcutManager::new(&result));
+		}
+	}
 	
 	//
 	// NOTE(nick): prevent the EventLoop's destructor from being called here
@@ -247,10 +310,10 @@ pub extern "C" fn window_create(event_loop: CEventLoop, options: CWindow_Options
 	let result: i32;
 
 	unsafe {
-		result = GLOBAL_WINDOWS.len() as i32;
+		result = WINDOWS.len() as i32;
 		let the_window = Window{ id: result, webview };
 
-		GLOBAL_WINDOWS.push(the_window);
+		WINDOWS.push(the_window);
 	}
 
 	return result;
@@ -261,9 +324,9 @@ pub extern "C" fn window_destroy(window_id: CInt) -> CBool {
 	let mut result = false;
 
 	unsafe {
-		let found = GLOBAL_WINDOWS.iter().position(|it| it.id == window_id);
+		let found = WINDOWS.iter().position(|it| it.id == window_id);
 		if let Some(index) = found {
-			GLOBAL_WINDOWS.remove(index);
+			WINDOWS.remove(index);
 			result = true;
 		}
 	}
@@ -274,17 +337,17 @@ pub extern "C" fn window_destroy(window_id: CInt) -> CBool {
 #[no_mangle]
 pub extern "C" fn window_set_title(window_id: CInt, title: CString) -> CBool {
 	let title = string_from_cstr(title);
-	find_item!(GLOBAL_WINDOWS, window_id, |it: &Window| it.webview.window().set_title(&title))
+	find_item!(WINDOWS, window_id, |it: &Window| it.webview.window().set_title(&title))
 }
 
 #[no_mangle]
 pub extern "C" fn window_set_visible(window_id: CInt, is_visible: CBool) -> CBool {
-	find_item!(GLOBAL_WINDOWS, window_id, |it: &Window| it.webview.window().set_visible(is_visible))
+	find_item!(WINDOWS, window_id, |it: &Window| it.webview.window().set_visible(is_visible))
 }
 
 #[no_mangle]
 pub extern "C" fn window_set_focused(window_id: CInt) -> CBool {
-	find_item!(GLOBAL_WINDOWS, window_id, |it: &Window| {
+	find_item!(WINDOWS, window_id, |it: &Window| {
 		it.webview.focus();
 		it.webview.window().set_focus();
 	})
@@ -293,58 +356,58 @@ pub extern "C" fn window_set_focused(window_id: CInt) -> CBool {
 #[no_mangle]
 pub extern "C" fn window_set_fullscreen(window_id: CInt, is_fullscreen: CBool) -> CBool {
 	let fullscreen = if is_fullscreen { Some(Fullscreen::Borderless(None)) } else { None };
-	find_item!(GLOBAL_WINDOWS, window_id, |it: &Window| it.webview.window().set_fullscreen(fullscreen))
+	find_item!(WINDOWS, window_id, |it: &Window| it.webview.window().set_fullscreen(fullscreen))
 }
 
 #[no_mangle]
 pub extern "C" fn window_set_maximized(window_id: CInt, is_maximized: CBool) -> CBool {
-	find_item!(GLOBAL_WINDOWS, window_id, |it: &Window| it.webview.window().set_maximized(is_maximized))
+	find_item!(WINDOWS, window_id, |it: &Window| it.webview.window().set_maximized(is_maximized))
 }
 
 #[no_mangle]
 pub extern "C" fn window_set_minimized(window_id: CInt, is_minimized: CBool) -> CBool {
-	find_item!(GLOBAL_WINDOWS, window_id, |it: &Window| it.webview.window().set_minimized(is_minimized))
+	find_item!(WINDOWS, window_id, |it: &Window| it.webview.window().set_minimized(is_minimized))
 }
 
 #[no_mangle]
 pub extern "C" fn window_set_size(window_id: CInt, size: CSize) -> CBool {
 	let size = LogicalSize::new(size.width, size.height);
-	find_item!(GLOBAL_WINDOWS, window_id, |it: &Window| it.webview.window().set_inner_size(size))
+	find_item!(WINDOWS, window_id, |it: &Window| it.webview.window().set_inner_size(size))
 }
 
 #[no_mangle]
 pub extern "C" fn window_set_min_size(window_id: CInt, size: CSize) -> CBool {
 	let size = LogicalSize::new(size.width, size.height);
-	find_item!(GLOBAL_WINDOWS, window_id, |it: &Window| it.webview.window().set_min_inner_size(Some(size)))
+	find_item!(WINDOWS, window_id, |it: &Window| it.webview.window().set_min_inner_size(Some(size)))
 }
 
 #[no_mangle]
 pub extern "C" fn window_set_max_size(window_id: CInt, size: CSize) -> CBool {
 	let size = LogicalSize::new(size.width, size.height);
-	find_item!(GLOBAL_WINDOWS, window_id, |it: &Window| it.webview.window().set_max_inner_size(Some(size)))
+	find_item!(WINDOWS, window_id, |it: &Window| it.webview.window().set_max_inner_size(Some(size)))
 }
 
 #[no_mangle]
 pub extern "C" fn window_set_resizable(window_id: CInt, is_resizable: CBool) -> CBool {
-	find_item!(GLOBAL_WINDOWS, window_id, |it: &Window| it.webview.window().set_resizable(is_resizable))
+	find_item!(WINDOWS, window_id, |it: &Window| it.webview.window().set_resizable(is_resizable))
 }
 
 #[no_mangle]
 pub extern "C" fn window_set_always_on_top(window_id: CInt, is_on_top: CBool) -> CBool {
-	find_item!(GLOBAL_WINDOWS, window_id, |it: &Window| it.webview.window().set_always_on_top(is_on_top))
+	find_item!(WINDOWS, window_id, |it: &Window| it.webview.window().set_always_on_top(is_on_top))
 }
 
 #[no_mangle]
 pub extern "C" fn window_set_position(window_id: CInt, position: CPosition) -> CBool {
 	let position = LogicalPosition::new(position.x, position.y);
-	find_item!(GLOBAL_WINDOWS, window_id, |it: &Window| it.webview.window().set_outer_position(position))
+	find_item!(WINDOWS, window_id, |it: &Window| it.webview.window().set_outer_position(position))
 }
 
 #[no_mangle]
 pub extern "C" fn window_get_outer_position(window_id: CInt) -> CPosition {
 	let mut result = CPosition{ x: 0.0, y: 0.0 };
 
-	find_item!(GLOBAL_WINDOWS, window_id, |it: &Window| {
+	find_item!(WINDOWS, window_id, |it: &Window| {
 		let position = it.webview.window().outer_position();
 		if position.is_ok() {
 			let position = position.unwrap();
@@ -360,7 +423,7 @@ pub extern "C" fn window_get_outer_position(window_id: CInt) -> CPosition {
 pub extern "C" fn window_get_outer_size(window_id: CInt) -> CSize {
 	let mut result = CSize{ width: 0.0, height: 0.0 };
 
-	find_item!(GLOBAL_WINDOWS, window_id, |it: &Window| {
+	find_item!(WINDOWS, window_id, |it: &Window| {
 		let size = it.webview.window().outer_size();
 		result.width = size.width as f64;
 		result.height = size.height as f64;
@@ -373,7 +436,7 @@ pub extern "C" fn window_get_outer_size(window_id: CInt) -> CSize {
 pub extern "C" fn window_get_inner_position(window_id: CInt) -> CPosition {
 	let mut result = CPosition{ x: 0.0, y: 0.0 };
 
-	find_item!(GLOBAL_WINDOWS, window_id, |it: &Window| {
+	find_item!(WINDOWS, window_id, |it: &Window| {
 		let position = it.webview.window().inner_position();
 		if position.is_ok() {
 			let position = position.unwrap();
@@ -389,7 +452,7 @@ pub extern "C" fn window_get_inner_position(window_id: CInt) -> CPosition {
 pub extern "C" fn window_get_inner_size(window_id: CInt) -> CSize {
 	let mut result = CSize{ width: 0.0, height: 0.0 };
 
-	find_item!(GLOBAL_WINDOWS, window_id, |it: &Window| {
+	find_item!(WINDOWS, window_id, |it: &Window| {
 		let size = it.webview.window().inner_size();
 		result.width = size.width as f64;
 		result.height = size.height as f64;
@@ -401,14 +464,14 @@ pub extern "C" fn window_get_inner_size(window_id: CInt) -> CSize {
 #[no_mangle]
 pub extern "C" fn window_get_dpi_scale(window_id: CInt) -> CDouble {
 	let mut result = 1.0;
-	find_item!(GLOBAL_WINDOWS, window_id, |it: &Window| result = it.webview.window().scale_factor());
+	find_item!(WINDOWS, window_id, |it: &Window| result = it.webview.window().scale_factor());
 	result
 }
 
 #[no_mangle]
 pub extern "C" fn window_is_visible(window_id: CInt) -> CBool {
 	let mut result = false;
-	find_item!(GLOBAL_WINDOWS, window_id, |it: &Window| result = it.webview.window().is_visible());
+	find_item!(WINDOWS, window_id, |it: &Window| result = it.webview.window().is_visible());
 	result
 }
 
@@ -449,15 +512,15 @@ pub extern "C" fn menu_add_item(mut menu: CMenu, item: CMenu_Item) -> CBool {
 			.with_enabled(item.enabled)
 			.with_selected(item.selected);
 
-	let accelerator = string_from_cstr(item.accelerator);
 	let mut success = true;
 
-	if accelerator.len() > 0 {
-		let accelerator: &str = &accelerator[..];
-		let parsed = Accelerator::from_str(accelerator);
+	let accel_str = str_from_cstr(item.accelerator);
+	if accel_str.len() > 0 {
+		let (ok, id, accelerator) = register_shortcut(accel_str, item.id);
 
-		if let Ok(it) = parsed {
-			result = result.with_accelerators(&it);
+		if ok {
+			let accelerator = accelerator.unwrap();
+			result = result.with_accelerators(&accelerator);
 		} else {
 			success = false;
 		}
@@ -516,22 +579,15 @@ pub extern "C" fn context_menu_add_item(mut menu: CContextMenu, item: CMenu_Item
 			.with_enabled(item.enabled)
 			.with_selected(item.selected);
 
-	let accelerator = string_from_cstr(item.accelerator);
 	let mut success = true;
 
-	if accelerator.len() > 0 {
-		let accelerator: &str = &accelerator[..];
-		let parsed = Accelerator::from_str(accelerator);
+	let accel_str = str_from_cstr(item.accelerator);
+	if accel_str.len() > 0 {
+		let (ok, id, accelerator) = register_shortcut(accel_str, item.id);
 
-		if let Ok(it) = parsed {
-			result = result.with_accelerators(&it);
-
-			/*
-			let mut shortcut_manager = ShortcutManager::new(&event_loop);
-			shortcut_manager.register(it.clone()).unwrap();
-			// @MemoryLeak
-			forget(shortcut_manager);
-			*/
+		if ok {
+			let accelerator = accelerator.unwrap();
+			result = result.with_accelerators(&accelerator);
 		} else {
 			success = false;
 		}
@@ -696,7 +752,7 @@ pub extern fn shell_show_file_picker(title: CString, directory: CString, filenam
 pub extern "C" fn screen_get_available_displays() -> CArray {
 	let mut monitors: Vec<wry::application::monitor::MonitorHandle> = Vec::new();
 
-	let first_user_window = unsafe { GLOBAL_WINDOWS.first() };
+	let first_user_window = unsafe { WINDOWS.first() };
 
 	if let Some(first_user_window) = first_user_window {
 		let window = first_user_window.webview.window();
@@ -744,14 +800,7 @@ pub extern "C" fn shell_read_clipboard() -> CString {
 	}
 
 	let content = content.unwrap();
-
-	let ptr = unsafe {
-		let result = TEMPORARY_STORAGE.write(content.as_str());
-		TEMPORARY_STORAGE.write("\0");
-		result
-	};
-
-	ptr as *mut i8
+	cstr_from_string(content)
 }
 
 #[no_mangle]
@@ -773,6 +822,86 @@ pub extern "C" fn shell_write_clipboard(text: CString) -> CBool {
 
 #[no_mangle]
 #[allow(improper_ctypes_definitions)]
+pub extern "C" fn shell_register_shortcut(accelerator: CString) -> CBool {
+	let accelerator = str_from_cstr(accelerator);
+	let (success, _, _) = register_shortcut(accelerator, 0);
+	success
+}
+
+#[no_mangle]
+#[allow(improper_ctypes_definitions)]
+pub extern "C" fn shell_is_shortcut_registered(accelerator: CString) -> CBool {
+	unsafe {
+		if SHORTCUT_MANAGER.is_none() {
+			return false;
+		}
+	}
+
+	let accelerator = str_from_cstr(accelerator);
+	let shortcut = Accelerator::from_str(accelerator);
+
+	if shortcut.is_ok() {
+		let shortcut = shortcut.unwrap();
+		let result = unsafe { SHORTCUT_MANAGER.as_mut().unwrap().is_registered(&shortcut) };
+		return result;
+	}
+
+	false
+}
+
+#[no_mangle]
+#[allow(improper_ctypes_definitions)]
+pub extern "C" fn shell_unregister_shortcut(accelerator: CString) -> CBool {
+	unsafe {
+		if SHORTCUT_MANAGER.is_none() {
+			return false;
+		}
+	}
+
+	let accelerator = str_from_cstr(accelerator);
+	let accelerator = Accelerator::from_str(accelerator);
+
+	if accelerator.is_ok() {
+		let accelerator = accelerator.unwrap();
+
+		unsafe {
+			let id = accelerator.id().0;
+			let it = SHORTCUTS.get_mut(&id);
+
+			if it.is_some() {
+				let it = it.unwrap();
+
+				let result = SHORTCUT_MANAGER.as_mut().unwrap().unregister(it.shortcut.clone());
+				SHORTCUTS.remove(&id);
+
+				return result.is_ok();
+			}
+		}
+	}
+
+	false
+}
+
+#[no_mangle]
+#[allow(improper_ctypes_definitions)]
+pub extern "C" fn shell_unregister_all_shortcuts() -> CBool {
+	unsafe {
+		if SHORTCUT_MANAGER.is_some() {
+			return false;
+		}
+	}
+
+	unsafe {
+		SHORTCUTS.clear();
+	}
+
+	let result = unsafe { SHORTCUT_MANAGER.as_mut().unwrap().unregister_all() };
+	return result.is_ok();
+}
+
+
+#[no_mangle]
+#[allow(improper_ctypes_definitions)]
 pub extern "C" fn run(event_loop: CEventLoop, user_callback: unsafe extern "C" fn(CEvent)) {
 	event_loop.run(move |event, _, control_flow| {
 		*control_flow = ControlFlow::Poll;
@@ -783,6 +912,7 @@ pub extern "C" fn run(event_loop: CEventLoop, user_callback: unsafe extern "C" f
 			position: CPosition{x: 0.0, y: 0.0},
 			size: CSize{width: 0.0, height: 0.0},
 			menu_id: 0,
+			shortcut: std::ptr::null(),
 		};
 
 		match event {
@@ -790,7 +920,7 @@ pub extern "C" fn run(event_loop: CEventLoop, user_callback: unsafe extern "C" f
 				// @Incomplete: when a window is being destroyed we still want to get its user_window_id
 				// Right now, it will be -1
 				let user_window_id = unsafe {
-					let it = GLOBAL_WINDOWS.iter().find(|&it| it.webview.window().id() == window_id);
+					let it = WINDOWS.iter().find(|&it| it.webview.window().id() == window_id);
 
 					if let Some(it) = it {
 						it.id
@@ -820,7 +950,7 @@ pub extern "C" fn run(event_loop: CEventLoop, user_callback: unsafe extern "C" f
 						// result.size = CSize{width: size.width as f64, height: size.height as f64}
 
 						unsafe {
-							let it = GLOBAL_WINDOWS.iter().find(|&it| it.webview.window().id() == window_id);
+							let it = WINDOWS.iter().find(|&it| it.webview.window().id() == window_id);
 
 							if let Some(it) = it {
 								let size = it.webview.inner_size();
@@ -839,7 +969,7 @@ pub extern "C" fn run(event_loop: CEventLoop, user_callback: unsafe extern "C" f
 
 				if let Some(window_id) = window_id {
 					let user_window_id = unsafe {
-						let it = GLOBAL_WINDOWS.iter().find(|&it| it.webview.window().id() == window_id);
+						let it = WINDOWS.iter().find(|&it| it.webview.window().id() == window_id);
 
 						if let Some(it) = it {
 							it.id
@@ -852,9 +982,22 @@ pub extern "C" fn run(event_loop: CEventLoop, user_callback: unsafe extern "C" f
 				}
 			},
 			Event::GlobalShortcutEvent(hotkey_id) => {
-				// @Incomplete: need a way to match these hotkey_id's back to their original MenuItems (or possibly keyboard shortcuts)
-				// that triggered them
-				println!("GlobalShortcutEvent {:?}", hotkey_id);
+				let id = hotkey_id.0;
+
+				unsafe {
+					let it = SHORTCUTS.get(&id);
+
+					if let Some(it) = it {
+						if it.menu_id == 0 {
+							result.event_type = CEventType::Shortcut as i32;
+						} else {
+							result.event_type = CEventType::MenuItem as i32;
+							result.menu_id = it.menu_id as i32;
+						}
+
+						result.shortcut = cstr_from_string(it.accelerator.clone());
+					}
+				}
 			},
 			_ => (),
 		}
