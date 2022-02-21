@@ -224,11 +224,7 @@ fn register_shortcut(accel_str: &'static str, menu_id: i32) -> (bool, u16, Optio
 
 			return (true, id, Some(accelerator));
 		}
-
-		println!("result is not ok");
 	}
-
-	println!("Accel is not OK");
 
 	(false, 0, None)
 }
@@ -836,7 +832,6 @@ pub extern "C" fn shell_register_shortcut(accelerator: CString) -> CBool {
 #[allow(improper_ctypes_definitions)]
 pub extern "C" fn shell_is_shortcut_registered(accelerator: CString) -> CBool {
 	unsafe {
-		// @Incomplete: how should this work with menu accelerators?
 		if SHORTCUT_MANAGER.is_none() {
 			return false;
 		}
