@@ -140,9 +140,14 @@ func main() {
 	app.NewIndicator(iconData, trayTemplate)
 
 	options := window.Options{
+		Title: "Demo window",
 		// NOTE(nick): resizing a transparent window on MacOS seems really slow?
-		//Transparent: true,
+		Transparent: true,
 		Frameless: false,
+		Visible: true,
+		//Position: window.Position{X: 10, Y: 10},
+		//Size: window.Size{ Width: 360, Height: 240 },
+		//Center: true,
 		HTML: `
 			<!doctype html>
 			<html>

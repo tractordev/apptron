@@ -53,26 +53,23 @@ type Window struct {
 }
 
 type Options struct {
-	Transparent bool
+	AlwaysOnTop bool
 	Frameless   bool
+	Fullscreen  bool
+	Size        Size
+	MinSize     Size
+	MaxSize     Size
+	Maximized   bool
+	Position    Position
+	Resizable   bool
+	Title       string
+	Transparent bool
+	Visible     bool
+	Center      bool
+	Icon        []byte
+	URL         string
 	HTML        string
-
-	/*
-		AlwaysOnTop bool
-		Size        Size
-		MinSize     Size
-		MaxSize     Size
-		Maximized   bool
-		Position    Position
-		Resizable   bool
-		Title       string
-		Transparent bool
-		Visible     bool
-		Center      bool
-		Icon        string // bytestream callback
-		URL         string
-		Script      string
-	*/
+	Script      string
 }
 
 var EventLoop C.EventLoop
@@ -134,9 +131,27 @@ func Create(options Options) (*Window, error) {
 
 func (m *module) Create(options Options) (*Window, error) {
 	opts := C.Window_Options{
+		always_on_top: toCBool(options.AlwaysOnTop),
+		frameless:   toCBool(options.Frameless),
+		fullscreen: toCBool(options.Fullscreen),
+		size: C.Size{ width: C.double(options.Size.Width), height: C.double(options.Size.Height) },
+		min_size: C.Size{ width: C.double(options.MinSize.Width), height: C.double(options.MinSize.Height) },
+		max_size: C.Size{ width: C.double(options.MaxSize.Width), height: C.double(options.MaxSize.Height) },
+		maximized: toCBool(options.Maximized),
+		position: C.Position{ x: C.double(options.Position.X), y: C.double(options.Position.Y) },
+		resizable: toCBool(options.Resizable),
+		title: C.CString(options.Title),
 		transparent: toCBool(options.Transparent),
-		decorations: toCBool(!options.Frameless),
-		html:        C.CString(options.HTML),
+		visible: toCBool(options.Visible),
+		center: toCBool(options.Center),
+		icon: C.Icon{data: (*C.uchar)(nil), size: C.int(0)},
+		url: C.CString(options.URL),
+		html: C.CString(options.HTML),
+		script: C.CString(options.Script),
+	}
+
+	if len(options.Icon) > 0 {
+		opts.icon = C.Icon{data: (*C.uchar)(unsafe.Pointer(&options.Icon[0])), size: C.int(len(options.Icon))}
 	}
 
 	appMenu := *(*C.Menu)(unsafe.Pointer(&menu.AppMenu))
