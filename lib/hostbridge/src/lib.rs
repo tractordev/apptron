@@ -1,7 +1,8 @@
 mod memory;
 use memory::*;
 
-use std::ffi::CStr;
+use std::collections::HashMap;
+use once_cell::unsync::Lazy;
 use std::str::FromStr;
 use std::mem::{ManuallyDrop, forget, size_of, transmute};
 
@@ -19,6 +20,10 @@ use wry::{
 	},
 	webview::{WebViewBuilder},
 };
+
+//
+// C Types
+//
 
 type CInt    = libc::c_int;
 type CString = *const libc::c_char;
@@ -47,6 +52,7 @@ enum CEventType {
 	Resized   = 4,
 	Moved     = 5,
 	MenuItem  = 6,
+	Shortcut  = 7,
 }
 
 #[repr(C)]
@@ -101,24 +107,44 @@ pub struct CDisplay {
 	pub scale_factor: CDouble,
 }
 
+//
+// Globals
+//
+
 struct Window {
 	id: i32,
 	webview: wry::webview::WebView,
 }
 
+struct Shortcut {
+	id: u16,
+	accelerator: String,
+	shortcut: wry::application::global_shortcut::GlobalShortcut,
+	menu_id: i32,
+}
+
 static mut WINDOWS: Vec<Window> = Vec::new();
 static mut SHORTCUT_MANAGER: Option<ShortcutManager> = None;
+static mut SHORTCUTS: Lazy<HashMap<u16, Shortcut>> = Lazy::new(|| {
+  HashMap::new()
+});
 
 const STORAGE_SIZE: usize = kilobytes!(256);
 static mut STORAGE_BUFFER: [u8; STORAGE_SIZE] = [0; STORAGE_SIZE];
 static mut TEMPORARY_STORAGE: Arena = unsafe { Arena::new(&STORAGE_BUFFER as *const u8 as *mut u8, STORAGE_SIZE) };
 
+//
+// Helpers
+//
+
 fn string_from_cstr(cstr: CString) -> String {
+	use std::ffi::CStr;
 	let buffer = unsafe { CStr::from_ptr(cstr).to_bytes() };
 	String::from_utf8(buffer.to_vec()).unwrap()
 }
 
 fn str_from_cstr(cstr: CString) -> &'static str {
+	use std::ffi::CStr;
 	let result: &CStr = unsafe { CStr::from_ptr(cstr) };
 	result.to_str().unwrap()
 }
@@ -176,6 +202,40 @@ macro_rules! find_item {
 	}};
 } 
 
+fn register_shortcut(accel_str: &'static str, menu_id: i32) -> (bool, u16, Option<Accelerator>) {
+	unsafe {
+		if SHORTCUT_MANAGER.is_none() {
+			println!("SHORTCUT_MANAGER not initialized!");
+			return (false, 0, None);
+		}
+	}
+
+	let accelerator = Accelerator::from_str(accel_str);
+
+	if accelerator.is_ok() {
+		let accelerator = accelerator.unwrap();
+		let id = accelerator.clone().id().0;
+		let result = unsafe { SHORTCUT_MANAGER.as_mut().unwrap().register(accelerator.clone()) };
+
+		if result.is_ok() {
+			let item = Shortcut{ id: id as u16, menu_id, shortcut: result.unwrap(), accelerator: accel_str.to_string() };
+			unsafe { SHORTCUTS.insert(id, item); };
+
+			return (true, id, Some(accelerator));
+		}
+
+		println!("result is not ok");
+	}
+
+	println!("Accel is not OK");
+
+	(false, 0, None)
+}
+
+//
+// API
+//
+
 #[no_mangle]
 #[allow(improper_ctypes_definitions)]
 pub extern "C" fn create_event_loop() -> CEventLoop {
@@ -186,6 +246,15 @@ pub extern "C" fn create_event_loop() -> CEventLoop {
 	assert_eq!(size_of::<CEventLoop>(), 40);
 
 	let result = EventLoop::new();
+
+
+	// @Cleanup: move this to a app_init() method or something?
+	// Calling this multiple times will be result in the wrong ShortcutManager being used
+	unsafe {
+		if SHORTCUT_MANAGER.is_none() {
+			SHORTCUT_MANAGER = Some(ShortcutManager::new(&result));
+		}
+	}
 	
 	//
 	// NOTE(nick): prevent the EventLoop's destructor from being called here
@@ -446,15 +515,15 @@ pub extern "C" fn menu_add_item(mut menu: CMenu, item: CMenu_Item) -> CBool {
 			.with_enabled(item.enabled)
 			.with_selected(item.selected);
 
-	let accelerator = string_from_cstr(item.accelerator);
 	let mut success = true;
 
-	if accelerator.len() > 0 {
-		let accelerator: &str = &accelerator[..];
-		let parsed = Accelerator::from_str(accelerator);
+	let accel_str = str_from_cstr(item.accelerator);
+	if accel_str.len() > 0 {
+		let (ok, id, accelerator) = register_shortcut(accel_str, item.id);
 
-		if let Ok(it) = parsed {
-			result = result.with_accelerators(&it);
+		if ok {
+			let accelerator = accelerator.unwrap();
+			result = result.with_accelerators(&accelerator);
 		} else {
 			success = false;
 		}
@@ -513,22 +582,15 @@ pub extern "C" fn context_menu_add_item(mut menu: CContextMenu, item: CMenu_Item
 			.with_enabled(item.enabled)
 			.with_selected(item.selected);
 
-	let accelerator = string_from_cstr(item.accelerator);
 	let mut success = true;
 
-	if accelerator.len() > 0 {
-		let accelerator: &str = &accelerator[..];
-		let parsed = Accelerator::from_str(accelerator);
+	let accel_str = str_from_cstr(item.accelerator);
+	if accel_str.len() > 0 {
+		let (ok, id, accelerator) = register_shortcut(accel_str, item.id);
 
-		if let Ok(it) = parsed {
-			result = result.with_accelerators(&it);
-
-			/*
-			let mut shortcut_manager = ShortcutManager::new(&event_loop);
-			shortcut_manager.register(it.clone()).unwrap();
-			// @MemoryLeak
-			forget(shortcut_manager);
-			*/
+		if ok {
+			let accelerator = accelerator.unwrap();
+			result = result.with_accelerators(&accelerator);
 		} else {
 			success = false;
 		}
@@ -763,25 +825,10 @@ pub extern "C" fn shell_write_clipboard(text: CString) -> CBool {
 
 #[no_mangle]
 #[allow(improper_ctypes_definitions)]
-pub extern "C" fn shell_register_shortcut(event_loop: CEventLoop, accelerator: CString) -> CBool {
-	unsafe {
-		if SHORTCUT_MANAGER.is_none() {
-			SHORTCUT_MANAGER = Some(ShortcutManager::new(&event_loop));
-		}
-
-		forget(event_loop);
-	}
-
+pub extern "C" fn shell_register_shortcut(accelerator: CString) -> CBool {
 	let accelerator = str_from_cstr(accelerator);
-	let shortcut = Accelerator::from_str(accelerator);
-
-	if shortcut.is_ok() {
-		let shortcut = shortcut.unwrap();
-		let result = unsafe { SHORTCUT_MANAGER.as_mut().unwrap().register(shortcut) };
-		return result.is_ok();
-	}
-
-	false
+	let (success, _, _) = register_shortcut(accelerator, 0);
+	success
 }
 
 #[no_mangle]
@@ -810,24 +857,31 @@ pub extern "C" fn shell_is_shortcut_registered(accelerator: CString) -> CBool {
 #[allow(improper_ctypes_definitions)]
 pub extern "C" fn shell_unregister_shortcut(accelerator: CString) -> CBool {
 	unsafe {
-		// @Incomplete: how should this work with menu accelerators?
 		if SHORTCUT_MANAGER.is_none() {
 			return false;
 		}
 	}
 
-	// @Incomplete: this needs GlobalShortcut which is returned from ShortcutManager.register()
-
-	/*
 	let accelerator = str_from_cstr(accelerator);
-	let shortcut = Accelerator::from_str(accelerator);
+	let accelerator = Accelerator::from_str(accelerator);
 
-	if shortcut.is_ok() {
-		let shortcut = shortcut.unwrap();
-		let result = unsafe { SHORTCUT_MANAGER.as_mut().unwrap().unregister(shortcut) };
-		return result.is_ok();
+	if accelerator.is_ok() {
+		let accelerator = accelerator.unwrap();
+
+		unsafe {
+			let id = accelerator.id().0;
+			let it = SHORTCUTS.get_mut(&id);
+
+			if it.is_some() {
+				let it = it.unwrap();
+
+				let result = SHORTCUT_MANAGER.as_mut().unwrap().unregister(it.shortcut.clone());
+				SHORTCUTS.remove(&id);
+
+				return result.is_ok();
+			}
+		}
 	}
-	*/
 
 	false
 }
@@ -839,6 +893,10 @@ pub extern "C" fn shell_unregister_all_shortcuts() -> CBool {
 		if SHORTCUT_MANAGER.is_some() {
 			return false;
 		}
+	}
+
+	unsafe {
+		SHORTCUTS.clear();
 	}
 
 	let result = unsafe { SHORTCUT_MANAGER.as_mut().unwrap().unregister_all() };
@@ -927,9 +985,24 @@ pub extern "C" fn run(event_loop: CEventLoop, user_callback: unsafe extern "C" f
 				}
 			},
 			Event::GlobalShortcutEvent(hotkey_id) => {
-				// @Incomplete: need a way to match these hotkey_id's back to their original MenuItems (or possibly keyboard shortcuts)
-				// that triggered them
-				println!("GlobalShortcutEvent {:?}", hotkey_id);
+				let id = hotkey_id.0;
+
+				unsafe {
+					let it = SHORTCUTS.get(&id);
+
+					if let Some(it) = it {
+						println!("{:?}", it.menu_id);
+
+						// @Incomplete: right now we emit MenuItem event's for GlobalShortcuts bound to a menu
+						// do we need some way to distinguish these in the future?
+						if it.menu_id == 0 {
+							result.event_type = CEventType::Shortcut as i32;
+						} else {
+							result.event_type = CEventType::MenuItem as i32;
+							result.menu_id = it.menu_id as i32;
+						}
+					}
+				}
 			},
 			_ => (),
 		}

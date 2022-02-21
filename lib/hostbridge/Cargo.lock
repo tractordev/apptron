@@ -905,6 +905,7 @@ version = "0.1.0"
 dependencies = [
  "libc",
  "notify-rust",
+ "once_cell",
  "rfd",
  "wry",
 ]

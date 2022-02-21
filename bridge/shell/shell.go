@@ -8,8 +8,6 @@ import "C"
 import (
 	"strings"
 	"unsafe"
-
-	"github.com/progrium/hostbridge/bridge/window"
 )
 
 type Notification struct {
@@ -78,8 +76,7 @@ func WriteClipboard(text string) bool {
 }
 
 func RegisterShortcut(accelerator string) bool {
-	eventLoop := *(*C.EventLoop)(unsafe.Pointer(&window.EventLoop))
-	result := C.shell_register_shortcut(eventLoop, C.CString(accelerator))
+	result := C.shell_register_shortcut(C.CString(accelerator))
 	return toBool(result)
 }
 

@@ -34,10 +34,11 @@ const (
 	EventResized
 	EventMoved
 	EventMenuItem
+	EventShortcut
 )
 
 func (e EventType) String() string {
-	return []string{"none", "close", "destroyed", "focused", "resized", "moved", "menu-item"}[e]
+	return []string{"none", "close", "destroyed", "focused", "resized", "moved", "menu-item", "shortcut"}[e]
 }
 
 type Event struct {

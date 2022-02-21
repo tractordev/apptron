@@ -33,6 +33,7 @@ typedef enum EventType {
 	EventResized   = 4,
 	EventMoved     = 5,
 	EventMenuItem  = 6,
+	EventShortcut  = 7,
 } EventType;
 
 typedef struct Event {
@@ -41,6 +42,7 @@ typedef struct Event {
 	Position position;
 	Size     size;
 	int      menu_id;
+	//char *   accelerator;
 } Event;
 
 // NOTE(nick): this has to be kept in sync with wry's EventLoop struct size
@@ -161,7 +163,7 @@ bool        shell_show_dialog(char *title, char *body, char *level, char *button
 StringArray shell_show_file_picker(char *title, char *directory, char *filename, char *mode, char *filters);
 char *      shell_read_clipboard();
 bool        shell_write_clipboard(char *text);
-bool        shell_register_shortcut(EventLoop event_loop, char *accelerator);
+bool        shell_register_shortcut(char *accelerator);
 bool        shell_is_shortcut_registered(char *accelerator);
 bool        shell_unregister_shortcut(char *accelerator);
 bool        shell_unregister_all_shortcuts();
