@@ -147,7 +147,7 @@ func main() {
 		Visible: true,
 		//Position: window.Position{X: 10, Y: 10},
 		//Size: window.Size{ Width: 360, Height: 240 },
-		//Center: true,
+		Center: true,
 		HTML: `
 			<!doctype html>
 			<html>

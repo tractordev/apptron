@@ -10,7 +10,7 @@ use wry::{
 	application::{
 		accelerator::{Accelerator},
 		clipboard::Clipboard,
-		dpi::{LogicalSize, LogicalPosition},
+		dpi::{LogicalSize, LogicalPosition, PhysicalPosition},
 		event::{Event, WindowEvent},
 		event_loop::{ControlFlow, EventLoop},
 		global_shortcut::ShortcutManager,
@@ -307,9 +307,7 @@ pub extern "C" fn window_create(event_loop: CEventLoop, options: CWindow_Options
 		window_builder = window_builder.with_max_inner_size(LogicalSize::new(options.max_size.width, options.max_size.height));
 	}
 
-	if options.center {
-		// @Incomplete: center window in default monitor
-	} else {
+	if !options.center {
 		window_builder = window_builder.with_position(LogicalPosition::new(options.position.x, options.position.y));
 	}
 
@@ -335,6 +333,17 @@ pub extern "C" fn window_create(event_loop: CEventLoop, options: CWindow_Options
 	}
 
 	let window = maybe_window.unwrap();
+
+	if options.center {
+		let monitor = window.current_monitor();
+
+		if let Some(monitor) = monitor {
+			let size = window.outer_size();
+			let monitor_size = monitor.size();
+			let center = PhysicalPosition::new((monitor_size.width - size.width) / 2, (monitor_size.height - size.height) / 2);
+			window.set_outer_position(center);
+		}
+	}
 
 	let webview_builder = WebViewBuilder::new(window);
 
