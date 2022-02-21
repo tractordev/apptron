@@ -10,13 +10,13 @@ use wry::{
 	application::{
 		accelerator::{Accelerator},
 		clipboard::Clipboard,
-		dpi::{LogicalSize, LogicalPosition},
+		dpi::{LogicalSize, LogicalPosition, PhysicalPosition},
 		event::{Event, WindowEvent},
 		event_loop::{ControlFlow, EventLoop},
 		global_shortcut::ShortcutManager,
 	  menu::{ContextMenu, MenuBar, MenuItemAttributes},
 	  system_tray::SystemTrayBuilder,
-		window::{WindowBuilder, Fullscreen},
+		window::{WindowBuilder, Fullscreen, Icon},
 	},
 	webview::{WebViewBuilder},
 };
@@ -73,9 +73,23 @@ type CContextMenu = ContextMenu;
 
 #[repr(C)]
 pub struct CWindow_Options {
-	pub transparent: CBool,
-	pub decorations: CBool,
-	pub html: CString,
+	pub always_on_top: CBool,
+	pub frameless:     CBool,
+	pub fullscreen:    CBool,
+	pub size:          CSize,
+	pub min_size:      CSize,
+	pub max_size:      CSize,
+	pub maximized:     CBool,
+	pub position:      CPosition,
+	pub resizable:     CBool,
+	pub title:         CString,
+	pub transparent:   CBool,
+	pub visible:       CBool,
+	pub center:        CBool,
+	pub icon:          CIcon,
+	pub url:           CString,
+	pub html:          CString,
+	pub script:        CString,
 }
 
 #[repr(C)]
@@ -267,14 +281,51 @@ pub extern "C" fn create_event_loop() -> CEventLoop {
 #[no_mangle]
 #[allow(improper_ctypes_definitions)]
 pub extern "C" fn window_create(event_loop: CEventLoop, options: CWindow_Options, menu: CMenu) -> i32 {
-	let maybe_window = WindowBuilder::new()
-		.with_title("")
+	let title = str_from_cstr(options.title);
+	let fullscreen = if options.fullscreen { Some(Fullscreen::Borderless(None)) } else { None };
+
+	let mut window_builder = WindowBuilder::new()
 		.with_menu(menu)
-		.with_decorations(options.decorations)
+		.with_always_on_top(options.always_on_top)
+		.with_decorations(!options.frameless)
+		.with_fullscreen(fullscreen)
+		.with_maximized(options.maximized)
+		.with_resizable(options.visible)
+		.with_title(title)
 		.with_transparent(options.transparent)
-		.build(&event_loop);
+		.with_visible(options.visible);
 
+	if options.size.width > 0.0 || options.size.height > 0.0 {
+		window_builder = window_builder.with_inner_size(LogicalSize::new(options.size.width, options.size.height));
+	}
 
+	if options.min_size.width > 0.0 || options.min_size.height > 0.0 {
+		window_builder = window_builder.with_min_inner_size(LogicalSize::new(options.min_size.width, options.min_size.height));
+	}
+
+	if options.max_size.width > 0.0 || options.max_size.height > 0.0 {
+		window_builder = window_builder.with_max_inner_size(LogicalSize::new(options.max_size.width, options.max_size.height));
+	}
+
+	if !options.center {
+		window_builder = window_builder.with_position(LogicalPosition::new(options.position.x, options.position.y));
+	}
+
+	// @Incomplete: add support for icons
+	/*
+	if options.icon.size > 0 {
+		let icon = options.icon;
+		let icon_buf = unsafe { Vec::<u8>::from_raw_parts(icon.data, icon.size as usize, icon.size as usize) };
+
+		// @Incomplete: size is in pixels but we only have bytes here
+		let icon = Icon::from_rgba(icon_buf, 0, 0);
+		if let Ok(icon) = icon {
+			window_builder = window_builder.with_window_icon(Some(icon));
+		}
+	}
+	*/
+
+	let maybe_window = window_builder.build(&event_loop);
 	forget(event_loop);
 
 	if !maybe_window.is_ok() {
@@ -283,23 +334,56 @@ pub extern "C" fn window_create(event_loop: CEventLoop, options: CWindow_Options
 
 	let window = maybe_window.unwrap();
 
-	let maybe_webview_builder = WebViewBuilder::new(window);
+	if options.center {
+		let monitor = window.current_monitor();
 
-	if !maybe_webview_builder.is_ok() {
+		if let Some(monitor) = monitor {
+			let size = window.outer_size();
+			let monitor_size = monitor.size();
+			let center = PhysicalPosition::new((monitor_size.width - size.width) / 2, (monitor_size.height - size.height) / 2);
+			window.set_outer_position(center);
+		}
+	}
+
+	let webview_builder = WebViewBuilder::new(window);
+
+	if !webview_builder.is_ok() {
 		return -3;
 	}
 
+	let webview_builder = webview_builder.unwrap();
+
 	let html = string_from_cstr(options.html);
+	let url = str_from_cstr(options.url);
+	let script = str_from_cstr(options.script);
 
-	let maybe_webview = maybe_webview_builder.unwrap()
-		.with_transparent(options.transparent)
-		.with_html(html);
+	let mut webview_builder = webview_builder
+		.with_transparent(options.transparent);
 
-	if !maybe_webview.is_ok() {
-		return -4;
+	if script.len() > 0 {
+		webview_builder = webview_builder.with_initialization_script(script);
 	}
 
-	let result = maybe_webview.unwrap().build();
+	if url.len() > 0 {
+		let success = webview_builder.with_url(url);
+
+		if success.is_ok() {
+			webview_builder = success.unwrap();
+		} else {
+			return -4;
+		}
+	} else {
+		// From the wry docs: This will be ignored if url is already provided.
+		let success = webview_builder.with_html(html);
+
+		if success.is_ok() {
+			webview_builder = success.unwrap();
+		} else {
+			return -4;
+		}
+	}
+
+	let result = webview_builder.build();
 
 	if !result.is_ok() {
 		return -5;

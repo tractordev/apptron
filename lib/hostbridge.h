@@ -68,10 +68,29 @@ typedef struct ContextMenu {
 	#endif
 } ContextMenu;
 
+typedef struct Icon {
+	unsigned char *data;
+	int size;
+} Icon;
+
 typedef struct Window_Options {
-	bool transparent;
-	bool decorations;
-	char *html;
+	bool     always_on_top;
+	bool     frameless;
+	bool     fullscreen;
+	Size     size;
+	Size     min_size;
+	Size     max_size;
+	bool     maximized;
+	Position position;
+	bool     resizable;
+	char *   title;
+	bool     transparent;
+	bool     visible;
+	bool     center;
+	Icon     icon;
+	char *   url;
+	char *   html;
+	char *   script;
 } Window_Options;
 
 typedef struct Menu_Item {
@@ -81,11 +100,6 @@ typedef struct Menu_Item {
 	bool selected;
 	char *accelerator;
 } Menu_Item;
-
-typedef struct Icon {
-	unsigned char *data;
-	int size;
-} Icon;
 
 typedef struct Display {
 	char *   name;
