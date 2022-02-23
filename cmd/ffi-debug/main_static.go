@@ -38,36 +38,14 @@ func tick(event core.Event) {
 			}
 		}
 
-<<<<<<< HEAD
 		if event.Name == "menu" && event.MenuID == quitAllId {
-=======
-		if event.Name == "menu-item" && event.MenuID == quitId {
-			w := window.Module.FindByID(event.WindowID)
-			if w != nil {
-				w.Destroy()
-			}
-
-			all := window.All()
-			fmt.Println("count of all windows", len(all))
-			if len(all) == 0 {
-				fmt.Println("  quitting application...")
-				core.Quit()
-			}
-		}
-
-		if event.Name == "menu-item" && event.MenuID == quitAllId {
->>>>>>> 6bff410 (refactor bridge packages to export to rpc easily, start client with tests)
 			core.Quit()
 		}
 	}
 }
 
 func main() {
-<<<<<<< HEAD
 	main2()
-=======
-	go main2()
->>>>>>> 6bff410 (refactor bridge packages to export to rpc easily, start client with tests)
 	core.Run(tick)
 
 	// NOTE(nick): this doesn't appear to be called ever

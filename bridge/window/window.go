@@ -164,7 +164,6 @@ func (m *module) New(options Options) (*Window, error) {
 
 	ret := make(chan retVal)
 	core.Dispatch(func() {
-
 		opts := C.Window_Options{
 			always_on_top: toCBool(options.AlwaysOnTop),
 			frameless:     toCBool(options.Frameless),
@@ -184,7 +183,6 @@ func (m *module) New(options Options) (*Window, error) {
 			html:          C.CString(options.HTML),
 			script:        C.CString(options.Script),
 		}
-
 		if len(options.Icon) > 0 {
 			opts.icon = C.Icon{data: (*C.uchar)(unsafe.Pointer(&options.Icon[0])), size: C.int(len(options.Icon))}
 		}
@@ -199,16 +197,14 @@ func (m *module) New(options Options) (*Window, error) {
 		window.Transparent = options.Transparent
 
 		if id >= 0 {
-			m.mu.Lock()
-			m.windows = append(m.windows, window)
-			m.mu.Unlock()
+			Module.mu.Lock()
+			Module.windows = append(Module.windows, window)
+			Module.mu.Unlock()
 			ret <- retVal{&window, nil}
 			return
 		}
 
 		ret <- retVal{nil, errors.New("Failed to create window")}
-		return
-
 	})
 	r := <-ret
 	return r.V.(*Window), r.E
@@ -247,7 +243,6 @@ func (w *Window) Destroy() bool {
 		Module.windows = append(Module.windows[:index], Module.windows[index+1:]...)
 		Module.mu.Unlock()
 	}
-
 	return true
 }
 
@@ -292,9 +287,7 @@ func (m *module) SetVisible(h core.Handle, visible bool) error {
 }
 
 func (it *Window) SetVisible(visible bool) {
-	core.Dispatch(func() {
-		C.window_set_visible(C.int(it.ID), toCBool(visible))
-	})
+	C.window_set_visible(C.int(it.ID), toCBool(visible))
 }
 
 func (m *module) IsVisible(h core.Handle) (bool, error) {
