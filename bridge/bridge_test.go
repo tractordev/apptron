@@ -6,7 +6,7 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/progrium/hostbridge/bridge/app"
+	"github.com/progrium/hostbridge/bridge/core"
 	"github.com/progrium/hostbridge/bridge/window"
 	"github.com/progrium/qtalk-go/codec"
 	"github.com/progrium/qtalk-go/fn"
@@ -21,9 +21,9 @@ func TestMain(m *testing.M) {
 	// call flag.Parse() here if TestMain uses flags
 	go func() {
 		m.Run()
-		app.Quit()
+		core.Quit()
 	}()
-	app.Run(nil)
+	core.Run(nil)
 }
 
 func TestBridge(t *testing.T) {
@@ -53,7 +53,7 @@ func TestBridge(t *testing.T) {
 			</html>
 		`,
 	}
-	_, err = client.Call(context.Background(), "window.Create", fn.Args{opts}, nil)
+	_, err = client.Call(context.Background(), "window.New", fn.Args{opts}, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -6,16 +6,21 @@ import (
 	"runtime"
 
 	"github.com/progrium/hostbridge/bridge/app"
+	"github.com/progrium/hostbridge/bridge/core"
 	"github.com/progrium/hostbridge/bridge/menu"
 	"github.com/progrium/hostbridge/bridge/screen"
 	"github.com/progrium/hostbridge/bridge/shell"
 	"github.com/progrium/hostbridge/bridge/window"
 )
 
+func init() {
+	runtime.LockOSThread()
+}
+
 var quitId uint16 = 999
 var quitAllId uint16 = 9999
 
-func tick(event app.Event) {
+func tick(event core.Event) {
 	if event.Type > 0 {
 		fmt.Println("[tick] event", event)
 
@@ -25,11 +30,11 @@ func tick(event app.Event) {
 				w.Destroy()
 			}
 
-			all := window.Module.All()
+			all := window.All()
 			fmt.Println("count of all windows", len(all))
 			if len(all) == 0 {
 				fmt.Println("  quitting application...")
-				app.Quit()
+				core.Quit()
 			}
 		}
 
@@ -39,21 +44,29 @@ func tick(event app.Event) {
 				w.Destroy()
 			}
 
-			all := window.Module.All()
+			all := window.All()
 			fmt.Println("count of all windows", len(all))
 			if len(all) == 0 {
 				fmt.Println("  quitting application...")
-				app.Quit()
+				core.Quit()
 			}
 		}
 
 		if event.Name == "menu-item" && event.MenuID == quitAllId {
-			app.Quit()
+			core.Quit()
 		}
 	}
 }
 
 func main() {
+	go main2()
+	core.Run(tick)
+
+	// NOTE(nick): this doesn't appear to be called ever
+	fmt.Println("[main] Goodbye.")
+}
+
+func main2() {
 	menuTemplate := []menu.Item{
 		{
 			// NOTE(nick): when setting the window menu with wry, the first item title will always be the name of the executable on MacOS
@@ -143,8 +156,8 @@ func main() {
 		Title: "Demo window",
 		// NOTE(nick): resizing a transparent window on MacOS seems really slow?
 		Transparent: true,
-		Frameless: false,
-		Visible: true,
+		Frameless:   false,
+		Visible:     true,
 		//Position: window.Position{X: 10, Y: 10},
 		//Size: window.Size{ Width: 360, Height: 240 },
 		Center: true,
@@ -161,7 +174,7 @@ func main() {
 		`,
 	}
 
-	w1, _ := window.Module.Create(options)
+	w1, _ := window.New(options)
 
 	fmt.Println("[main] window", w1)
 
@@ -232,8 +245,4 @@ func main() {
 	didUnregister := shell.UnregisterShortcut("Control+Shift+T")
 	fmt.Println("didUnregister", didUnregister)
 
-	app.Run(tick)
-
-	// NOTE(nick): this doesn't appear to be called ever
-	fmt.Println("[main] Goodbye.", w1)
 }

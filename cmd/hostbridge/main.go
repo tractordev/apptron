@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"log"
@@ -25,5 +26,5 @@ func main() {
 		log.Fatal(err)
 	}
 	srv := bridge.NewServer()
-	srv.Respond(sess)
+	srv.Respond(sess, context.Background())
 }

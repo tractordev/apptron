@@ -6,131 +6,56 @@ package app
 import "C"
 
 import (
-	"os"
 	"unsafe"
 
+	"github.com/progrium/hostbridge/bridge/core"
 	"github.com/progrium/hostbridge/bridge/menu"
-	"github.com/progrium/hostbridge/bridge/window"
 )
 
-var dispatchQueue chan func()
-var module Module
-var userMainLoop Callback
+var Module *module
 
 func init() {
-	module.shouldQuit = false
-	dispatchQueue = make(chan func(), 1)
+	Module = &module{menu: menu.New(nil)}
 }
 
-type Callback func(event Event)
-
-type EventType int
-
-const (
-	EventNone EventType = iota
-	EventClose
-	EventDestroyed
-	EventFocused
-	EventResized
-	EventMoved
-	EventMenuItem
-	EventShortcut
-)
-
-func (e EventType) String() string {
-	return []string{"none", "close", "destroyed", "focused", "resized", "moved", "menu-item", "shortcut"}[e]
-}
-
-type Event struct {
-	Type     EventType
-	Name     string
-	WindowID window.Handle
-	Position window.Position
-	Size     window.Size
-	MenuID   uint16
-	Shortcut string
-}
-
-type Module struct {
-	shouldQuit bool
-	menu       menu.Menu
-}
-
-//export go_app_main_loop
-func go_app_main_loop(data C.Event) {
-	if module.shouldQuit {
-		return
-	}
-
-	select {
-	case fn := <-dispatchQueue:
-		fn()
-	default:
-	}
-
-	if userMainLoop != nil {
-		event := Event{}
-		event.Type = EventType(data.event_type)
-		event.Name = event.Type.String()
-		event.WindowID = window.Handle(data.window_id)
-		event.Position = window.Position{X: float64(data.position.x), Y: float64(data.position.y)}
-		event.Size = window.Size{Width: float64(data.size.width), Height: float64(data.size.height)}
-		event.MenuID = uint16(data.menu_id)
-		event.Shortcut = C.GoString(data.shortcut)
-
-		userMainLoop(event)
-	}
-}
-
-func Dispatch(fn func()) {
-	dispatchQueue <- fn
-}
-
-func Run(callback Callback) {
-	userMainLoop = callback
-	eventLoop := *(*C.EventLoop)(unsafe.Pointer(&window.EventLoop))
-	C.run(eventLoop, C.closure(C.go_app_main_loop))
-}
-
-func Quit() {
-	if !module.shouldQuit {
-		module.shouldQuit = true
-
-		os.Exit(0)
-
-		// @Incomplete: ideally this would return execution to the main thread
-		// but it seems fine because ControlFlow::Exit actually quits the whole process...
-		//
-		// @MemoryLeak: window.EventLoop destructor needs to be called here if we return execution to go main
-	}
+type module struct {
+	menu *menu.Menu
 }
 
 func Menu() *menu.Menu {
-	if menu.AppMenuWasSet {
-		return &menu.AppMenu
-	}
-
-	return nil
+	return Module.Menu()
 }
 
-func SetMenu(m menu.Menu) {
-	menu.AppMenu = m
-	menu.AppMenuWasSet = true
+func (m module) Menu() *menu.Menu {
+	return m.menu
+}
+
+func SetMenu(m *menu.Menu) {
+	Module.SetMenu(m)
+}
+
+func (mod module) SetMenu(m *menu.Menu) {
+	mod.menu = m
 }
 
 func NewIndicator(icon []byte, items []menu.Item) {
-	eventLoop := *(*C.EventLoop)(unsafe.Pointer(&window.EventLoop))
+	Module.NewIndicator(icon, items)
+}
 
-	var cicon C.Icon
-	if len(icon) > 0 {
-		cicon = C.Icon{data: (*C.uchar)(unsafe.Pointer(&icon[0])), size: C.int(len(icon))}
-	} else {
-		cicon = C.Icon{data: (*C.uchar)(nil), size: C.int(0)}
-	}
+func (m module) NewIndicator(icon []byte, items []menu.Item) {
+	core.Dispatch(func() {
+		var cicon C.Icon
+		if len(icon) > 0 {
+			cicon = C.Icon{data: (*C.uchar)(unsafe.Pointer(&icon[0])), size: C.int(len(icon))}
+		} else {
+			cicon = C.Icon{data: (*C.uchar)(nil), size: C.int(0)}
+		}
 
-	trayMenu := NewContextMenu(items)
+		trayMenu := NewContextMenu(items)
 
-	C.tray_set_system_tray(eventLoop, cicon, trayMenu)
+		eventLoop := *(*C.EventLoop)(core.EventLoop())
+		C.tray_set_system_tray(eventLoop, cicon, trayMenu)
+	})
 }
 
 func NewContextMenu(items []menu.Item) C.ContextMenu {
@@ -164,8 +89,4 @@ func toCBool(it bool) C.uchar {
 	}
 
 	return C.uchar(0)
-}
-
-func toBool(it C.uchar) bool {
-	return int(it) != 0
 }
