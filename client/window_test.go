@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-func TestWindowModule(t *testing.T) {
+func testWindowModule(t *testing.T) {
 	client, cleanup := setupBridgeClient(t)
 	defer cleanup()
 
@@ -52,4 +52,5 @@ func TestWindowModule(t *testing.T) {
 
 	fmt.Println(w1, w2)
 	// time.Sleep(5 * time.Second)
+
 }

@@ -59,7 +59,7 @@ func tick(event core.Event) {
 }
 
 func main() {
-	go main2()
+	main2()
 	core.Run(tick)
 
 	// NOTE(nick): this doesn't appear to be called ever

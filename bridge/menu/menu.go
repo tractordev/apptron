@@ -41,8 +41,6 @@ func New(items []Item) *Menu {
 }
 
 func (m module) New(items []Item) *Menu {
-	// ret := make(chan *Menu)
-	// core.Dispatch(func() {
 	cmenu := C.menu_create()
 
 	for _, it := range items {
@@ -58,9 +56,6 @@ func (m module) New(items []Item) *Menu {
 	menu.Handle = cmenu
 
 	return menu
-	// 	ret <- menu
-	// })
-	// return <-ret
 }
 
 func buildCMenuItem(item Item) C.Menu_Item {

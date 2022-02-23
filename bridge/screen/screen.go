@@ -37,31 +37,31 @@ type Size struct {
 }
 
 func Displays() []Display {
-	return Module.Displays()
+	array := C.screen_get_available_displays()
+
+	n := int(array.count)
+	result := make([]Display, n)
+
+	items := (*[1 << 28]C.Display)(unsafe.Pointer(array.data))[:n:n]
+
+	for i := 0; i < n; i++ {
+		display := items[i]
+
+		result[i] = Display{
+			Name:        C.GoString(display.name),
+			Size:        Size{Width: float64(display.size.width), Height: float64(display.size.height)},
+			Position:    Position{X: float64(display.position.x), Y: float64(display.position.y)},
+			ScaleFactor: float64(display.scale_factor),
+		}
+	}
+
+	return result
 }
 
 func (m module) Displays() []Display {
 	ret := make(chan []Display)
 	core.Dispatch(func() {
-		array := C.screen_get_available_displays()
-
-		n := int(array.count)
-		result := make([]Display, n)
-
-		items := (*[1 << 28]C.Display)(unsafe.Pointer(array.data))[:n:n]
-
-		for i := 0; i < n; i++ {
-			display := items[i]
-
-			result[i] = Display{
-				Name:        C.GoString(display.name),
-				Size:        Size{Width: float64(display.size.width), Height: float64(display.size.height)},
-				Position:    Position{X: float64(display.position.x), Y: float64(display.position.y)},
-				ScaleFactor: float64(display.scale_factor),
-			}
-		}
-
-		ret <- result
+		ret <- Displays()
 	})
 	return <-ret
 }

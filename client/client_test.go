@@ -14,7 +14,6 @@ func init() {
 }
 
 func TestMain(m *testing.M) {
-	// call flag.Parse() here if TestMain uses flags
 	go func() {
 		m.Run()
 		core.Quit()
@@ -22,18 +21,24 @@ func TestMain(m *testing.M) {
 	core.Run(nil)
 }
 
+func TestClient(t *testing.T) {
+	t.Run("window", testWindowModule)
+	t.Run("screen", testScreenModule)
+}
+
 func setupBridgeClient(t *testing.T) (*Client, func()) {
 	l, err := net.Listen("tcp", ":0")
 	if err != nil {
-		t.Fatal(err)
+		panic(err)
 	}
 	srv := bridge.NewServer()
 	go srv.Serve(l)
 
 	client, err := Dial(l.Addr().String())
 	if err != nil {
-		t.Fatal(err)
+		panic(err)
 	}
+
 	return client, func() {
 		client.Close()
 		l.Close()
