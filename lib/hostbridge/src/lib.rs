@@ -698,7 +698,33 @@ pub extern "C" fn context_menu_add_submenu(mut menu: CContextMenu, title: CStrin
 #[no_mangle]
 #[allow(improper_ctypes_definitions)]
 pub extern "C" fn tray_set_system_tray(event_loop: CEventLoop, icon: CIcon, tray_menu: CContextMenu) -> CBool {
-	let icon = unsafe { Vec::<u8>::from_raw_parts(icon.data, icon.size as usize, icon.size as usize) };
+	let mut icon = unsafe { Vec::<u8>::from_raw_parts(icon.data, icon.size as usize, icon.size as usize) };
+
+	#[cfg(target_os = "windows")]
+	{
+		use std::io::Cursor;
+
+		let mut icon_dir = ico::IconDir::new(ico::ResourceType::Icon);
+		let image = ico::IconImage::read_png(&mut Cursor::new(&mut icon));
+		
+		if image.is_ok() {
+			let image = image.unwrap();
+
+			let entry = ico::IconDirEntry::encode(&image);
+			if entry.is_ok() {
+				let entry = entry.unwrap();
+				icon_dir.add_entry(entry);
+
+				let mut bytes: Vec<u8> = Vec::new();
+				let result = icon_dir.write(&mut Cursor::new(&mut bytes));
+
+				if result.is_ok() {
+					forget(icon); // Prevent dealloc
+					icon = bytes; // @MemoryLeak
+				}
+			}
+		}
+	}
 
 	let system_tray = SystemTrayBuilder::new(icon.clone(), Some(tray_menu)).build(&event_loop).unwrap();
 
