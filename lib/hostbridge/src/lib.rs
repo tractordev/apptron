@@ -1017,9 +1017,14 @@ pub extern "C" fn run(event_loop: CEventLoop, user_callback: unsafe extern "C" f
 				let event_type = match event {
 					WindowEvent::CloseRequested{ .. } => CEventType::Close as i32,
 					WindowEvent::Destroyed{ .. }      => CEventType::Destroyed as i32,
-					WindowEvent::Focused(focus) => {
+					WindowEvent::Focused(mut focus) => {
 
-						println!("[rust] window event {:?}", focus);
+						// NOTE(nick): the "focus" argument _should_ be according to the docs:
+						// > The parameter is true if the window has gained focus, and false if it has lost focus.
+						// But in reality the _opposite_ seems to be true at the moment on win32
+						if cfg!(windows) {
+							focus = !focus; // @Hack
+						}
 
 						if focus {
 							CEventType::Focused as i32

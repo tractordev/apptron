@@ -21,7 +21,7 @@ type module struct {
 	windows    []Window
 	shouldQuit bool
 
-	FocusedWindowID Handle
+	focusedWindowID Handle
 }
 
 type Position struct {
@@ -89,7 +89,7 @@ const (
 )
 
 func (e EventType) String() string {
-	return []string{"none", "close", "destroy", "focus", "blur", "resize", "move", "menu-item", "shortcut"}[e]
+	return []string{"none", "close", "destroy", "focus", "blur", "resize", "move", "menu", "shortcut"}[e]
 }
 
 type Event struct {
@@ -134,14 +134,17 @@ func Focused() *Window {
 }
 
 func (m *module) Focused() *Window {
-	if m.FocusedWindowID > 0 {
-		return &m.windows[m.FocusedWindowID]
+	if m.focusedWindowID >= 0 {
+		return m.FindByID(m.focusedWindowID)
 	}
 
 	return nil
 }
 
 func (m *module) ProcessEvent(event Event) {
+	if event.Type == EventFocused {
+		m.focusedWindowID = event.WindowID
+	}
 }
 
 func (m *module) FindIndexByID(windowID Handle) int {
