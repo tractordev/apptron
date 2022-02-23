@@ -15,7 +15,7 @@ import (
 var quitId uint16 = 999
 var quitAllId uint16 = 9999
 
-func tick(event app.Event) {
+func tick(event window.Event) {
 	if event.Type > 0 {
 		fmt.Println("[tick] event", event)
 
@@ -25,7 +25,7 @@ func tick(event app.Event) {
 				w.Destroy()
 			}
 
-			all := window.Module.All()
+			all := window.All()
 			fmt.Println("count of all windows", len(all))
 			if len(all) == 0 {
 				fmt.Println("  quitting application...")
@@ -39,7 +39,7 @@ func tick(event app.Event) {
 				w.Destroy()
 			}
 
-			all := window.Module.All()
+			all := window.All()
 			fmt.Println("count of all windows", len(all))
 			if len(all) == 0 {
 				fmt.Println("  quitting application...")

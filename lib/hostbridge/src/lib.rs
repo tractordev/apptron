@@ -49,10 +49,11 @@ enum CEventType {
 	Close     = 1,
 	Destroyed = 2,
 	Focused   = 3,
-	Resized   = 4,
-	Moved     = 5,
-	MenuItem  = 6,
-	Shortcut  = 7,
+	Blurred   = 4,
+	Resized   = 5,
+	Moved     = 6,
+	MenuItem  = 7,
+	Shortcut  = 8,
 }
 
 #[repr(C)]
@@ -600,7 +601,7 @@ pub extern "C" fn menu_add_item(mut menu: CMenu, item: CMenu_Item) -> CBool {
 
 	let accel_str = str_from_cstr(item.accelerator);
 	if accel_str.len() > 0 {
-		let (ok, id, accelerator) = register_shortcut(accel_str, item.id);
+		let (ok, _, accelerator) = register_shortcut(accel_str, item.id);
 
 		if ok {
 			let accelerator = accelerator.unwrap();
@@ -667,7 +668,7 @@ pub extern "C" fn context_menu_add_item(mut menu: CContextMenu, item: CMenu_Item
 
 	let accel_str = str_from_cstr(item.accelerator);
 	if accel_str.len() > 0 {
-		let (ok, id, accelerator) = register_shortcut(accel_str, item.id);
+		let (ok, _, accelerator) = register_shortcut(accel_str, item.id);
 
 		if ok {
 			let accelerator = accelerator.unwrap();
@@ -1016,7 +1017,16 @@ pub extern "C" fn run(event_loop: CEventLoop, user_callback: unsafe extern "C" f
 				let event_type = match event {
 					WindowEvent::CloseRequested{ .. } => CEventType::Close as i32,
 					WindowEvent::Destroyed{ .. }      => CEventType::Destroyed as i32,
-					WindowEvent::Focused{ .. }        => CEventType::Focused as i32,
+					WindowEvent::Focused(focus) => {
+
+						println!("[rust] window event {:?}", focus);
+
+						if focus {
+							CEventType::Focused as i32
+						} else {
+							CEventType::Blurred as i32
+						}
+					},
 					WindowEvent::Resized{ .. }        => CEventType::Resized as i32,
 					WindowEvent::Moved{ .. }          => CEventType::Moved as i32,
 					_ => CEventType::None as i32,

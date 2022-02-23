@@ -20,6 +20,8 @@ type module struct {
 
 	windows    []Window
 	shouldQuit bool
+
+	FocusedWindowID Handle
 }
 
 type Position struct {
@@ -72,6 +74,34 @@ type Options struct {
 	Script      string
 }
 
+type EventType int
+
+const (
+	EventNone EventType = iota
+	EventClose
+	EventDestroyed
+	EventFocused
+	EventBlurred
+	EventResized
+	EventMoved
+	EventMenuItem
+	EventShortcut
+)
+
+func (e EventType) String() string {
+	return []string{"none", "close", "destroy", "focus", "blur", "resize", "move", "menu-item", "shortcut"}[e]
+}
+
+type Event struct {
+	Type     EventType
+	Name     string
+	WindowID Handle
+	Position Position
+	Size     Size
+	MenuID   uint16
+	Shortcut string
+}
+
 var EventLoop C.EventLoop
 var Module *module
 
@@ -97,6 +127,21 @@ func (m *module) All() (result []Window) {
 	}
 
 	return result
+}
+
+func Focused() *Window {
+	return Module.Focused()
+}
+
+func (m *module) Focused() *Window {
+	if m.FocusedWindowID > 0 {
+		return &m.windows[m.FocusedWindowID]
+	}
+
+	return nil
+}
+
+func (m *module) ProcessEvent(event Event) {
 }
 
 func (m *module) FindIndexByID(windowID Handle) int {

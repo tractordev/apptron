@@ -30,10 +30,11 @@ typedef enum EventType {
 	EventClose     = 1,
 	EventDestroyed = 2,
 	EventFocused   = 3,
-	EventResized   = 4,
-	EventMoved     = 5,
-	EventMenuItem  = 6,
-	EventShortcut  = 7,
+	EventBlurred   = 4,
+	EventResized   = 5,
+	EventMoved     = 6,
+	EventMenuItem  = 7,
+	EventShortcut  = 8,
 } EventType;
 
 typedef struct Event {

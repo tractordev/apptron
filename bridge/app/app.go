@@ -22,34 +22,7 @@ func init() {
 	dispatchQueue = make(chan func(), 1)
 }
 
-type Callback func(event Event)
-
-type EventType int
-
-const (
-	EventNone EventType = iota
-	EventClose
-	EventDestroyed
-	EventFocused
-	EventResized
-	EventMoved
-	EventMenuItem
-	EventShortcut
-)
-
-func (e EventType) String() string {
-	return []string{"none", "close", "destroyed", "focused", "resized", "moved", "menu-item", "shortcut"}[e]
-}
-
-type Event struct {
-	Type     EventType
-	Name     string
-	WindowID window.Handle
-	Position window.Position
-	Size     window.Size
-	MenuID   uint16
-	Shortcut string
-}
+type Callback func(event window.Event)
 
 type Module struct {
 	shouldQuit bool
@@ -68,16 +41,18 @@ func go_app_main_loop(data C.Event) {
 	default:
 	}
 
-	if userMainLoop != nil {
-		event := Event{}
-		event.Type = EventType(data.event_type)
-		event.Name = event.Type.String()
-		event.WindowID = window.Handle(data.window_id)
-		event.Position = window.Position{X: float64(data.position.x), Y: float64(data.position.y)}
-		event.Size = window.Size{Width: float64(data.size.width), Height: float64(data.size.height)}
-		event.MenuID = uint16(data.menu_id)
-		event.Shortcut = C.GoString(data.shortcut)
+	event := window.Event{}
+	event.Type = window.EventType(data.event_type)
+	event.Name = event.Type.String()
+	event.WindowID = window.Handle(data.window_id)
+	event.Position = window.Position{X: float64(data.position.x), Y: float64(data.position.y)}
+	event.Size = window.Size{Width: float64(data.size.width), Height: float64(data.size.height)}
+	event.MenuID = uint16(data.menu_id)
+	event.Shortcut = C.GoString(data.shortcut)
 
+	window.Module.ProcessEvent(event)
+
+	if userMainLoop != nil {
 		userMainLoop(event)
 	}
 }
