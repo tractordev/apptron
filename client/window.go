@@ -58,10 +58,13 @@ func (ws *WindowModule) byID(id Handle) *Window {
 }
 
 func (s *WindowModule) New(ctx context.Context, opts WindowOptions) (*Window, error) {
+<<<<<<< HEAD
 	if len(opts.Icon) > 0 {
 		opts.IconSel = s.client.ServeData(opts.Icon)
 		opts.Icon = nil
 	}
+=======
+>>>>>>> 6bff410 (refactor bridge packages to export to rpc easily, start client with tests)
 	var win Window
 	_, err := s.client.Call(ctx, "window.New", fn.Args{opts}, &win)
 	if err != nil {

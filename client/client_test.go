@@ -24,14 +24,14 @@ func TestMain(m *testing.M) {
 func setupBridgeClient(t *testing.T) (*Client, func()) {
 	l, err := net.Listen("tcp", ":0")
 	if err != nil {
-		panic(err)
+		t.Fatal(err)
 	}
 	srv := bridge.NewServer()
 	go srv.Serve(l)
 
 	client, err := Dial(l.Addr().String())
 	if err != nil {
-		panic(err)
+		t.Fatal(err)
 	}
 	go client.Respond()
 

@@ -39,22 +39,22 @@ func (mod module) SetMenu(m *menu.Menu) {
 }
 
 func NewIndicator(icon []byte, items []menu.Item) {
-	var cicon C.Icon
-	if len(icon) > 0 {
-		cicon = C.Icon{data: (*C.uchar)(unsafe.Pointer(&icon[0])), size: C.int(len(icon))}
-	} else {
-		cicon = C.Icon{data: (*C.uchar)(nil), size: C.int(0)}
-	}
-
-	trayMenu := NewContextMenu(items)
-
-	eventLoop := *(*C.EventLoop)(core.EventLoop())
-	C.tray_set_system_tray(eventLoop, cicon, trayMenu)
+	Module.NewIndicator(icon, items)
 }
 
 func (m module) NewIndicator(icon []byte, items []menu.Item) {
 	core.Dispatch(func() {
-		NewIndicator(icon, items)
+		var cicon C.Icon
+		if len(icon) > 0 {
+			cicon = C.Icon{data: (*C.uchar)(unsafe.Pointer(&icon[0])), size: C.int(len(icon))}
+		} else {
+			cicon = C.Icon{data: (*C.uchar)(nil), size: C.int(0)}
+		}
+
+		trayMenu := NewContextMenu(items)
+
+		eventLoop := *(*C.EventLoop)(core.EventLoop())
+		C.tray_set_system_tray(eventLoop, cicon, trayMenu)
 	})
 }
 
