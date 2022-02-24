@@ -16,6 +16,7 @@ import (
 
 	"github.com/progrium/hostbridge/bridge/app"
 	"github.com/progrium/hostbridge/bridge/core"
+	"github.com/progrium/qtalk-go/rpc"
 )
 
 var (
@@ -145,10 +146,48 @@ func (m *module) FindByID(windowID core.Handle) *Window {
 }
 
 func New(options Options) (*Window, error) {
-	return Module.New(options)
+	opts := C.Window_Options{
+		always_on_top: toCBool(options.AlwaysOnTop),
+		frameless:     toCBool(options.Frameless),
+		fullscreen:    toCBool(options.Fullscreen),
+		size:          C.Size{width: C.double(options.Size.Width), height: C.double(options.Size.Height)},
+		min_size:      C.Size{width: C.double(options.MinSize.Width), height: C.double(options.MinSize.Height)},
+		max_size:      C.Size{width: C.double(options.MaxSize.Width), height: C.double(options.MaxSize.Height)},
+		maximized:     toCBool(options.Maximized),
+		position:      C.Position{x: C.double(options.Position.X), y: C.double(options.Position.Y)},
+		resizable:     toCBool(options.Resizable),
+		title:         C.CString(options.Title),
+		transparent:   toCBool(options.Transparent),
+		visible:       toCBool(options.Visible),
+		center:        toCBool(options.Center),
+		icon:          C.Icon{data: (*C.uchar)(nil), size: C.int(0)},
+		url:           C.CString(options.URL),
+		html:          C.CString(options.HTML),
+		script:        C.CString(options.Script),
+	}
+	if len(options.Icon) > 0 {
+		opts.icon = C.Icon{data: (*C.uchar)(unsafe.Pointer(&options.Icon[0])), size: C.int(len(options.Icon))}
+	}
+
+	appMenu := *(*C.Menu)(unsafe.Pointer(app.Module.Menu()))
+	eventLoop := *(*C.EventLoop)(core.EventLoop())
+	result := C.window_create(eventLoop, opts, appMenu)
+	id := int(result)
+
+	window := Window{}
+	window.ID = core.Handle(id)
+	window.Transparent = options.Transparent
+
+	if id >= 0 {
+		Module.mu.Lock()
+		Module.windows = append(Module.windows, window)
+		Module.mu.Unlock()
+		return &window, nil
+	}
+	return nil, errors.New("Failed to create window")
 }
 
-func (m *module) New(options Options) (*Window, error) {
+func (m *module) New(options Options, call *rpc.Call) (*Window, error) {
 	if options.IconSel != "" {
 		resp, err := call.Caller.Call(context.Background(), options.IconSel, nil, nil)
 		if err != nil {
@@ -161,50 +200,10 @@ func (m *module) New(options Options) (*Window, error) {
 			return nil, err
 		}
 	}
-
 	ret := make(chan retVal)
 	core.Dispatch(func() {
-		opts := C.Window_Options{
-			always_on_top: toCBool(options.AlwaysOnTop),
-			frameless:     toCBool(options.Frameless),
-			fullscreen:    toCBool(options.Fullscreen),
-			size:          C.Size{width: C.double(options.Size.Width), height: C.double(options.Size.Height)},
-			min_size:      C.Size{width: C.double(options.MinSize.Width), height: C.double(options.MinSize.Height)},
-			max_size:      C.Size{width: C.double(options.MaxSize.Width), height: C.double(options.MaxSize.Height)},
-			maximized:     toCBool(options.Maximized),
-			position:      C.Position{x: C.double(options.Position.X), y: C.double(options.Position.Y)},
-			resizable:     toCBool(options.Resizable),
-			title:         C.CString(options.Title),
-			transparent:   toCBool(options.Transparent),
-			visible:       toCBool(options.Visible),
-			center:        toCBool(options.Center),
-			icon:          C.Icon{data: (*C.uchar)(nil), size: C.int(0)},
-			url:           C.CString(options.URL),
-			html:          C.CString(options.HTML),
-			script:        C.CString(options.Script),
-		}
-		if len(options.Icon) > 0 {
-			opts.icon = C.Icon{data: (*C.uchar)(unsafe.Pointer(&options.Icon[0])), size: C.int(len(options.Icon))}
-		}
-
-		appMenu := *(*C.Menu)(unsafe.Pointer(app.Module.Menu()))
-		eventLoop := *(*C.EventLoop)(core.EventLoop())
-		result := C.window_create(eventLoop, opts, appMenu)
-		id := int(result)
-
-		window := Window{}
-		window.ID = core.Handle(id)
-		window.Transparent = options.Transparent
-
-		if id >= 0 {
-			Module.mu.Lock()
-			Module.windows = append(Module.windows, window)
-			Module.mu.Unlock()
-			ret <- retVal{&window, nil}
-			return
-		}
-
-		ret <- retVal{nil, errors.New("Failed to create window")}
+		w, err := New(options)
+		ret <- retVal{w, err}
 	})
 	r := <-ret
 	return r.V.(*Window), r.E

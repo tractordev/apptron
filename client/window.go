@@ -59,12 +59,18 @@ func (ws *WindowModule) byID(id Handle) *Window {
 
 func (s *WindowModule) New(ctx context.Context, opts WindowOptions) (*Window, error) {
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> e3f8dee (add mechanism to efficiently transfer icon bytes over rpc for window icon (but does not pass them to the cgo struct))
 	if len(opts.Icon) > 0 {
 		opts.IconSel = s.client.ServeData(opts.Icon)
 		opts.Icon = nil
 	}
+<<<<<<< HEAD
 =======
 >>>>>>> 6bff410 (refactor bridge packages to export to rpc easily, start client with tests)
+=======
+>>>>>>> e3f8dee (add mechanism to efficiently transfer icon bytes over rpc for window icon (but does not pass them to the cgo struct))
 	var win Window
 	_, err := s.client.Call(ctx, "window.New", fn.Args{opts}, &win)
 	if err != nil {

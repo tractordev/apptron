@@ -63,12 +63,4 @@ func testWindowModule(t *testing.T) {
 
 	fmt.Println(w1, w2)
 	// time.Sleep(5 * time.Second)
-<<<<<<< HEAD
-<<<<<<< HEAD
-
-=======
->>>>>>> 6bff410 (refactor bridge packages to export to rpc easily, start client with tests)
-=======
-
->>>>>>> 292da05 (fix everything by moving dispatch to module methods and for some reason putting client tests into subtests)
 }
