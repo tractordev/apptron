@@ -923,6 +923,7 @@ dependencies = [
  "libc",
  "notify-rust",
  "once_cell",
+ "raw-window-handle",
  "rfd",
  "wry",
 ]

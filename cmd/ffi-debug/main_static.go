@@ -22,10 +22,10 @@ var quitAllId uint16 = 9999
 
 func tick(event core.Event) {
 	if event.Type > 0 {
-		fmt.Println("[tick] event", event)
+		fmt.Println("[tick] event", event, window.Focused())
 
-		if event.Name == "close" {
-			w := window.Module.FindByID(event.WindowID)
+		if event.Name == "close" || (event.Name == "menu" && event.MenuID == quitId) {
+			w := window.FindByID(event.WindowID)
 			if w != nil {
 				w.Destroy()
 			}
@@ -38,21 +38,7 @@ func tick(event core.Event) {
 			}
 		}
 
-		if event.Name == "menu-item" && event.MenuID == quitId {
-			w := window.Module.FindByID(event.WindowID)
-			if w != nil {
-				w.Destroy()
-			}
-
-			all := window.All()
-			fmt.Println("count of all windows", len(all))
-			if len(all) == 0 {
-				fmt.Println("  quitting application...")
-				core.Quit()
-			}
-		}
-
-		if event.Name == "menu-item" && event.MenuID == quitAllId {
+		if event.Name == "menu" && event.MenuID == quitAllId {
 			core.Quit()
 		}
 	}
@@ -174,6 +160,10 @@ func main2() {
 		`,
 	}
 
+	w2, _ := window.New(options)
+	w2.SetTitle("YO!")
+	w2.SetSize(core.Size{ Width: 640, Height: 480 })
+
 	w1, _ := window.New(options)
 
 	fmt.Println("[main] window", w1)
@@ -184,15 +174,6 @@ func main2() {
 
 	w1.SetTitle("Hello, Sailor!")
 	fmt.Println("[main] window position", w1.GetOuterPosition())
-
-	/*
-		w2, _ := window.Module.Create(options)
-		window.Module.SetTitle(w2, "YO!")
-		window.Module.SetFullscreen(w2, true)
-
-		wasDestroyed := window.Module.Destroy(w2)
-		fmt.Println("[main] wasDestroyed", wasDestroyed)
-	*/
 
 	shell.ShowNotification(shell.Notification{
 		Title:    "Title: Hello, world",

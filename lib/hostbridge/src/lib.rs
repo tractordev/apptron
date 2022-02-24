@@ -21,6 +21,19 @@ use wry::{
 	webview::{WebViewBuilder},
 };
 
+use raw_window_handle::{HasRawWindowHandle, RawWindowHandle};
+
+#[allow(non_camel_case_types)]
+#[cfg(target_os = "windows")]
+mod win32 {
+  type HWND = *const libc::c_void;
+
+  #[link(name = "user32")]
+  extern "stdcall" {
+    pub fn GetActiveWindow() ->  HWND;
+  }
+}
+
 //
 // C Types
 //
@@ -32,8 +45,8 @@ type CDouble = f64;
 
 #[repr(C)]
 pub struct CPosition {
-	pub x: f64,
-	pub y: f64,
+pub x: f64,
+pub y: f64,
 }
 
 #[repr(C)]
@@ -49,10 +62,11 @@ enum CEventType {
 	Close     = 1,
 	Destroyed = 2,
 	Focused   = 3,
-	Resized   = 4,
-	Moved     = 5,
-	MenuItem  = 6,
-	Shortcut  = 7,
+	Blurred   = 4,
+	Resized   = 5,
+	Moved     = 6,
+	MenuItem  = 7,
+	Shortcut  = 8,
 }
 
 #[repr(C)]
@@ -559,6 +573,24 @@ pub extern "C" fn window_is_visible(window_id: CInt) -> CBool {
 	result
 }
 
+#[no_mangle]
+pub extern "C" fn window_is_focused(window_id: CInt) -> CBool {
+	let mut result = false;
+	find_item!(WINDOWS, window_id, |it: &Window| {
+
+		#[cfg(target_os = "windows")]
+		{
+			let handle = it.webview.window().raw_window_handle();
+
+			if let RawWindowHandle::Win32(handle) = handle {
+				result = win32::GetActiveWindow() == handle.hwnd;
+			}
+		}
+
+	});
+	result
+}
+
 
 #[no_mangle]
 #[allow(improper_ctypes_definitions)]
@@ -600,7 +632,7 @@ pub extern "C" fn menu_add_item(mut menu: CMenu, item: CMenu_Item) -> CBool {
 
 	let accel_str = str_from_cstr(item.accelerator);
 	if accel_str.len() > 0 {
-		let (ok, id, accelerator) = register_shortcut(accel_str, item.id);
+		let (ok, _, accelerator) = register_shortcut(accel_str, item.id);
 
 		if ok {
 			let accelerator = accelerator.unwrap();
@@ -667,7 +699,7 @@ pub extern "C" fn context_menu_add_item(mut menu: CContextMenu, item: CMenu_Item
 
 	let accel_str = str_from_cstr(item.accelerator);
 	if accel_str.len() > 0 {
-		let (ok, id, accelerator) = register_shortcut(accel_str, item.id);
+		let (ok, _, accelerator) = register_shortcut(accel_str, item.id);
 
 		if ok {
 			let accelerator = accelerator.unwrap();
@@ -1043,7 +1075,20 @@ pub extern "C" fn run(event_loop: CEventLoop, user_callback: unsafe extern "C" f
 				let event_type = match event {
 					WindowEvent::CloseRequested{ .. } => CEventType::Close as i32,
 					WindowEvent::Destroyed{ .. }      => CEventType::Destroyed as i32,
-					WindowEvent::Focused{ .. }        => CEventType::Focused as i32,
+					WindowEvent::Focused(mut focus)   => {
+						// NOTE(nick): the "focus" argument _should_ be according to the docs:
+						// > The parameter is true if the window has gained focus, and false if it has lost focus.
+						// But in reality the _opposite_ seems to be true at the moment on win32
+						if cfg!(windows) {
+							focus = !focus; // @Hack
+						}
+
+						if focus {
+							CEventType::Focused as i32
+						} else {
+							CEventType::Blurred as i32
+						}
+					},
 					WindowEvent::Resized{ .. }        => CEventType::Resized as i32,
 					WindowEvent::Moved{ .. }          => CEventType::Moved as i32,
 					_ => CEventType::None as i32,
