@@ -3,6 +3,9 @@ package client
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
+	"path"
+	"runtime"
 	"testing"
 )
 
@@ -12,8 +15,16 @@ func testWindowModule(t *testing.T) {
 
 	ctx := context.Background()
 
+	_, filename, _, _ := runtime.Caller(0)
+	iconpath := path.Join(path.Dir(filename), "../assets/icon.png")
+	icon, err := ioutil.ReadFile(iconpath)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	opts := WindowOptions{
 		Visible: true,
+		Icon:    icon,
 		HTML: `
 			<!doctype html>
 			<html>

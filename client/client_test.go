@@ -38,6 +38,7 @@ func setupBridgeClient(t *testing.T) (*Client, func()) {
 	if err != nil {
 		panic(err)
 	}
+	go client.Respond()
 
 	return client, func() {
 		client.Close()

@@ -8,12 +8,15 @@ package window
 import "C"
 
 import (
+	"context"
 	"errors"
+	"io/ioutil"
 	"sync"
 	"unsafe"
 
 	"github.com/progrium/hostbridge/bridge/app"
 	"github.com/progrium/hostbridge/bridge/core"
+	"github.com/progrium/qtalk-go/rpc"
 )
 
 var (
@@ -70,6 +73,7 @@ type Options struct {
 	Transparent bool
 	Visible     bool
 	Center      bool
+	IconSel     string
 	Icon        []byte
 	URL         string
 	HTML        string
@@ -163,7 +167,19 @@ func New(options Options) (*Window, error) {
 	return nil, errors.New("Failed to create window")
 }
 
-func (m *module) New(options Options) (*Window, error) {
+func (m *module) New(options Options, call *rpc.Call) (*Window, error) {
+	if options.IconSel != "" {
+		resp, err := call.Caller.Call(context.Background(), options.IconSel, nil, nil)
+		if err != nil {
+			return nil, err
+		}
+		ch := resp.Channel
+		defer ch.Close()
+		options.Icon, err = ioutil.ReadAll(ch)
+		if err != nil {
+			return nil, err
+		}
+	}
 	ret := make(chan retVal)
 	core.Dispatch(func() {
 		w, err := New(options)
