@@ -202,16 +202,19 @@ func (m *module) Destroy(h core.Handle) (bool, error) {
 }
 
 func (w *Window) Destroy() bool {
+	w.mu.Lock()
+
 	if w.destroyed {
+		w.mu.Unlock()
 		return false
 	}
 
 	success := C.window_destroy(C.int(w.ID))
 	if !fromCBool(success) {
+		w.mu.Unlock()
 		return false
 	}
 
-	w.mu.Lock()
 	w.destroyed = true
 	w.mu.Unlock()
 
