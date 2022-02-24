@@ -7,7 +7,17 @@ import "C"
 
 import (
 	"unsafe"
+
+	"github.com/progrium/hostbridge/bridge/core"
 )
+
+var Module *module
+
+func init() {
+	Module = &module{}
+}
+
+type module struct{}
 
 type Display struct {
 	Name        string
@@ -46,4 +56,12 @@ func Displays() []Display {
 	}
 
 	return result
+}
+
+func (m module) Displays() []Display {
+	ret := make(chan []Display)
+	core.Dispatch(func() {
+		ret <- Displays()
+	})
+	return <-ret
 }

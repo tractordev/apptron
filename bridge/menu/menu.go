@@ -5,7 +5,13 @@ package menu
 */
 import "C"
 
-type Handle int
+var Module *module
+
+func init() {
+	Module = &module{}
+}
+
+type module struct{}
 
 type Menu struct {
 	/*
@@ -30,30 +36,26 @@ type Item struct {
 	SubMenu []Item
 }
 
-var AppMenu Menu
-var AppMenuWasSet bool
-
-func init() {
-	AppMenu = New([]Item{})
-	AppMenuWasSet = false
+func New(items []Item) *Menu {
+	return Module.New(items)
 }
 
-func New(items []Item) Menu {
-	menu := C.menu_create()
+func (m module) New(items []Item) *Menu {
+	cmenu := C.menu_create()
 
 	for _, it := range items {
 		if len(it.SubMenu) > 0 {
-			submenu := New(it.SubMenu)
-			C.menu_add_submenu(menu, C.CString(it.Title), toCBool(it.Enabled), submenu.Handle)
+			submenu := m.New(it.SubMenu)
+			C.menu_add_submenu(cmenu, C.CString(it.Title), toCBool(it.Enabled), submenu.Handle)
 		} else {
-			C.menu_add_item(menu, buildCMenuItem(it))
+			C.menu_add_item(cmenu, buildCMenuItem(it))
 		}
 	}
 
-	result := Menu{}
-	result.Handle = menu
+	menu := &Menu{}
+	menu.Handle = cmenu
 
-	return result
+	return menu
 }
 
 func buildCMenuItem(item Item) C.Menu_Item {
@@ -72,8 +74,4 @@ func toCBool(it bool) C.uchar {
 	}
 
 	return C.uchar(0)
-}
-
-func toBool(it C.uchar) bool {
-	return int(it) != 0
 }

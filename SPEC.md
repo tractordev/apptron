@@ -83,15 +83,22 @@ Object representing a window
 
 ```golang
 type Window struct {
+
+  // options or setters only
 	Title       string
-	Transparent bool
-	Size        Size
-	Position    Position
-	AlwaysOnTop bool
-	Fullscreen  bool
-	MinSize     Size
-	MaxSize     Size
 	Resizable   bool
+	AlwaysOnTop bool
+  MinSize     Size
+	MaxSize     Size
+  Visible     bool // user might be able to change?
+  Frameless   bool
+	
+  // options, setter, or user changeable
+  Maximized   bool      // pollable with is_maximized
+  Size        Size      // Resized event
+	Position    Position  // Moved event
+  Fullscreen  bool      // pollable with fullscreen
+  Focused     bool      // Focused event
 }
 ```
 

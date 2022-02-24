@@ -10,6 +10,14 @@ import (
 	"unsafe"
 )
 
+var Module *module
+
+func init() {
+	Module = &module{}
+}
+
+type module struct{}
+
 type Notification struct {
 	Title    string
 	Subtitle string // for MacOS only
@@ -35,15 +43,27 @@ type MessageDialog struct {
 }
 
 func ShowNotification(n Notification) {
+	Module.ShowNotification(n)
+}
+
+func (m module) ShowNotification(n Notification) {
 	C.shell_show_notification(C.CString(n.Title), C.CString(n.Subtitle), C.CString(n.Body))
 }
 
 func ShowMessage(msg MessageDialog) bool {
-	result := C.shell_show_dialog(C.CString(msg.Title), C.CString(msg.Body), C.CString(msg.Level), C.CString(msg.Buttons))
-	return toBool(result)
+	return Module.ShowMessage(msg)
+}
+
+func (m module) ShowMessage(msg MessageDialog) bool {
+	return fromCBool(
+		C.shell_show_dialog(C.CString(msg.Title), C.CString(msg.Body), C.CString(msg.Level), C.CString(msg.Buttons)))
 }
 
 func ShowFilePicker(fd FileDialog) []string {
+	return Module.ShowFilePicker(fd)
+}
+
+func (m module) ShowFilePicker(fd FileDialog) []string {
 	// @Cleanup: reset these at frame boundaries in the event loop?
 	C.reset_temporary_storage()
 
@@ -64,37 +84,54 @@ func ShowFilePicker(fd FileDialog) []string {
 }
 
 func ReadClipboard() string {
-	C.reset_temporary_storage()
+	return Module.ReadClipboard()
+}
 
-	result := C.shell_read_clipboard()
-	return C.GoString(result)
+func (m module) ReadClipboard() string {
+	C.reset_temporary_storage()
+	return C.GoString(C.shell_read_clipboard())
 }
 
 func WriteClipboard(text string) bool {
-	result := C.shell_write_clipboard(C.CString(text))
-	return toBool(result)
+	return Module.WriteClipboard(text)
+}
+
+func (m module) WriteClipboard(text string) bool {
+	return fromCBool(C.shell_write_clipboard(C.CString(text)))
 }
 
 func RegisterShortcut(accelerator string) bool {
-	result := C.shell_register_shortcut(C.CString(accelerator))
-	return toBool(result)
+	return Module.RegisterShortcut(accelerator)
+}
+
+func (m module) RegisterShortcut(accelerator string) bool {
+	return fromCBool(C.shell_register_shortcut(C.CString(accelerator)))
 }
 
 func IsShortcutRegistered(accelerator string) bool {
-	result := C.shell_is_shortcut_registered(C.CString(accelerator))
-	return toBool(result)
+	return Module.IsShortcutRegistered(accelerator)
+}
+
+func (m module) IsShortcutRegistered(accelerator string) bool {
+	return fromCBool(C.shell_is_shortcut_registered(C.CString(accelerator)))
 }
 
 func UnregisterShortcut(accelerator string) bool {
-	result := C.shell_unregister_shortcut(C.CString(accelerator))
-	return toBool(result)
+	return Module.UnregisterShortcut(accelerator)
+}
+
+func (m module) UnregisterShortcut(accelerator string) bool {
+	return fromCBool(C.shell_unregister_shortcut(C.CString(accelerator)))
 }
 
 func UnregisterAllShortcuts() bool {
-	result := C.shell_unregister_all_shortcuts()
-	return toBool(result)
+	return Module.UnregisterAllShortcuts()
 }
 
-func toBool(it C.uchar) bool {
+func (m module) UnregisterAllShortcuts() bool {
+	return fromCBool(C.shell_unregister_all_shortcuts())
+}
+
+func fromCBool(it C.uchar) bool {
 	return int(it) != 0
 }

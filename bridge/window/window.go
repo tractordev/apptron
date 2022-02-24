@@ -8,12 +8,25 @@ package window
 import "C"
 
 import (
+	"context"
 	"errors"
+	"io/ioutil"
 	"sync"
 	"unsafe"
 
-	"github.com/progrium/hostbridge/bridge/menu"
+	"github.com/progrium/hostbridge/bridge/app"
+	"github.com/progrium/hostbridge/bridge/core"
+	"github.com/progrium/qtalk-go/rpc"
 )
+
+var (
+	Module       *module
+	ErrBadHandle = errors.New("bad handle")
+)
+
+func init() {
+	Module = &module{}
+}
 
 type module struct {
 	mu sync.Mutex
@@ -22,62 +35,49 @@ type module struct {
 	shouldQuit bool
 }
 
-type Position struct {
-	X float64
-	Y float64
+type retVal struct {
+	V interface{}
+	E error
 }
-
-type Size struct {
-	Width  float64
-	Height float64
-}
-
-type Handle int
 
 type Window struct {
-	ID          Handle
+	ID          core.Handle
 	Title       string
 	Transparent bool
 
 	/*
-		Size        Size
-		Position    Position
+		Size        core.Size
+		Position    core.Position
 		AlwaysOnTop bool
 		Fullscreen  bool
-		MinSize     Size
-		MaxSize     Size
+		MinSize     core.Size
+		MaxSize     core.Size
 		Resizable   bool
 	*/
 
 	destroyed bool
+	mu        sync.Mutex
 }
 
 type Options struct {
 	AlwaysOnTop bool
 	Frameless   bool
 	Fullscreen  bool
-	Size        Size
-	MinSize     Size
-	MaxSize     Size
+	Size        core.Size
+	MinSize     core.Size
+	MaxSize     core.Size
 	Maximized   bool
-	Position    Position
+	Position    core.Position
 	Resizable   bool
 	Title       string
 	Transparent bool
 	Visible     bool
 	Center      bool
+	IconSel     string
 	Icon        []byte
 	URL         string
 	HTML        string
 	Script      string
-}
-
-var EventLoop C.EventLoop
-var Module *module
-
-func init() {
-	EventLoop = C.create_event_loop()
-	Module = &module{}
 }
 
 func All() (result []Window) {
@@ -85,10 +85,8 @@ func All() (result []Window) {
 }
 
 func (m *module) All() (result []Window) {
-	/*
-		module.mu.Lock()
-		defer module.mu.Unlock()
-	*/
+	m.mu.Lock()
+	defer m.mu.Unlock()
 
 	for _, it := range m.windows {
 		if !it.destroyed {
@@ -99,11 +97,9 @@ func (m *module) All() (result []Window) {
 	return result
 }
 
-func (m *module) FindIndexByID(windowID Handle) int {
-	/*
-		module.mu.Lock()
-		defer module.mu.Unlock()
-	*/
+func (m *module) FindIndexByID(windowID core.Handle) int {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 
 	var result int = -1
 
@@ -117,218 +113,363 @@ func (m *module) FindIndexByID(windowID Handle) int {
 	return result
 }
 
-func (m *module) FindByID(windowID Handle) *Window {
+func (m *module) FindByID(windowID core.Handle) *Window {
 	index := m.FindIndexByID(windowID)
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	if index >= 0 {
 		return &m.windows[index]
 	}
 	return nil
 }
 
-func Create(options Options) (*Window, error) {
-	return Module.Create(options)
-}
-
-func (m *module) Create(options Options) (*Window, error) {
+func New(options Options) (*Window, error) {
 	opts := C.Window_Options{
 		always_on_top: toCBool(options.AlwaysOnTop),
-		frameless:   toCBool(options.Frameless),
-		fullscreen: toCBool(options.Fullscreen),
-		size: C.Size{ width: C.double(options.Size.Width), height: C.double(options.Size.Height) },
-		min_size: C.Size{ width: C.double(options.MinSize.Width), height: C.double(options.MinSize.Height) },
-		max_size: C.Size{ width: C.double(options.MaxSize.Width), height: C.double(options.MaxSize.Height) },
-		maximized: toCBool(options.Maximized),
-		position: C.Position{ x: C.double(options.Position.X), y: C.double(options.Position.Y) },
-		resizable: toCBool(options.Resizable),
-		title: C.CString(options.Title),
-		transparent: toCBool(options.Transparent),
-		visible: toCBool(options.Visible),
-		center: toCBool(options.Center),
-		icon: C.Icon{data: (*C.uchar)(nil), size: C.int(0)},
-		url: C.CString(options.URL),
-		html: C.CString(options.HTML),
-		script: C.CString(options.Script),
+		frameless:     toCBool(options.Frameless),
+		fullscreen:    toCBool(options.Fullscreen),
+		size:          C.Size{width: C.double(options.Size.Width), height: C.double(options.Size.Height)},
+		min_size:      C.Size{width: C.double(options.MinSize.Width), height: C.double(options.MinSize.Height)},
+		max_size:      C.Size{width: C.double(options.MaxSize.Width), height: C.double(options.MaxSize.Height)},
+		maximized:     toCBool(options.Maximized),
+		position:      C.Position{x: C.double(options.Position.X), y: C.double(options.Position.Y)},
+		resizable:     toCBool(options.Resizable),
+		title:         C.CString(options.Title),
+		transparent:   toCBool(options.Transparent),
+		visible:       toCBool(options.Visible),
+		center:        toCBool(options.Center),
+		icon:          C.Icon{data: (*C.uchar)(nil), size: C.int(0)},
+		url:           C.CString(options.URL),
+		html:          C.CString(options.HTML),
+		script:        C.CString(options.Script),
 	}
 
 	if len(options.Icon) > 0 {
 		opts.icon = C.Icon{data: (*C.uchar)(unsafe.Pointer(&options.Icon[0])), size: C.int(len(options.Icon))}
 	}
 
-	appMenu := *(*C.Menu)(unsafe.Pointer(&menu.AppMenu))
-	result := C.window_create(EventLoop, opts, appMenu)
+	appMenu := *(*C.Menu)(unsafe.Pointer(app.Module.Menu()))
+	eventLoop := *(*C.EventLoop)(core.EventLoop())
+	result := C.window_create(eventLoop, opts, appMenu)
 	id := int(result)
 
 	window := Window{}
-	window.ID = Handle(id)
+	window.ID = core.Handle(id)
 	window.Transparent = options.Transparent
 
 	if id >= 0 {
-		m.windows = append(m.windows, window)
+		Module.mu.Lock()
+		Module.windows = append(Module.windows, window)
+		Module.mu.Unlock()
 		return &window, nil
 	}
 
 	return nil, errors.New("Failed to create window")
 }
 
-func (m *module) Destroy(w *Window) bool {
-	return w.Destroy()
-}
-
-func (it *Window) Destroy() bool {
-	result := false
-
-	if !it.destroyed {
-		success := C.window_destroy(C.int(it.ID))
-		if toBool(success) {
-			it.destroyed = true
-			result = true
-
-			index := Module.FindIndexByID(it.ID)
-			if index >= 0 {
-				Module.windows = append(Module.windows[:index], Module.windows[index+1:]...)
-			}
+func (m *module) New(options Options, call *rpc.Call) (*Window, error) {
+	if options.IconSel != "" {
+		resp, err := call.Caller.Call(context.Background(), options.IconSel, nil, nil)
+		if err != nil {
+			return nil, err
+		}
+		ch := resp.Channel
+		defer ch.Close()
+		options.Icon, err = ioutil.ReadAll(ch)
+		if err != nil {
+			return nil, err
 		}
 	}
-
-	return result
+	ret := make(chan retVal)
+	core.Dispatch(func() {
+		w, err := New(options)
+		ret <- retVal{w, err}
+	})
+	r := <-ret
+	return r.V.(*Window), r.E
 }
 
-func (m *module) IsDestroyed(w *Window) bool {
-	return w.IsDestroyed()
+func (m *module) Destroy(h core.Handle) (bool, error) {
+	w := m.FindByID(h)
+	if w == nil {
+		return false, ErrBadHandle
+	}
+	ret := make(chan bool)
+	core.Dispatch(func() {
+		ret <- w.Destroy()
+	})
+	return <-ret, nil
 }
 
-func (it *Window) IsDestroyed() bool {
-	return it.destroyed
+func (w *Window) Destroy() bool {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	if w.destroyed {
+		return false
+	}
+
+	success := C.window_destroy(C.int(w.ID))
+	if !fromCBool(success) {
+		return false
+	}
+	w.destroyed = true
+	index := Module.FindIndexByID(w.ID)
+	if index >= 0 {
+		Module.mu.Lock()
+		Module.windows = append(Module.windows[:index], Module.windows[index+1:]...)
+		Module.mu.Unlock()
+	}
+	return true
 }
 
-func (m *module) Focus(w *Window) {
-	w.Focus()
+func (m *module) IsDestroyed(h core.Handle) (bool, error) {
+	w := m.FindByID(h)
+	if w == nil {
+		return false, ErrBadHandle
+	}
+	return w.IsDestroyed(), nil
 }
 
-func (it *Window) Focus() {
-	C.window_set_focused(C.int(it.ID))
+func (w *Window) IsDestroyed() bool {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	return w.destroyed
 }
 
-func (m *module) SetVisible(w *Window, visible bool) {
-	w.SetVisible(visible)
+func (m *module) Focus(h core.Handle) error {
+	w := m.FindByID(h)
+	if w == nil {
+		return ErrBadHandle
+	}
+	core.Dispatch(func() {
+		w.Focus()
+	})
+	return nil
+}
+
+func (w *Window) Focus() {
+	C.window_set_focused(C.int(w.ID))
+}
+
+func (m *module) SetVisible(h core.Handle, visible bool) error {
+	w := m.FindByID(h)
+	if w == nil {
+		return ErrBadHandle
+	}
+	core.Dispatch(func() {
+		w.SetVisible(visible)
+	})
+	return nil
 }
 
 func (it *Window) SetVisible(visible bool) {
 	C.window_set_visible(C.int(it.ID), toCBool(visible))
 }
 
-func (m *module) IsVisible(w *Window) bool {
-	return w.IsVisible()
+func (m *module) IsVisible(h core.Handle) (bool, error) {
+	w := m.FindByID(h)
+	if w == nil {
+		return false, ErrBadHandle
+	}
+	ret := make(chan bool)
+	core.Dispatch(func() {
+		ret <- w.IsVisible()
+	})
+	return <-ret, nil
 }
 
-func (it *Window) IsVisible() bool {
-	result := C.window_is_visible(C.int(it.ID))
-	return toBool(result)
+func (w *Window) IsVisible() bool {
+	return fromCBool(C.window_is_visible(C.int(w.ID)))
 }
 
-func (m *module) SetMaximized(w *Window, maximized bool) {
-	w.SetMaximized(maximized)
+func (m *module) SetMaximized(h core.Handle, maximized bool) error {
+	w := m.FindByID(h)
+	if w == nil {
+		return ErrBadHandle
+	}
+	core.Dispatch(func() {
+		w.SetMaximized(maximized)
+	})
+	return nil
 }
 
-func (it *Window) SetMaximized(maximized bool) {
-	C.window_set_maximized(C.int(it.ID), toCBool(maximized))
+func (w *Window) SetMaximized(maximized bool) {
+	C.window_set_maximized(C.int(w.ID), toCBool(maximized))
 }
 
-func (m *module) SetMinimized(w *Window, minimized bool) {
-	w.SetMinimized(minimized)
+func (m *module) SetMinimized(h core.Handle, minimized bool) error {
+	w := m.FindByID(h)
+	if w == nil {
+		return ErrBadHandle
+	}
+	core.Dispatch(func() {
+		w.SetMinimized(minimized)
+	})
+	return nil
 }
 
-func (it *Window) SetMinimized(minimized bool) {
-	C.window_set_minimized(C.int(it.ID), toCBool(minimized))
+func (w *Window) SetMinimized(minimized bool) {
+	C.window_set_minimized(C.int(w.ID), toCBool(minimized))
 }
 
-func (m *module) SetFullscreen(w *Window, fullscreen bool) {
-	w.SetFullscreen(fullscreen)
+func (m *module) SetFullscreen(h core.Handle, fullscreen bool) error {
+	w := m.FindByID(h)
+	if w == nil {
+		return ErrBadHandle
+	}
+	core.Dispatch(func() {
+		w.SetFullscreen(fullscreen)
+	})
+	return nil
 }
 
-func (it *Window) SetFullscreen(fullscreen bool) {
-	C.window_set_fullscreen(C.int(it.ID), toCBool(fullscreen))
+func (w *Window) SetFullscreen(fullscreen bool) {
+	C.window_set_fullscreen(C.int(w.ID), toCBool(fullscreen))
 }
 
-func (m *module) SetSize(w *Window, size Size) {
-	w.SetSize(size)
+func (m *module) SetSize(h core.Handle, size core.Size) error {
+	w := m.FindByID(h)
+	if w == nil {
+		return ErrBadHandle
+	}
+	core.Dispatch(func() {
+		w.SetSize(size)
+	})
+	return nil
 }
 
-func (it *Window) SetSize(size Size) {
+func (w *Window) SetSize(size core.Size) {
 	arg := C.Size{width: C.double(size.Width), height: C.double(size.Height)}
-	C.window_set_size(C.int(it.ID), arg)
+	C.window_set_size(C.int(w.ID), arg)
 }
 
-func (m *module) SetMinSize(w *Window, size Size) {
-	w.SetMinSize(size)
+func (m *module) SetMinSize(h core.Handle, size core.Size) error {
+	w := m.FindByID(h)
+	if w == nil {
+		return ErrBadHandle
+	}
+	core.Dispatch(func() {
+		w.SetMinSize(size)
+	})
+	return nil
 }
 
-func (it *Window) SetMinSize(size Size) {
+func (w *Window) SetMinSize(size core.Size) {
 	arg := C.Size{width: C.double(size.Width), height: C.double(size.Height)}
-	C.window_set_min_size(C.int(it.ID), arg)
+	C.window_set_min_size(C.int(w.ID), arg)
 }
 
-func (m *module) SetMaxSize(w *Window, size Size) {
-	w.SetMaxSize(size)
+func (m *module) SetMaxSize(h core.Handle, size core.Size) error {
+	w := m.FindByID(h)
+	if w == nil {
+		return ErrBadHandle
+	}
+	core.Dispatch(func() {
+		w.SetMaxSize(size)
+	})
+	return nil
 }
 
-func (it *Window) SetMaxSize(size Size) {
+func (w *Window) SetMaxSize(size core.Size) {
 	arg := C.Size{width: C.double(size.Width), height: C.double(size.Height)}
-	C.window_set_max_size(C.int(it.ID), arg)
+	C.window_set_max_size(C.int(w.ID), arg)
 }
 
-func (m *module) SetResizable(w *Window, resizable bool) {
-	w.SetResizable(resizable)
+func (m *module) SetResizable(h core.Handle, resizable bool) error {
+	w := m.FindByID(h)
+	if w == nil {
+		return ErrBadHandle
+	}
+	core.Dispatch(func() {
+		w.SetResizable(resizable)
+	})
+	return nil
 }
 
-func (it *Window) SetResizable(resizable bool) {
-	C.window_set_resizable(C.int(it.ID), toCBool(resizable))
+func (w *Window) SetResizable(resizable bool) {
+	C.window_set_resizable(C.int(w.ID), toCBool(resizable))
 }
 
-func (m *module) SetAlwaysOnTop(w *Window, always bool) {
-	w.SetAlwaysOnTop(always)
+func (m *module) SetAlwaysOnTop(h core.Handle, always bool) error {
+	w := m.FindByID(h)
+	if w == nil {
+		return ErrBadHandle
+	}
+	core.Dispatch(func() {
+		w.SetAlwaysOnTop(always)
+	})
+	return nil
 }
 
-func (it *Window) SetAlwaysOnTop(always bool) {
-	C.window_set_always_on_top(C.int(it.ID), toCBool(always))
+func (w *Window) SetAlwaysOnTop(always bool) {
+	C.window_set_always_on_top(C.int(w.ID), toCBool(always))
 }
 
-func (m *module) SetPosition(w *Window, position Position) {
-	w.SetPosition(position)
+func (m *module) SetPosition(h core.Handle, position core.Position) error {
+	w := m.FindByID(h)
+	if w == nil {
+		return ErrBadHandle
+	}
+	core.Dispatch(func() {
+		w.SetPosition(position)
+	})
+	return nil
 }
 
-func (it *Window) SetPosition(position Position) {
+func (w *Window) SetPosition(position core.Position) {
 	arg := C.Position{x: C.double(position.X), y: C.double(position.Y)}
-	C.window_set_position(C.int(it.ID), arg)
+	C.window_set_position(C.int(w.ID), arg)
 }
 
-func (m *module) SetTitle(w *Window, title string) {
-	w.SetTitle(title)
+func (m *module) SetTitle(h core.Handle, title string) error {
+	w := m.FindByID(h)
+	if w == nil {
+		return ErrBadHandle
+	}
+	core.Dispatch(func() {
+		w.SetTitle(title)
+	})
+	return nil
 }
 
-func (it *Window) SetTitle(title string) {
-	success := C.window_set_title(C.int(it.ID), C.CString(title))
-	if toBool(success) {
-		it.Title = title
+func (w *Window) SetTitle(title string) {
+	if fromCBool(C.window_set_title(C.int(w.ID), C.CString(title))) {
+		w.Title = title
 	}
 }
 
-func (m *module) GetOuterPosition(w *Window) Position {
-	return w.GetOuterPosition()
+func (m *module) GetOuterPosition(h core.Handle) (core.Position, error) {
+	w := m.FindByID(h)
+	if w == nil {
+		return core.Position{}, ErrBadHandle
+	}
+	ret := make(chan core.Position)
+	core.Dispatch(func() {
+		ret <- w.GetOuterPosition()
+	})
+	return <-ret, nil
 }
 
-func (it *Window) GetOuterPosition() Position {
-	result := C.window_get_outer_position(C.int(it.ID))
-	return Position{X: float64(result.x), Y: float64(result.y)}
+func (w *Window) GetOuterPosition() core.Position {
+	result := C.window_get_outer_position(C.int(w.ID))
+	return core.Position{X: float64(result.x), Y: float64(result.y)}
 }
 
-func (m *module) GetOuterSize(w *Window) Size {
-	return w.GetOuterSize()
+func (m *module) GetOuterSize(h core.Handle) (core.Size, error) {
+	w := m.FindByID(h)
+	if w == nil {
+		return core.Size{}, ErrBadHandle
+	}
+	ret := make(chan core.Size)
+	core.Dispatch(func() {
+		ret <- w.GetOuterSize()
+	})
+	return <-ret, nil
 }
 
-func (it *Window) GetOuterSize() Size {
-	result := C.window_get_outer_size(C.int(it.ID))
-	return Size{Width: float64(result.width), Height: float64(result.height)}
+func (w *Window) GetOuterSize() core.Size {
+	result := C.window_get_outer_size(C.int(w.ID))
+	return core.Size{Width: float64(result.width), Height: float64(result.height)}
 }
 
 func toCBool(it bool) C.uchar {
@@ -339,6 +480,6 @@ func toCBool(it bool) C.uchar {
 	return C.uchar(0)
 }
 
-func toBool(it C.uchar) bool {
+func fromCBool(it C.uchar) bool {
 	return int(it) != 0
 }
