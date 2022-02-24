@@ -33,6 +33,15 @@ mod win32 {
   }
 }
 
+#[cfg(target_os = "macos")]
+use objc::{
+	msg_send,
+	class,
+	sel,
+	sel_impl,
+  runtime::{Object, BOOL, YES},
+};
+
 //
 // C Types
 //
@@ -578,15 +587,24 @@ pub extern "C" fn window_is_focused(window_id: CInt) -> CBool {
 
 	find_item!(WINDOWS, window_id, |it: &Window| {
 
+		let handle = it.webview.window().raw_window_handle();
+
 		#[cfg(target_os = "windows")]
 		{
-			let handle = it.webview.window().raw_window_handle();
-
 			if let RawWindowHandle::Win32(handle) = handle {
 				result = win32::GetActiveWindow() == handle.hwnd;
 			}
 		}
-		
+
+		#[cfg(target_os = "macos")]
+		{
+			if let RawWindowHandle::AppKit(handle) = handle {
+				let is_key_window: BOOL = msg_send!(handle.ns_window as *const Object, isKeyWindow);
+
+				result = is_key_window == YES;
+			}
+		}
+
 	});
 
 	result
