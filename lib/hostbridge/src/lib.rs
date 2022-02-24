@@ -16,20 +16,19 @@ use wry::{
 		global_shortcut::ShortcutManager,
 	  menu::{ContextMenu, MenuBar, MenuItemAttributes},
 	  system_tray::SystemTrayBuilder,
-		window::{WindowBuilder, Fullscreen, Icon},
+		window::{WindowBuilder, Fullscreen},
 	},
 	webview::{WebViewBuilder},
 };
 
 use raw_window_handle::{HasRawWindowHandle, RawWindowHandle};
 
-#[allow(non_camel_case_types)]
 #[cfg(target_os = "windows")]
 mod win32 {
   type HWND = *const libc::c_void;
 
   #[link(name = "user32")]
-  extern "stdcall" {
+  extern "C" {
     pub fn GetActiveWindow() ->  HWND;
   }
 }
@@ -576,6 +575,7 @@ pub extern "C" fn window_is_visible(window_id: CInt) -> CBool {
 #[no_mangle]
 pub extern "C" fn window_is_focused(window_id: CInt) -> CBool {
 	let mut result = false;
+
 	find_item!(WINDOWS, window_id, |it: &Window| {
 
 		#[cfg(target_os = "windows")]
@@ -586,8 +586,9 @@ pub extern "C" fn window_is_focused(window_id: CInt) -> CBool {
 				result = win32::GetActiveWindow() == handle.hwnd;
 			}
 		}
-
+		
 	});
+
 	result
 }
 

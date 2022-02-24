@@ -31,8 +31,8 @@ func init() {
 type module struct {
 	mu sync.Mutex
 
-	windows         []Window
-	shouldQuit      bool
+	windows    []Window
+	shouldQuit bool
 }
 
 type retVal struct {
