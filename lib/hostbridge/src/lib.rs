@@ -859,7 +859,8 @@ pub extern fn shell_show_file_picker(title: CString, directory: CString, filenam
 }
 
 #[no_mangle]
-pub extern "C" fn screen_get_available_displays() -> CArray {
+#[allow(improper_ctypes_definitions)]
+pub extern "C" fn screen_get_available_displays(event_loop: CEventLoop) -> CArray {
 	let mut monitors: Vec<wry::application::monitor::MonitorHandle> = Vec::new();
 
 	let first_user_window = unsafe { WINDOWS.first() };
@@ -869,8 +870,6 @@ pub extern "C" fn screen_get_available_displays() -> CArray {
 		monitors = window.available_monitors().collect::<Vec<_>>();
 	} else {
 		// @Incomplete: does this cause any visual artifcats on any operating systems?
-		let event_loop = EventLoop::new();
-
 		let window_builder = WindowBuilder::new()
 			.with_visible(false)
 			.with_decorations(false)
@@ -882,6 +881,8 @@ pub extern "C" fn screen_get_available_displays() -> CArray {
 			monitors = window.available_monitors().collect::<Vec<_>>();
 		}
 	}
+
+	forget(event_loop);
 
 	let array: Vec<CDisplay> = monitors.into_iter().map(|it| {
 		let name = it.name().unwrap();

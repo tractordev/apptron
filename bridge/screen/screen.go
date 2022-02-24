@@ -37,7 +37,8 @@ type Size struct {
 }
 
 func Displays() []Display {
-	array := C.screen_get_available_displays()
+	eventLoop := *(*C.EventLoop)(core.EventLoop())
+	array := C.screen_get_available_displays(eventLoop)
 
 	n := int(array.count)
 	result := make([]Display, n)

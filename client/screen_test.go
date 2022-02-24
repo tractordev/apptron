@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-func testScreenModule(t *testing.T) {
+func TestScreenModule(t *testing.T) {
 	client, cleanup := setupBridgeClient(t)
 	defer cleanup()
 
