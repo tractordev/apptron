@@ -97,6 +97,24 @@ func (m *module) All() (result []Window) {
 	return result
 }
 
+func Focused() *Window {
+	return Module.Focused()
+}
+
+func (m *module) Focused() *Window {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	for index, it := range m.windows {
+		is_focused := fromCBool(C.window_is_focused(C.int(it.ID)))
+		if is_focused {
+			return &m.windows[index]
+		}
+	}
+
+	return nil
+}
+
 func (m *module) FindIndexByID(windowID core.Handle) int {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -111,6 +129,10 @@ func (m *module) FindIndexByID(windowID core.Handle) int {
 	}
 
 	return result
+}
+
+func FindByID(windowID core.Handle) *Window {
+	return Module.FindByID(windowID)
 }
 
 func (m *module) FindByID(windowID core.Handle) *Window {

@@ -922,7 +922,9 @@ dependencies = [
  "ico",
  "libc",
  "notify-rust",
+ "objc",
  "once_cell",
+ "raw-window-handle",
  "rfd",
  "wry",
 ]
