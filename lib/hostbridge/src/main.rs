@@ -2,7 +2,8 @@ use hostbridge::*;
 use std::mem::{size_of};
 
 fn main() {
-  let result = hostbridge::screen_get_available_displays();
+  let event_loop = hostbridge::create_event_loop();
+  let result = hostbridge::screen_get_available_displays(event_loop);
 
   for i in 0..result.count {
     let it: *mut CDisplay = unsafe { std::mem::transmute(result.data as usize + size_of::<CDisplay>() * i as usize) };

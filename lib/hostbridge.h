@@ -182,4 +182,4 @@ bool        shell_is_shortcut_registered(char *accelerator);
 bool        shell_unregister_shortcut(char *accelerator);
 bool        shell_unregister_all_shortcuts();
 
-DisplayArray screen_get_available_displays();
+DisplayArray screen_get_available_displays(EventLoop event_loop);
