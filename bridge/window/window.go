@@ -202,8 +202,6 @@ func (m *module) Destroy(h core.Handle) (bool, error) {
 }
 
 func (w *Window) Destroy() bool {
-	w.mu.Lock()
-
 	if w.destroyed {
 		return false
 	}
@@ -213,8 +211,8 @@ func (w *Window) Destroy() bool {
 		return false
 	}
 
+	w.mu.Lock()
 	w.destroyed = true
-
 	w.mu.Unlock()
 
 	index := Module.FindIndexByID(w.ID)
@@ -223,6 +221,7 @@ func (w *Window) Destroy() bool {
 		Module.windows = append(Module.windows[:index], Module.windows[index+1:]...)
 		Module.mu.Unlock()
 	}
+
 	return true
 }
 
