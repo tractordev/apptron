@@ -30,10 +30,11 @@ typedef enum EventType {
 	EventClose     = 1,
 	EventDestroyed = 2,
 	EventFocused   = 3,
-	EventResized   = 4,
-	EventMoved     = 5,
-	EventMenuItem  = 6,
-	EventShortcut  = 7,
+	EventBlurred   = 4,
+	EventResized   = 5,
+	EventMoved     = 6,
+	EventMenuItem  = 7,
+	EventShortcut  = 8,
 } EventType;
 
 typedef struct Event {
@@ -161,6 +162,7 @@ Position window_get_inner_position(int window_id);
 Size     window_get_inner_size(int window_id);
 double   window_get_dpi_scale(int window_id);
 bool     window_is_visible(int window_id);
+bool     window_is_focused(int window_id);
 
 Menu menu_create();
 bool menu_add_item(Menu menu, Menu_Item item);

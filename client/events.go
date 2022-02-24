@@ -14,6 +14,7 @@ const (
 	EventClose
 	EventDestroyed
 	EventFocused
+	EventBlurred
 	EventResized
 	EventMoved
 	EventMenuItem
@@ -21,7 +22,7 @@ const (
 )
 
 func (e EventType) String() string {
-	return []string{"none", "close", "destroyed", "focused", "resized", "moved", "menu-item", "shortcut"}[e]
+	return []string{"none", "close", "destroy", "focus", "blur", "resize", "move", "menu", "shortcut"}[e]
 }
 
 type Event struct {
