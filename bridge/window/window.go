@@ -202,8 +202,6 @@ func (m *module) Destroy(h core.Handle) (bool, error) {
 }
 
 func (w *Window) Destroy() bool {
-	w.mu.Lock()
-	defer w.mu.Unlock()
 	if w.destroyed {
 		return false
 	}
@@ -213,6 +211,7 @@ func (w *Window) Destroy() bool {
 		return false
 	}
 	w.destroyed = true
+	
 	index := Module.FindIndexByID(w.ID)
 	if index >= 0 {
 		Module.mu.Lock()
