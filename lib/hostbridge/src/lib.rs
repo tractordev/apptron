@@ -139,6 +139,7 @@ struct Shortcut {
 }
 
 static mut WINDOWS: Vec<Window> = Vec::new();
+static mut NEXT_WINDOW_ID: i32 = 1;
 static mut SHORTCUT_MANAGER: Option<ShortcutManager> = None;
 static mut SHORTCUTS: Lazy<HashMap<u16, Shortcut>> = Lazy::new(|| {
   HashMap::new()
@@ -394,7 +395,8 @@ pub extern "C" fn window_create(event_loop: CEventLoop, options: CWindow_Options
 	let result: i32;
 
 	unsafe {
-		result = WINDOWS.len() as i32;
+		result = NEXT_WINDOW_ID;
+		NEXT_WINDOW_ID += 1;
 		let the_window = Window{ id: result, webview };
 
 		WINDOWS.push(the_window);
