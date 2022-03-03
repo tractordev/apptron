@@ -14,10 +14,6 @@ const (
 	EventClose
 	EventDestroyed
 	EventFocused
-<<<<<<< HEAD
-	EventBlurred
-=======
->>>>>>> 6bff410 (refactor bridge packages to export to rpc easily, start client with tests)
 	EventResized
 	EventMoved
 	EventMenuItem
@@ -25,11 +21,7 @@ const (
 )
 
 func (e EventType) String() string {
-<<<<<<< HEAD
-	return []string{"none", "close", "destroy", "focus", "blur", "resize", "move", "menu", "shortcut"}[e]
-=======
 	return []string{"none", "close", "destroyed", "focused", "resized", "moved", "menu-item", "shortcut"}[e]
->>>>>>> 6bff410 (refactor bridge packages to export to rpc easily, start client with tests)
 }
 
 type Event struct {
