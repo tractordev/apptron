@@ -14,6 +14,7 @@ const (
 	EventClose
 	EventDestroyed
 	EventFocused
+	EventBlurred
 	EventResized
 	EventMoved
 	EventMenuItem
@@ -21,7 +22,7 @@ const (
 )
 
 func (e EventType) String() string {
-	return []string{"none", "close", "destroyed", "focused", "resized", "moved", "menu-item", "shortcut"}[e]
+	return []string{"none", "close", "destroy", "focus", "blur", "resize", "move", "menu", "shortcut"}[e]
 }
 
 type Event struct {
@@ -54,6 +55,10 @@ func dispatchEvents(client *Client, resp *rpc.Response) {
 			w := client.Window.byID(e.WindowID)
 			if w != nil && w.OnResized != nil {
 				w.OnResized(e)
+			}
+		case EventShortcut:
+			if client.Shell.OnShortcut != nil {
+				client.Shell.OnShortcut(e)
 			}
 		}
 		// TODO: more cases

@@ -17,7 +17,7 @@ type ScreenModule struct {
 	client *Client
 }
 
-// Destroy
+// Displays
 func (m *ScreenModule) Displays(ctx context.Context) (ret []Display, err error) {
 	_, err = m.client.Call(ctx, "screen.Displays", fn.Args{}, &ret)
 	return

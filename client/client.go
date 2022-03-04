@@ -19,6 +19,9 @@ type Client struct {
 
 	Window *WindowModule
 	Screen *ScreenModule
+	Shell  *ShellModule
+	App    *AppModule
+	Menu   *MenuModule
 
 	files sync.Map
 }
@@ -55,6 +58,9 @@ func Dial(addr string) (*Client, error) {
 	client := &Client{Peer: peer}
 	client.Window = &WindowModule{client: client}
 	client.Screen = &ScreenModule{client: client}
+	client.App = &AppModule{client: client}
+	client.Menu = &MenuModule{client: client}
+	client.Shell = &ShellModule{client: client}
 	resp, err := client.Call(context.Background(), "Listen", nil, nil)
 	if err != nil {
 		return nil, err

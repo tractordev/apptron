@@ -9,7 +9,7 @@ import (
 	"testing"
 )
 
-func testWindowModule(t *testing.T) {
+func TestWindowModule(t *testing.T) {
 	client, cleanup := setupBridgeClient(t)
 	defer cleanup()
 
