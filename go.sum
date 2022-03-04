@@ -6,6 +6,8 @@ github.com/progrium/qtalk-go v0.5.1-0.20220217225312-a29547650bdf h1:TVNgeCp3a8l
 github.com/progrium/qtalk-go v0.5.1-0.20220217225312-a29547650bdf/go.mod h1:iUsmFliIv4xjVAbIsrfhOSKrf83tQqOLP+oAvaexKiw=
 github.com/progrium/qtalk-go v0.5.1-0.20220217235404-f7ad88d73ae2 h1:z8LoibDqKq73brwDZNsE2dtClA/kL3+oyax1xqjVrt8=
 github.com/progrium/qtalk-go v0.5.1-0.20220217235404-f7ad88d73ae2/go.mod h1:iUsmFliIv4xjVAbIsrfhOSKrf83tQqOLP+oAvaexKiw=
+github.com/progrium/qtalk-go v0.5.1-0.20220304004920-63c76b555fb1 h1:TqB4c3zHNoY6q6hqX4EOCQ8biqkTE8hoBTgBfftGGMw=
+github.com/progrium/qtalk-go v0.5.1-0.20220304004920-63c76b555fb1/go.mod h1:zAvCVqglCVTp54Dz01xp2g3X1K219WEZUxuK03EZ9ug=
 github.com/rs/xid v1.3.0 h1:6NjYksEUlhurdVehpc7S7dk6DAmcKv8V9gG0FsVN2U4=
 github.com/rs/xid v1.3.0/go.mod h1:trrq9SKmegXys3aeAKXMUTdJsYXVwGY3RLcfgqegfbg=
 golang.org/x/net v0.0.0-20210420210106-798c2154c571 h1:Q6Bg8xzKzpFPU4Oi1sBnBTHBwlMsLeEXpu4hYBY8rAg=
