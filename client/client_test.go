@@ -21,11 +21,6 @@ func TestMain(m *testing.M) {
 	core.Run(nil)
 }
 
-// func TestClient(t *testing.T) {
-// 	t.Run("window", testWindowModule)
-// 	t.Run("screen", testScreenModule)
-// }
-
 func setupBridgeClient(t *testing.T) (*Client, func()) {
 	l, err := net.Listen("tcp", ":0")
 	if err != nil {

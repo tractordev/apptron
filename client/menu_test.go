@@ -12,7 +12,7 @@ func TestMenuModule(t *testing.T) {
 
 	ctx := context.Background()
 
-	m, err := client.Menu.New(ctx, []Item{
+	m, err := client.Menu.New(ctx, []MenuItem{
 		{
 			Title:   "One",
 			Enabled: true,

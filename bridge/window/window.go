@@ -10,7 +10,6 @@ import "C"
 import (
 	"context"
 	"errors"
-	"io/ioutil"
 	"sync"
 	"unsafe"
 
@@ -189,13 +188,8 @@ func New(options Options) (*Window, error) {
 
 func (m *module) New(options Options, call *rpc.Call) (*Window, error) {
 	if options.IconSel != "" {
-		resp, err := call.Caller.Call(context.Background(), options.IconSel, nil, nil)
-		if err != nil {
-			return nil, err
-		}
-		ch := resp.Channel
-		defer ch.Close()
-		options.Icon, err = ioutil.ReadAll(ch)
+		var err error
+		options.Icon, err = core.FetchData(context.Background(), call, options.IconSel)
 		if err != nil {
 			return nil, err
 		}

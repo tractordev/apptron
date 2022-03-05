@@ -6,10 +6,12 @@ package app
 import "C"
 
 import (
+	"context"
 	"unsafe"
 
 	"github.com/progrium/hostbridge/bridge/core"
 	"github.com/progrium/hostbridge/bridge/menu"
+	"github.com/progrium/qtalk-go/rpc"
 )
 
 var Module *module
@@ -52,7 +54,9 @@ func NewIndicator(icon []byte, items []menu.Item) {
 	C.tray_set_system_tray(eventLoop, cicon, trayMenu)
 }
 
-func (m module) NewIndicator(icon []byte, items []menu.Item) {
+func (m module) NewIndicator(iconSel string, items []menu.Item, call *rpc.Call) {
+	var icon []byte
+	icon, _ = core.FetchData(context.Background(), call, iconSel)
 	core.Dispatch(func() {
 		NewIndicator(icon, items)
 	})

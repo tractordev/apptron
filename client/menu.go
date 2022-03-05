@@ -12,13 +12,13 @@ type Menu struct {
 	*/
 }
 
-type Item struct {
+type MenuItem struct {
 	ID          uint16
 	Title       string
 	Enabled     bool
 	Selected    bool
 	Accelerator string
-	SubMenu     []Item
+	SubMenu     []MenuItem
 }
 
 type MenuModule struct {
@@ -26,7 +26,7 @@ type MenuModule struct {
 }
 
 // New
-func (m *MenuModule) New(ctx context.Context, items []Item) (ret interface{}, err error) {
+func (m *MenuModule) New(ctx context.Context, items []MenuItem) (ret Menu, err error) {
 	_, err = m.client.Call(ctx, "menu.New", fn.Args{items}, &ret)
 	return
 }
