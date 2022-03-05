@@ -7,9 +7,12 @@ import (
 	"encoding/hex"
 	"io"
 	"log"
+	"os"
+	"os/exec"
 	"sync"
 
 	"github.com/progrium/qtalk-go/codec"
+	"github.com/progrium/qtalk-go/mux"
 	"github.com/progrium/qtalk-go/rpc"
 	"github.com/progrium/qtalk-go/talk"
 )
@@ -24,6 +27,18 @@ type Client struct {
 	Menu   *MenuModule
 
 	files sync.Map
+	cmd   *exec.Cmd
+}
+
+func (c *Client) Close() error {
+	ctx := context.Background()
+	if _, err := c.Call(ctx, "Shutdown", nil, nil); err != nil {
+		return err
+	}
+	if c.cmd != nil {
+		c.cmd.Process.Kill()
+	}
+	return c.Peer.Close()
 }
 
 func (c *Client) ServeData(d []byte) string {
@@ -50,11 +65,7 @@ func (c *Client) ServeData(d []byte) string {
 	return selector
 }
 
-func Dial(addr string) (*Client, error) {
-	peer, err := talk.Dial("tcp", addr, codec.JSONCodec{})
-	if err != nil {
-		return nil, err
-	}
+func New(peer *talk.Peer) *Client {
 	client := &Client{Peer: peer}
 	client.Window = &WindowModule{client: client}
 	client.Screen = &ScreenModule{client: client}
@@ -62,9 +73,43 @@ func Dial(addr string) (*Client, error) {
 	client.Menu = &MenuModule{client: client}
 	client.Shell = &ShellModule{client: client}
 	resp, err := client.Call(context.Background(), "Listen", nil, nil)
+	if err == nil {
+		go dispatchEvents(client, resp)
+	}
+	go client.Respond()
+	return client
+}
+
+func Dial(addr string) (*Client, error) {
+	peer, err := talk.Dial("tcp", addr, codec.JSONCodec{})
 	if err != nil {
 		return nil, err
 	}
-	go dispatchEvents(client, resp)
+	return New(peer), nil
+}
+
+func Spawn() (*Client, error) {
+	bridgecmd := os.Getenv("BRIDGECMD")
+	if bridgecmd == "" {
+		bridgecmd = "hostbridge"
+	}
+	cmd := exec.Command(bridgecmd)
+	wc, err := cmd.StdinPipe()
+	if err != nil {
+		return nil, err
+	}
+	rc, err := cmd.StdoutPipe()
+	if err != nil {
+		return nil, err
+	}
+	sess, err := mux.DialIO(wc, rc)
+	if err != nil {
+		return nil, err
+	}
+	if err := cmd.Start(); err != nil {
+		return nil, err
+	}
+	client := New(talk.NewPeer(sess, codec.JSONCodec{}))
+	client.cmd = cmd
 	return client, nil
 }

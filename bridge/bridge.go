@@ -26,6 +26,10 @@ func NewServer() *rpc.Server {
 		}
 	}))
 
+	mux.Handle("Shutdown", rpc.HandlerFunc(func(r rpc.Responder, c *rpc.Call) {
+		core.Quit()
+	}))
+
 	mux.Handle("window", fn.HandlerFrom(window.Module))
 	mux.Handle("menu", fn.HandlerFrom(menu.Module))
 	mux.Handle("app", fn.HandlerFrom(app.Module))

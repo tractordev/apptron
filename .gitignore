@@ -18,5 +18,7 @@
 /ffi-debug
 /ffi-demo
 /rpc-demo
+/hostbridge
+/hostbridge-demo
 lib/hostbridge/target
 lib/libhostbridge.a

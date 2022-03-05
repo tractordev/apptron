@@ -40,7 +40,6 @@ func Run() {
 		panic(err)
 	}
 	defer c.Close()
-	go c.Respond()
 
 	menuTemplate := []client.MenuItem{
 		{
