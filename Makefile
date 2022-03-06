@@ -1,20 +1,20 @@
 ROOT_DIR := $(dir $(realpath $(lastword $(MAKEFILE_LIST))))
 SRC_FILES := $(shell find lib/hostbridge/src -name "*.rs") 
 
-ffi-demo: lib/libhostbridge.a
+debug-ffi: lib/libhostbridge.a
 	CGO_LDFLAGS="./lib/libhostbridge.a -ldl -framework Carbon -framework Cocoa -framework CoreFoundation -framework CoreVideo -framework IOKit -framework WebKit" \
-	go build -a -o ./ffi-demo ./cmd/ffi-demo/main.go
+	go build -tags ffi -a -o ./debug-ffi ./cmd/debug
 
-rpc-demo: lib/libhostbridge.a
+debug-rpc: lib/libhostbridge.a
 	CGO_LDFLAGS="./lib/libhostbridge.a -ldl -framework Carbon -framework Cocoa -framework CoreFoundation -framework CoreVideo -framework IOKit -framework WebKit" \
-	go build -a -o ./rpc-demo ./cmd/rpc-demo/main.go
+	go build -tags rpc -a -o ./debug-rpc ./cmd/debug
+
+debug-cmd: hostbridge
+	go build -tags cmd -o ./debug-cmd ./cmd/debug
 
 hostbridge: lib/libhostbridge.a
 	CGO_LDFLAGS="./lib/libhostbridge.a -ldl -framework Carbon -framework Cocoa -framework CoreFoundation -framework CoreVideo -framework IOKit -framework WebKit" \
 	go build -a -o ./hostbridge ./cmd/hostbridge/main.go
-
-hostbridge-demo: hostbridge
-	go build -o ./hostbridge-demo ./cmd/hostbridge-demo/main.go
 
 lib/libhostbridge.a: $(SRC_FILES) lib/hostbridge/Cargo.toml
 	cd lib/hostbridge && cargo build --release
@@ -22,4 +22,4 @@ lib/libhostbridge.a: $(SRC_FILES) lib/hostbridge/Cargo.toml
 
 .PHONY: clean
 clean:
-	rm -rf ./ffi-demo ./rpc-demo ./hostbridge ./hostbridge-demo ./lib/libhostbridge.a ./lib/hostbridge/target
+	rm -rf ./debug-ffi ./debug-rpc ./debug-cmd ./hostbridge ./lib/libhostbridge.a ./lib/hostbridge/target

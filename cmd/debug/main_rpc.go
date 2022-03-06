@@ -1,3 +1,5 @@
+//go:build rpc
+
 package main
 
 import (

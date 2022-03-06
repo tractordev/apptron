@@ -1,13 +1,17 @@
+//go:build cmd
+
 package main
 
 import (
 	"context"
 	"fmt"
+	"os"
 
 	"github.com/progrium/hostbridge/client"
 )
 
 func main() {
+	os.Setenv("BRIDGECMD", "./hostbridge")
 	c, err := client.Spawn()
 	if err != nil {
 		panic(err)

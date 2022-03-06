@@ -1,3 +1,5 @@
+//go:build ffi
+
 package main
 
 import (

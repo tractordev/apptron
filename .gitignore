@@ -15,10 +15,16 @@
 # Dependency directories (remove the comment below to include it)
 # vendor/
 
+/debug-ffi
+/debug-rpc
+/debug-cmd
+/hostbridge
+
+lib/hostbridge/target
+lib/libhostbridge.a
+
+
 /ffi-debug
 /ffi-demo
 /rpc-demo
-/hostbridge
 /hostbridge-demo
-lib/hostbridge/target
-lib/libhostbridge.a
