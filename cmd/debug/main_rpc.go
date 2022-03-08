@@ -91,10 +91,10 @@ func Run() {
 		panic(err)
 	}
 
-	fmt.Println(m)
-	// if err = c.App.SetMenu(ctx, m); err != nil {
-	// 	panic(err)
-	// }
+	fmt.Println("Menu", m)
+	if err = c.App.SetMenu(ctx, m); err != nil {
+		panic(err)
+	}
 
 	/*
 	trayTemplate := []client.MenuItem{

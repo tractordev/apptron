@@ -76,30 +76,40 @@ func New(items []Item) *Menu {
 	return Module.New(items)
 }
 
-func (m module) New(items []Item) *Menu {
+
+func (m *module) New(items []Item) *Menu {
+	cmenu := buildCMenu(items)
+
+	var id = -1
+
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	
+	m.nextMenuId += 1
+	id = m.nextMenuId
+
+	result := Menu{}
+	result.Handle = cmenu
+	result.ID     = core.Handle(id)
+
+	m.menus = append(m.menus, result)
+
+	return &result
+}
+
+func buildCMenu(items []Item) C.Menu {
 	cmenu := C.menu_create()
 
 	for _, it := range items {
 		if len(it.SubMenu) > 0 {
-			submenu := m.New(it.SubMenu)
-			C.menu_add_submenu(cmenu, C.CString(it.Title), toCBool(it.Enabled), submenu.Handle)
+			submenu := buildCMenu(it.SubMenu)
+			C.menu_add_submenu(cmenu, C.CString(it.Title), toCBool(it.Enabled), submenu)
 		} else {
 			C.menu_add_item(cmenu, buildCMenuItem(it))
 		}
 	}
 
-	var id = -1
-
-	m.mu.Lock()
-	m.nextMenuId += 1
-	id = m.nextMenuId
-	m.mu.Unlock()
-
-	menu := &Menu{}
-	menu.Handle = cmenu
-	menu.ID     = core.Handle(id)
-
-	return menu
+	return cmenu
 }
 
 func buildCMenuItem(item Item) C.Menu_Item {

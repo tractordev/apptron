@@ -7,6 +7,7 @@ import "C"
 
 import (
 	"context"
+	"errors"
 	"unsafe"
 
 	"github.com/progrium/hostbridge/bridge/core"
@@ -14,7 +15,10 @@ import (
 	"github.com/progrium/qtalk-go/rpc"
 )
 
-var Module *module
+var (
+	Module       *module
+	ErrBadHandle = errors.New("bad handle")
+)
 
 func init() {
 	Module = &module{menu: menu.New(nil)}
@@ -33,11 +37,20 @@ func (m module) Menu() *menu.Menu {
 }
 
 func SetMenu(m *menu.Menu) {
-	Module.SetMenu(m)
+	if m != nil {
+		Module.SetMenu(m.ID)
+	}
 }
 
-func (mod module) SetMenu(m *menu.Menu) {
+func (mod *module) SetMenu(menuID core.Handle) (error) {
+	var m = menu.FindByID(menuID)
+
+	if m == nil {
+		return ErrBadHandle
+	}
+
 	mod.menu = m
+	return nil
 }
 
 func NewIndicator(icon []byte, items []menu.Item) {
