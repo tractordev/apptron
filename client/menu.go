@@ -7,6 +7,8 @@ import (
 )
 
 type Menu struct {
+	ID Handle
+
 	/*
 		Items []Item
 	*/

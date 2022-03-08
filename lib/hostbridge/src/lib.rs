@@ -36,7 +36,6 @@ mod win32 {
 #[cfg(target_os = "macos")]
 use objc::{
 	msg_send,
-	class,
 	sel,
 	sel_impl,
   runtime::{Object, BOOL, YES},

@@ -5,7 +5,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"net"
 	"runtime"
 
@@ -41,7 +40,10 @@ func Run() {
 	if err != nil {
 		panic(err)
 	}
-	defer c.Close()
+	fmt.Println(c)
+	//defer c.Close()
+
+	ctx := context.Background()
 
 	menuTemplate := []client.MenuItem{
 		{
@@ -84,18 +86,17 @@ func Run() {
 		},
 	}
 
-	ctx := context.Background()
-
 	m, err := c.Menu.New(ctx, menuTemplate)
 	if err != nil {
 		panic(err)
 	}
 
-	fmt.Println(m)
-	// if err = c.App.SetMenu(ctx, m); err != nil {
-	// 	panic(err)
-	// }
+	fmt.Println("Menu", m)
+	if err = c.App.SetMenu(ctx, m); err != nil {
+		panic(err)
+	}
 
+	/*
 	trayTemplate := []client.MenuItem{
 		{
 			Title:   "Click on this here thing",
@@ -138,6 +139,7 @@ func Run() {
 	if err = c.App.NewIndicator(ctx, iconData, trayTemplate); err != nil {
 		panic(err)
 	}
+	*/
 
 	options := client.WindowOptions{
 		Title: "Demo window",
@@ -186,7 +188,10 @@ func Run() {
 		Subtitle: "Subtitle: MacOS only",
 		Body:     "Body: This is the body",
 	})
+
 	if err != nil {
 		panic(err)
 	}
+
+	fmt.Println("[main] Run done")
 }

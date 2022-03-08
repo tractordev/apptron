@@ -5,20 +5,32 @@ package menu
 */
 import "C"
 
+import (
+	"sync"
+
+	"github.com/progrium/hostbridge/bridge/core"
+)
+
 var Module *module
 
 func init() {
 	Module = &module{}
 }
 
-type module struct{}
+type module struct {
+	mu sync.Mutex
+
+	menus      []Menu
+	nextMenuId int
+}
 
 type Menu struct {
+	ID     core.Handle
+	Handle C.Menu
+
 	/*
 		Items []Item
 	*/
-
-	Handle C.Menu
 }
 
 type Item struct {
@@ -36,26 +48,67 @@ type Item struct {
 	SubMenu []Item
 }
 
+func FindByID(menuID core.Handle) *Menu {
+	return Module.FindByID(menuID)
+}
+
+func (m *module) FindByID(menuID core.Handle) *Menu {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	var index int = -1
+
+	for i, v := range m.menus {
+		if v.ID == menuID {
+			index = i
+			break
+		}
+	}
+
+	if index >= 0 {
+		return &m.menus[index]
+	}
+
+	return nil
+}
+
 func New(items []Item) *Menu {
 	return Module.New(items)
 }
 
-func (m module) New(items []Item) *Menu {
+func (m *module) New(items []Item) *Menu {
+	cmenu := buildCMenu(items)
+
+	var id = -1
+
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	m.nextMenuId += 1
+	id = m.nextMenuId
+
+	result := Menu{}
+	result.Handle = cmenu
+	result.ID = core.Handle(id)
+
+	m.menus = append(m.menus, result)
+
+	return &result
+}
+
+func buildCMenu(items []Item) C.Menu {
 	cmenu := C.menu_create()
 
 	for _, it := range items {
 		if len(it.SubMenu) > 0 {
-			submenu := m.New(it.SubMenu)
-			C.menu_add_submenu(cmenu, C.CString(it.Title), toCBool(it.Enabled), submenu.Handle)
+			submenu := buildCMenu(it.SubMenu)
+			C.menu_add_submenu(cmenu, C.CString(it.Title), toCBool(it.Enabled), submenu)
 		} else {
 			C.menu_add_item(cmenu, buildCMenuItem(it))
 		}
 	}
 
-	menu := &Menu{}
-	menu.Handle = cmenu
-
-	return menu
+	return cmenu
 }
 
 func buildCMenuItem(item Item) C.Menu_Item {
