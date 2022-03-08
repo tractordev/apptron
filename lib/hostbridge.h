@@ -51,15 +51,6 @@ typedef struct EventLoop {
 	unsigned char data[40];
 } EventLoop;
 
-// NOTE(nick): this has to be kept in sync with wry's Menu struct size
-typedef struct Menu {
-	#ifdef OS_MACOS
-	unsigned char data[16];
-	#elif OS_WINDOWS
-	unsigned char data[64];
-	#endif
-} Menu;
-
 // NOTE(nick): this has to be kept in sync with wry's ContextMenu struct size
 typedef struct ContextMenu {
 	#ifdef OS_MACOS
@@ -142,7 +133,7 @@ void run(EventLoop event_loop, void (*callback)(Event event));
 
 void reset_temporary_storage();
 
-int      window_create(EventLoop event_loop, Window_Options options, Menu menu);
+int      window_create(EventLoop event_loop, Window_Options options, int menu_id);
 bool     window_destroy(int window_id);
 bool     window_set_title(int window_id, char *title);
 bool     window_set_visible(int window_id, bool is_visible);
@@ -164,9 +155,9 @@ double   window_get_dpi_scale(int window_id);
 bool     window_is_visible(int window_id);
 bool     window_is_focused(int window_id);
 
-Menu menu_create();
-bool menu_add_item(Menu menu, Menu_Item item);
-bool menu_add_submenu(Menu menu, char *title, bool enabled, Menu submenu);
+int  menu_create();
+bool menu_add_item(int menu_id, Menu_Item item);
+bool menu_add_submenu(int menu_id, char *title, bool enabled, int submenu_id);
 
 ContextMenu context_menu_create();
 bool context_menu_add_item(ContextMenu menu, Menu_Item item);

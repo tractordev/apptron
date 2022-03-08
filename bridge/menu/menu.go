@@ -14,6 +14,8 @@ func init() {
 type module struct{}
 
 type Menu struct {
+	ID core.Handle // Library handle, not user id.
+
 	/*
 		Items []Item
 	*/
@@ -41,19 +43,19 @@ func New(items []Item) *Menu {
 }
 
 func (m module) New(items []Item) *Menu {
-	cmenu := C.menu_create()
+	cmenu_id := C.menu_create()
 
 	for _, it := range items {
 		if len(it.SubMenu) > 0 {
 			submenu := m.New(it.SubMenu)
-			C.menu_add_submenu(cmenu, C.CString(it.Title), toCBool(it.Enabled), submenu.Handle)
+			C.menu_add_submenu(cmenu_id, C.CString(it.Title), toCBool(it.Enabled), C.int(submenu.ID))
 		} else {
-			C.menu_add_item(cmenu, buildCMenuItem(it))
+			C.menu_add_item(cmenu_id, buildCMenuItem(it))
 		}
 	}
 
 	menu := &Menu{}
-	menu.Handle = cmenu
+	menu.ID = core.Handle(cmenu_id)
 
 	return menu
 }

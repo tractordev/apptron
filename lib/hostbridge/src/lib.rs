@@ -160,12 +160,23 @@ struct Shortcut {
 	menu_id: i32,
 }
 
+struct Menu {
+	id: i32,
+	menu: MenuBar,
+	// NOTE(nick): totally untested, but this could work
+	// I just don't know if wry will let you call all the same methods multiple times for both menu and context_menu with shared data
+	//context_menu: ContextMenu,
+}
+
 static mut WINDOWS: Vec<Window> = Vec::new();
 static mut NEXT_WINDOW_ID: i32 = 1;
 static mut SHORTCUT_MANAGER: Option<ShortcutManager> = None;
 static mut SHORTCUTS: Lazy<HashMap<u16, Shortcut>> = Lazy::new(|| {
   HashMap::new()
 });
+
+static mut MENUS: Vec<Menu> = Vec::new();
+static mut NEXT_MENU_ID: i32 = 1;
 
 const STORAGE_SIZE: usize = kilobytes!(256);
 static mut STORAGE_BUFFER: [u8; STORAGE_SIZE] = [0; STORAGE_SIZE];
@@ -240,6 +251,23 @@ macro_rules! find_item {
 	}};
 } 
 
+macro_rules! find_item_mut {
+	($array: expr, $id: expr, $func: expr) => {{
+		let mut result = false;
+
+		unsafe {
+			let it = $array.iter_mut().find(|it| it.id == $id);
+
+			if let Some(it) = it {
+				$func(it);
+				result = true;
+			}
+		}
+
+		result
+	}};
+} 
+
 fn register_shortcut(accel_str: &'static str, menu_id: i32) -> (bool, u16, Option<Accelerator>) {
 	unsafe {
 		if SHORTCUT_MANAGER.is_none() {
@@ -303,7 +331,17 @@ pub extern "C" fn create_event_loop() -> CEventLoop {
 
 #[no_mangle]
 #[allow(improper_ctypes_definitions)]
-pub extern "C" fn window_create(event_loop: CEventLoop, options: CWindow_Options, menu: CMenu) -> i32 {
+pub extern "C" fn window_create(event_loop: CEventLoop, options: CWindow_Options, menu_id: CInt) -> i32 {
+
+	let menu = unsafe { MENUS.iter().find(|&it| it.id == menu_id) };
+
+	if !menu.is_some() {
+		println!("MENU NOT FOUND!!!!!!!");
+		return -1;
+	}
+
+	let menu = &menu.unwrap().menu;
+
 	let title = str_from_cstr(options.title);
 	let fullscreen = if options.fullscreen { Some(Fullscreen::Borderless(None)) } else { None };
 
@@ -615,70 +653,82 @@ pub extern "C" fn window_is_focused(window_id: CInt) -> CBool {
 
 #[no_mangle]
 #[allow(improper_ctypes_definitions)]
-pub extern "C" fn menu_create() -> CMenu {
-	//
-	// NOTE(nick): If this changes, go and update hostbridge.h Menu size
-	// @Robustness: make this a static assertion
-	//
-	#[cfg(target_os = "macos")]
-	assert_eq!(size_of::<CMenu>(), 16);
-	#[cfg(target_os = "windows")]
-	assert_eq!(size_of::<CMenu>(), 64);
+pub extern "C" fn menu_create() -> CInt {
+	let menu = MenuBar::new();
+	//let context_menu = ContextMenu::new();
 
-	let result = MenuBar::new();
-	
-	let mut result = ManuallyDrop::new(result);
+	let result: i32;
 
 	unsafe {
-		ManuallyDrop::take(&mut result)
+		result = NEXT_MENU_ID;
+		NEXT_MENU_ID += 1;
+		let the_menu = Menu{ id: result, menu /*, context_menu */ };
+
+		MENUS.push(the_menu);
 	}
+
+	result
 }
 
 #[no_mangle]
 #[allow(improper_ctypes_definitions)]
-pub extern "C" fn menu_add_item(mut menu: CMenu, item: CMenu_Item) -> CBool {
-	// @Copypaste
+pub extern "C" fn menu_add_item(menu_id: CInt, item: CMenu_Item) -> CBool {
 	let title = str_from_cstr(item.title);
 
-	// @Incomplete: use `role` to handle native items
-	//menu.add_native_item(MenuItem::About("Todos".to_string()));
+	let mut success = false;
 
-	let mut result =
-		MenuItemAttributes::new(title)
-			.with_id(wry::application::menu::MenuId(item.id as u16))
-			.with_enabled(item.enabled)
-			.with_selected(item.selected);
+	find_item_mut!(MENUS, menu_id, |it: &mut Menu| {
+		// @Incomplete: use `role` to handle native items
+		//it.add_native_item(MenuItem::About("Todos".to_string()));
 
-	let mut success = true;
+		let mut result =
+			MenuItemAttributes::new(title)
+				.with_id(wry::application::menu::MenuId(item.id as u16))
+				.with_enabled(item.enabled)
+				.with_selected(item.selected);
+		
+		success = true;
 
-	let accel_str = str_from_cstr(item.accelerator);
-	if accel_str.len() > 0 {
-		let (ok, _, accelerator) = register_shortcut(accel_str, item.id);
+		let accel_str = str_from_cstr(item.accelerator);
+		if accel_str.len() > 0 {
+			let (ok, _, accelerator) = register_shortcut(accel_str, item.id);
 
-		if ok {
-			let accelerator = accelerator.unwrap();
-			result = result.with_accelerators(&accelerator);
-		} else {
-			success = false;
+			if ok {
+				let accelerator = accelerator.unwrap();
+				result = result.with_accelerators(&accelerator);
+			} else {
+				success = false;
+			}
 		}
-	}
 
-	menu.add_item(result);
-
-	forget(menu);
+		it.menu.add_item(result);
+		//it.context_menu.add_item(result);
+	});
 
 	success
 }
 
 #[no_mangle]
 #[allow(improper_ctypes_definitions)]
-pub extern "C" fn menu_add_submenu(mut menu: CMenu, title: CString, enabled: CBool, submenu: CMenu) -> CBool {
+pub extern "C" fn menu_add_submenu(menu_id: CInt, title: CString, enabled: CBool, submenu_id: CInt) -> CBool {
 	let title = str_from_cstr(title);
-	menu.add_submenu(title, enabled, submenu);
 
-	forget(menu);
+	let found_index = unsafe { MENUS.iter().position(|it| it.id == submenu_id) };
 
-	true
+	if let Some(found_index) = found_index {
+
+		// NOTE(nick): we _have_ to remove the item from MENUS to to "owwnership" of it here
+		// Even though you could imagine wanting the API to allow you to always reference any menu you ever created
+		// At the moment it doesn't make a difference in the client code, though.
+		let submenu = unsafe { MENUS.remove(found_index) };
+
+		return find_item_mut!(MENUS, menu_id, |it: &mut Menu| {
+			it.menu.add_submenu(title, enabled, submenu.menu);
+			//it.context_menu.add_submenu(title, enabled, submenu);
+		});
+	}
+
+	false
 }
 
 #[no_mangle]
@@ -705,6 +755,7 @@ pub extern "C" fn context_menu_create() -> CContextMenu {
 #[no_mangle]
 #[allow(improper_ctypes_definitions)]
 pub extern "C" fn context_menu_add_item(mut menu: CContextMenu, item: CMenu_Item) -> CBool {
+	// @Copypaste: from menu_add_item
 	let title = str_from_cstr(item.title);
 
 	// @Incomplete: use `role` to handle native items
