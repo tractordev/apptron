@@ -21,7 +21,7 @@ type module struct {
 	mu sync.Mutex
 
 	menus      []Menu
-	nextMenuId int 
+	nextMenuId int
 }
 
 type Menu struct {
@@ -76,7 +76,6 @@ func New(items []Item) *Menu {
 	return Module.New(items)
 }
 
-
 func (m *module) New(items []Item) *Menu {
 	cmenu := buildCMenu(items)
 
@@ -84,13 +83,13 @@ func (m *module) New(items []Item) *Menu {
 
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	
+
 	m.nextMenuId += 1
 	id = m.nextMenuId
 
 	result := Menu{}
 	result.Handle = cmenu
-	result.ID     = core.Handle(id)
+	result.ID = core.Handle(id)
 
 	m.menus = append(m.menus, result)
 

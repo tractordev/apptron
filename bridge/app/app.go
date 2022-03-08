@@ -42,7 +42,7 @@ func SetMenu(m *menu.Menu) {
 	}
 }
 
-func (mod *module) SetMenu(menuID core.Handle) (error) {
+func (mod *module) SetMenu(menuID core.Handle) error {
 	var m = menu.FindByID(menuID)
 
 	if m == nil {

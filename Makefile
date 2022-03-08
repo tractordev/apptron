@@ -5,6 +5,7 @@ debug-ffi: lib/libhostbridge.a
 	CGO_LDFLAGS="./lib/libhostbridge.a -ldl -framework Carbon -framework Cocoa -framework CoreFoundation -framework CoreVideo -framework IOKit -framework WebKit" \
 	go build -tags ffi -a -o ./debug-ffi ./cmd/debug
 
+.PHONY: debug-rpc
 debug-rpc: lib/libhostbridge.a
 	CGO_LDFLAGS="./lib/libhostbridge.a -ldl -framework Carbon -framework Cocoa -framework CoreFoundation -framework CoreVideo -framework IOKit -framework WebKit" \
 	go build -tags rpc -a -o ./debug-rpc ./cmd/debug
@@ -17,7 +18,7 @@ hostbridge: lib/libhostbridge.a
 	go build -a -o ./hostbridge ./cmd/hostbridge/main.go
 
 lib/libhostbridge.a: $(SRC_FILES) lib/hostbridge/Cargo.toml
-	cd lib/hostbridge && cargo build --release
+	cd lib/hostbridge && rustup run nightly cargo build --release
 	cp lib/hostbridge/target/release/libhostbridge.a lib/
 
 .PHONY: clean
