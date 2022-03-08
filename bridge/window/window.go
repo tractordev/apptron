@@ -170,7 +170,7 @@ func New(options Options) (*Window, error) {
 
 	appMenu := *(*C.Menu)(unsafe.Pointer(app.Module.Menu()))
 	eventLoop := *(*C.EventLoop)(core.EventLoop())
-	result := C.window_create(eventLoop, opts, C.int(appMenu.ID))
+	result := C.window_create(eventLoop, opts, appMenu)
 	id := int(result)
 
 	window := Window{}
