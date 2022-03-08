@@ -29,7 +29,8 @@ set CGO_LDFLAGS=%project_root%\hostbridge.dll
 
 pushd %project_root%
 
-  %go_path%\go.exe build -a -o ./ffi-debug.exe ./cmd/ffi-debug/main_static.go
+  ::%go_path%\go.exe build -a -o ./ffi-debug.exe ./cmd/ffi-debug/main_static.go
+  %go_path%\go.exe build -tags rpc -a -o ./debug-rpc.exe ./cmd/debug
 popd
 
 
