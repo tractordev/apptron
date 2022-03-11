@@ -17,6 +17,7 @@ var quitId uint16 = 999
 var quitAllId uint16 = 9999
 
 func init() {
+	runtime.GOMAXPROCS(1)
 	runtime.LockOSThread()
 }
 
@@ -40,7 +41,6 @@ func Run() {
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println(c)
 	//defer c.Close()
 
 	ctx := context.Background()
@@ -96,50 +96,48 @@ func Run() {
 		panic(err)
 	}
 
-	/*
-	trayTemplate := []client.MenuItem{
-		{
-			Title:   "Click on this here thing",
-			Enabled: true,
-		},
-		{
-			Title:   "Secret stuff",
-			Enabled: true,
-			SubMenu: []client.MenuItem{
-				{
-					ID:      42,
-					Title:   "I'm nested!!",
-					Enabled: true,
-				},
-				{
-					ID:      101,
-					Title:   "Can't touch this",
-					Enabled: false,
-				},
-			},
-		},
-		{
-			ID:          quitAllId,
-			Title:       "Quit App",
-			Enabled:     true,
-			Accelerator: "Command+T",
-		},
-	}
+	// trayTemplate := []client.MenuItem{
+	// 	{
+	// 		Title:   "Click on this here thing",
+	// 		Enabled: true,
+	// 	},
+	// 	{
+	// 		Title:   "Secret stuff",
+	// 		Enabled: true,
+	// 		SubMenu: []client.MenuItem{
+	// 			{
+	// 				ID:      42,
+	// 				Title:   "I'm nested!!",
+	// 				Enabled: true,
+	// 			},
+	// 			{
+	// 				ID:      101,
+	// 				Title:   "Can't touch this",
+	// 				Enabled: false,
+	// 			},
+	// 		},
+	// 	},
+	// 	{
+	// 		ID:          quitAllId,
+	// 		Title:       "Quit App",
+	// 		Enabled:     true,
+	// 		Accelerator: "Command+T",
+	// 	},
+	// }
 
-	iconPath := "assets/icon.png"
-	if runtime.GOOS == "windows" {
-		iconPath = "assets/icon.ico"
-	}
+	// iconPath := "assets/icon.png"
+	// if runtime.GOOS == "windows" {
+	// 	iconPath = "assets/icon.ico"
+	// }
 
-	iconData, err := ioutil.ReadFile(iconPath)
-	if err != nil {
-		fmt.Println("Error reading icon file:", err)
-	}
+	// iconData, err := ioutil.ReadFile(iconPath)
+	// if err != nil {
+	// 	fmt.Println("Error reading icon file:", err)
+	// }
 
-	if err = c.App.NewIndicator(ctx, iconData, trayTemplate); err != nil {
-		panic(err)
-	}
-	*/
+	// if err = c.App.NewIndicator(ctx, iconData, trayTemplate); err != nil {
+	// 	panic(err)
+	// }
 
 	options := client.WindowOptions{
 		Title: "Demo window",
@@ -194,4 +192,5 @@ func Run() {
 	}
 
 	fmt.Println("[main] Run done")
+	select {}
 }

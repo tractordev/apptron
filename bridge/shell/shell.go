@@ -43,11 +43,11 @@ type MessageDialog struct {
 }
 
 func ShowNotification(n Notification) {
-	Module.ShowNotification(n)
+	C.shell_show_notification(C.CString(n.Title), C.CString(n.Subtitle), C.CString(n.Body))
 }
 
 func (m module) ShowNotification(n Notification) {
-	C.shell_show_notification(C.CString(n.Title), C.CString(n.Subtitle), C.CString(n.Body))
+	ShowNotification(n)
 }
 
 func ShowMessage(msg MessageDialog) bool {
