@@ -6,11 +6,11 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/progrium/hostbridge/bridge/core"
-	"github.com/progrium/hostbridge/bridge/window"
 	"github.com/progrium/qtalk-go/codec"
 	"github.com/progrium/qtalk-go/fn"
 	"github.com/progrium/qtalk-go/talk"
+	"github.com/tractordev/hostbridge/bridge/core"
+	"github.com/tractordev/hostbridge/bridge/window"
 )
 
 func init() {

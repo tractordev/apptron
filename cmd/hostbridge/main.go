@@ -8,9 +8,9 @@ import (
 	"os"
 	"runtime"
 
-	"github.com/progrium/hostbridge/bridge"
-	"github.com/progrium/hostbridge/bridge/core"
 	"github.com/progrium/qtalk-go/mux"
+	"github.com/tractordev/hostbridge/bridge"
+	"github.com/tractordev/hostbridge/bridge/core"
 )
 
 const Version = "0.1.0"

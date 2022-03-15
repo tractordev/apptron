@@ -1,4 +1,4 @@
-module github.com/progrium/hostbridge
+module github.com/tractordev/hostbridge
 
 go 1.17
 

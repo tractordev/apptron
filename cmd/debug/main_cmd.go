@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/progrium/hostbridge/client"
+	"github.com/tractordev/hostbridge/client"
 )
 
 func main() {

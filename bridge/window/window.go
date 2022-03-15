@@ -13,8 +13,8 @@ import (
 	"sync"
 	"unsafe"
 
-	"github.com/progrium/hostbridge/bridge/core"
 	"github.com/progrium/qtalk-go/rpc"
+	"github.com/tractordev/hostbridge/bridge/core"
 )
 
 var (

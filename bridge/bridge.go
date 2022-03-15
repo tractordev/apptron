@@ -5,12 +5,12 @@ import (
 	"github.com/progrium/qtalk-go/fn"
 	"github.com/progrium/qtalk-go/rpc"
 
-	"github.com/progrium/hostbridge/bridge/app"
-	"github.com/progrium/hostbridge/bridge/core"
-	"github.com/progrium/hostbridge/bridge/menu"
-	"github.com/progrium/hostbridge/bridge/screen"
-	"github.com/progrium/hostbridge/bridge/shell"
-	"github.com/progrium/hostbridge/bridge/window"
+	"github.com/tractordev/hostbridge/bridge/app"
+	"github.com/tractordev/hostbridge/bridge/core"
+	"github.com/tractordev/hostbridge/bridge/menu"
+	"github.com/tractordev/hostbridge/bridge/screen"
+	"github.com/tractordev/hostbridge/bridge/shell"
+	"github.com/tractordev/hostbridge/bridge/window"
 )
 
 func NewServer() *rpc.Server {

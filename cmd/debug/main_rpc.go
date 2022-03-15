@@ -8,9 +8,9 @@ import (
 	"net"
 	"runtime"
 
-	"github.com/progrium/hostbridge/bridge"
-	"github.com/progrium/hostbridge/bridge/core"
-	"github.com/progrium/hostbridge/client"
+	"github.com/tractordev/hostbridge/bridge"
+	"github.com/tractordev/hostbridge/bridge/core"
+	"github.com/tractordev/hostbridge/client"
 )
 
 var quitId uint16 = 999

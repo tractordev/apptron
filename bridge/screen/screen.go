@@ -8,7 +8,7 @@ import "C"
 import (
 	"unsafe"
 
-	"github.com/progrium/hostbridge/bridge/core"
+	"github.com/tractordev/hostbridge/bridge/core"
 )
 
 var Module *module

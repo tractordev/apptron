@@ -10,9 +10,9 @@ import (
 	"errors"
 	"unsafe"
 
-	"github.com/progrium/hostbridge/bridge/core"
-	"github.com/progrium/hostbridge/bridge/menu"
 	"github.com/progrium/qtalk-go/rpc"
+	"github.com/tractordev/hostbridge/bridge/core"
+	"github.com/tractordev/hostbridge/bridge/menu"
 )
 
 var (
