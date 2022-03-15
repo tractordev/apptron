@@ -17,7 +17,7 @@ hostbridge: lib/libhostbridge.a
 	go build -a -o ./hostbridge ./cmd/hostbridge/main.go
 
 lib/libhostbridge.a: $(SRC_FILES) lib/hostbridge/Cargo.toml
-	cd lib/hostbridge && rustup run nightly cargo build --release
+	cd lib/hostbridge && cargo build --release
 	cp lib/hostbridge/target/release/libhostbridge.a lib/
 
 .PHONY: clean

@@ -302,10 +302,11 @@ pub extern "C" fn create_event_loop() -> CEventLoop {
 
 #[no_mangle]
 #[allow(improper_ctypes_definitions)]
-pub extern "C" fn window_create(event_loop: CEventLoop, options: CWindow_Options, menu: CMenu) -> i32 {
+pub extern "C" fn window_create(event_loop: CEventLoop, options: CWindow_Options/*, menu: CMenu*/) -> i32 {
 	let title = str_from_cstr(options.title);
 	let fullscreen = if options.fullscreen { Some(Fullscreen::Borderless(None)) } else { None };
 
+	let menu = MenuBar::new();
 	let mut window_builder = WindowBuilder::new()
 		.with_menu(menu)
 		.with_always_on_top(options.always_on_top)

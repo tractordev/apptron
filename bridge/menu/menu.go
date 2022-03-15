@@ -73,27 +73,31 @@ func (m *module) FindByID(menuID core.Handle) *Menu {
 }
 
 func New(items []Item) *Menu {
-	return Module.New(items)
-}
-
-func (m *module) New(items []Item) *Menu {
 	cmenu := buildCMenu(items)
 
 	var id = -1
 
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	Module.mu.Lock()
+	defer Module.mu.Unlock()
 
-	m.nextMenuId += 1
-	id = m.nextMenuId
+	Module.nextMenuId += 1
+	id = Module.nextMenuId
 
 	result := Menu{}
 	result.Handle = cmenu
 	result.ID = core.Handle(id)
 
-	m.menus = append(m.menus, result)
+	Module.menus = append(Module.menus, result)
 
 	return &result
+}
+
+func (m *module) New(items []Item) *Menu {
+	ret := make(chan *Menu)
+	core.Dispatch(func() {
+		ret <- New(items)
+	})
+	return <-ret
 }
 
 func buildCMenu(items []Item) C.Menu {

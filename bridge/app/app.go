@@ -37,13 +37,11 @@ func (m module) Menu() *menu.Menu {
 }
 
 func SetMenu(m *menu.Menu) {
-	if m != nil {
-		Module.SetMenu(m.ID)
-	}
+	Module.menu = m
 }
 
 func (mod *module) SetMenu(menuID core.Handle) error {
-	var m = menu.FindByID(menuID)
+	var m = menu.Module.FindByID(menuID)
 
 	if m == nil {
 		return ErrBadHandle

@@ -13,7 +13,6 @@ import (
 	"sync"
 	"unsafe"
 
-	"github.com/progrium/hostbridge/bridge/app"
 	"github.com/progrium/hostbridge/bridge/core"
 	"github.com/progrium/qtalk-go/rpc"
 )
@@ -168,9 +167,9 @@ func New(options Options) (*Window, error) {
 		opts.icon = C.Icon{data: (*C.uchar)(unsafe.Pointer(&options.Icon[0])), size: C.int(len(options.Icon))}
 	}
 
-	appMenu := *(*C.Menu)(unsafe.Pointer(app.Module.Menu()))
+	//appMenu := *(*C.Menu)(unsafe.Pointer(app.Module.Menu()))
 	eventLoop := *(*C.EventLoop)(core.EventLoop())
-	result := C.window_create(eventLoop, opts, appMenu)
+	result := C.window_create(eventLoop, opts)
 	id := int(result)
 
 	window := Window{}
