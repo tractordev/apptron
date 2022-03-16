@@ -6,6 +6,17 @@
     const rpc = await qtalk.connect(`ws://${window.location.host}/`, new qtalk.JSONCodec());
     window.client = rpc.virtualize();
     console.log(await client.screen.Displays());
+
+    window.makeWindow = async () => {
+      const w = await client.window.New({
+        Title: "Another window",
+        Visible: true,
+        Position: {X: 100, Y: 100},
+        URL: window.location.href
+      })
+      console.log(w);
+    }
   </script>
+  <button onclick="makeWindow()">New Window</button>
 </body>
 </html>
