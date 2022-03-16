@@ -381,7 +381,8 @@ pub extern "C" fn window_create(event_loop: CEventLoop, options: CWindow_Options
 	let script = str_from_cstr(options.script);
 
 	let mut webview_builder = webview_builder
-		.with_transparent(options.transparent);
+		.with_transparent(options.transparent)
+		.with_dev_tool(true);
 
 	if script.len() > 0 {
 		webview_builder = webview_builder.with_initialization_script(script);
