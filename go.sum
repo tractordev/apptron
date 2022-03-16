@@ -2,6 +2,8 @@ github.com/mitchellh/mapstructure v1.4.3 h1:OVowDSCllw/YjdLkam3/sm7wEtOy59d8ndGg
 github.com/mitchellh/mapstructure v1.4.3/go.mod h1:bFUtVrKA4DC2yAKiSyO/QUcy7e+RRV2QTWOzhPopBRo=
 github.com/progrium/qtalk-go v0.5.1-0.20220304004920-63c76b555fb1 h1:TqB4c3zHNoY6q6hqX4EOCQ8biqkTE8hoBTgBfftGGMw=
 github.com/progrium/qtalk-go v0.5.1-0.20220304004920-63c76b555fb1/go.mod h1:zAvCVqglCVTp54Dz01xp2g3X1K219WEZUxuK03EZ9ug=
+github.com/progrium/qtalk-go v0.5.1-0.20220310235116-55d5168d5344 h1:76aN9uvGCktN1aBlSYC+Nt+XbC9ykCCL0BZ6fItr2U8=
+github.com/progrium/qtalk-go v0.5.1-0.20220310235116-55d5168d5344/go.mod h1:zAvCVqglCVTp54Dz01xp2g3X1K219WEZUxuK03EZ9ug=
 github.com/rs/xid v1.3.0/go.mod h1:trrq9SKmegXys3aeAKXMUTdJsYXVwGY3RLcfgqegfbg=
 golang.org/x/net v0.0.0-20210420210106-798c2154c571 h1:Q6Bg8xzKzpFPU4Oi1sBnBTHBwlMsLeEXpu4hYBY8rAg=
 golang.org/x/net v0.0.0-20210420210106-798c2154c571/go.mod h1:72T/g9IO56b78aLF+1Kcs5dz7/ng1VjMUvfKvpfy+jM=

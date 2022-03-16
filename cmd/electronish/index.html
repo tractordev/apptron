@@ -1,0 +1,11 @@
+<html>
+<body>
+  <h1>Hello worldzz</h1>
+  <script type="module">
+    import * as qtalk from "/cmd/electronish/qtalk.min.js";
+    const rpc = await qtalk.connect(`ws://${window.location.host}/`, new qtalk.JSONCodec());
+    window.client = rpc.virtualize();
+    console.log(await client.screen.Displays());
+  </script>
+</body>
+</html>

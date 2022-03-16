@@ -19,6 +19,7 @@
 /debug-rpc
 /debug-cmd
 /hostbridge
+/electronish
 
 lib/hostbridge/target
 lib/libhostbridge.a

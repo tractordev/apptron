@@ -16,6 +16,9 @@ hostbridge: lib/libhostbridge.a
 	CGO_LDFLAGS="./lib/libhostbridge.a -ldl -framework Carbon -framework Cocoa -framework CoreFoundation -framework CoreVideo -framework IOKit -framework WebKit" \
 	go build -a -o ./hostbridge ./cmd/hostbridge/main.go
 
+electronish: hostbridge cmd/electronish/main.go bridge/**/*.go client/*.go
+	go build -o ./electronish ./cmd/electronish
+
 lib/libhostbridge.a: $(SRC_FILES) lib/hostbridge/Cargo.toml
 	cd lib/hostbridge && cargo build --release
 	cp lib/hostbridge/target/release/libhostbridge.a lib/
