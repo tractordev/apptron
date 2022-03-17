@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"io"
+	"io/fs"
 	"log"
 	"net/http"
 	"os"
@@ -24,7 +25,7 @@ import (
 //go:embed qtalk.min.js
 var qtalkjs []byte
 
-func Run(delegate interface{}) {
+func Run(delegate interface{}, fsys fs.FS) {
 	c, err := client.Spawn()
 	if err != nil {
 		panic(err)
@@ -44,7 +45,7 @@ func Run(delegate interface{}) {
 				w.Write(qtalkjs)
 				return
 			}
-			http.FileServer(http.Dir(".")).ServeHTTP(w, r)
+			http.FileServer(http.FS(fsys)).ServeHTTP(w, r)
 			return
 		}
 		websocket.Handler(func(ws *websocket.Conn) {

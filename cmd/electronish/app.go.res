@@ -1,13 +1,14 @@
 package main
 
 import (
-	"os"
-
 	"tractor.dev/hostbridge/app"
 )
+
+//go:embed *
+var dir embed.FS
 
 type rpc struct{}
 
 func main() {
-	app.Run(&rpc{})
+	app.Run(&rpc{}, dir)
 }
