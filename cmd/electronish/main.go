@@ -39,7 +39,7 @@ func main() {
 	fatal(ioutil.WriteFile("main.go", entrypoint, 0644))
 
 	run(gobin, "mod", "init", appname)
-	run(gobin, "get", "tractor.dev/hostbridge")
+	run(gobin, "get", "-u", "tractor.dev/hostbridge")
 	run(gobin, "get")
 	run(gobin, "build", "-o", appname, ".")
 

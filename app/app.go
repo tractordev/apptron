@@ -7,7 +7,6 @@ import (
 	"io/fs"
 	"log"
 	"net/http"
-	"os"
 	"strconv"
 	"strings"
 
@@ -62,7 +61,7 @@ func Run(delegate interface{}, fsys fs.FS) {
 	}))
 	go http.ListenAndServe(":7778", nil)
 
-	params, err := extractWindowParams()
+	params, err := extractWindowParams(fsys)
 	if err != nil && err != io.EOF {
 		log.Fatal(err)
 	}
@@ -121,8 +120,8 @@ func parseFloat(v string, fallback float64) float64 {
 	return fallback
 }
 
-func extractWindowParams() (map[string]string, error) {
-	f, err := os.Open("./index.html")
+func extractWindowParams(fsys fs.FS) (map[string]string, error) {
+	f, err := fsys.Open("index.html")
 	if err != nil {
 		panic(err)
 	}
