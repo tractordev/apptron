@@ -1,6 +1,8 @@
 package main
 
 import (
+	"embed"
+	
 	"tractor.dev/hostbridge/app"
 )
 
