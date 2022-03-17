@@ -8,9 +8,9 @@ import (
 	"net"
 	"runtime"
 
-	"github.com/tractordev/hostbridge/bridge"
-	"github.com/tractordev/hostbridge/bridge/core"
-	"github.com/tractordev/hostbridge/client"
+	"tractor.dev/hostbridge/bridge"
+	"tractor.dev/hostbridge/bridge/core"
+	"tractor.dev/hostbridge/client"
 )
 
 var quitId uint16 = 999

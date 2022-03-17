@@ -20,12 +20,8 @@
 /debug-cmd
 /hostbridge
 /electronish
+/_local
 
 lib/hostbridge/target
 lib/libhostbridge.a
 
-
-/ffi-debug
-/ffi-demo
-/rpc-demo
-/hostbridge-demo

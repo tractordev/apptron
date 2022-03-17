@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/tractordev/hostbridge/client"
+	"tractor.dev/hostbridge/client"
 )
 
 func main() {

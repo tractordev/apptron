@@ -8,7 +8,7 @@ import "C"
 import (
 	"unsafe"
 
-	"github.com/tractordev/hostbridge/bridge/core"
+	"tractor.dev/hostbridge/bridge/core"
 )
 
 var Module *module

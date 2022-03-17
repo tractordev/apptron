@@ -45,6 +45,9 @@ func dispatchEvents(client *Client, resp *rpc.Response) {
 			}
 			return
 		}
+		if client.OnEvent != nil {
+			client.OnEvent(e)
+		}
 		switch e.Type {
 		case EventMoved:
 			w := client.Window.byID(e.WindowID)

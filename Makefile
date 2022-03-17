@@ -12,7 +12,7 @@ debug-rpc: lib/libhostbridge.a cmd/debug/main_rpc.go bridge/**/*.go client/*.go
 debug-cmd: hostbridge cmd/debug/main_cmd.go bridge/**/*.go client/*.go
 	go build -tags cmd -o ./debug-cmd ./cmd/debug
 
-hostbridge: lib/libhostbridge.a
+hostbridge: lib/libhostbridge.a cmd/hostbridge/main.go
 	CGO_LDFLAGS="./lib/libhostbridge.a -ldl -framework Carbon -framework Cocoa -framework CoreFoundation -framework CoreVideo -framework IOKit -framework WebKit" \
 	go build -a -o ./hostbridge ./cmd/hostbridge/main.go
 

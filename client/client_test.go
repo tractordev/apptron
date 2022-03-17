@@ -5,8 +5,8 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/tractordev/hostbridge/bridge"
-	"github.com/tractordev/hostbridge/bridge/core"
+	"tractor.dev/hostbridge/bridge"
+	"tractor.dev/hostbridge/bridge/core"
 )
 
 func init() {

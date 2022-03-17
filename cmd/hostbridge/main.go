@@ -9,8 +9,8 @@ import (
 	"runtime"
 
 	"github.com/progrium/qtalk-go/mux"
-	"github.com/tractordev/hostbridge/bridge"
-	"github.com/tractordev/hostbridge/bridge/core"
+	"tractor.dev/hostbridge/bridge"
+	"tractor.dev/hostbridge/bridge/core"
 )
 
 const Version = "0.1.0"
@@ -33,6 +33,9 @@ func main() {
 	}
 	srv := bridge.NewServer()
 	go srv.Respond(sess, context.Background())
-
+	go func() {
+		sess.Wait()
+		core.Quit()
+	}()
 	core.Run(nil)
 }

@@ -14,7 +14,7 @@ import (
 	"unsafe"
 
 	"github.com/progrium/qtalk-go/rpc"
-	"github.com/tractordev/hostbridge/bridge/core"
+	"tractor.dev/hostbridge/bridge/core"
 )
 
 var (

@@ -8,7 +8,7 @@ import "C"
 import (
 	"sync"
 
-	"github.com/tractordev/hostbridge/bridge/core"
+	"tractor.dev/hostbridge/bridge/core"
 )
 
 var Module *module

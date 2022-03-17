@@ -26,6 +26,8 @@ type Client struct {
 	App    *AppModule
 	Menu   *MenuModule
 
+	OnEvent func(event Event)
+
 	files sync.Map
 	cmd   *exec.Cmd
 }
@@ -39,6 +41,10 @@ func (c *Client) Close() error {
 		c.cmd.Process.Kill()
 	}
 	return c.Peer.Close()
+}
+
+func (c *Client) Wait() error {
+	return c.cmd.Wait()
 }
 
 func (c *Client) ServeData(d []byte) string {
