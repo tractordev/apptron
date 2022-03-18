@@ -1,9 +1,11 @@
+//go:build entrypoint
+
 package main
 
 import (
 	"embed"
-	
-	"tractor.dev/hostbridge/app"
+
+	"tractor.dev/hostbridge/demo"
 )
 
 //go:embed *
@@ -12,5 +14,5 @@ var dir embed.FS
 type rpc struct{}
 
 func main() {
-	app.Run(&rpc{}, dir)
+	demo.Run(&rpc{}, dir)
 }

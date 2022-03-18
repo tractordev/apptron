@@ -1,4 +1,4 @@
-package main
+package demo
 
 import (
 	"io/ioutil"
@@ -10,7 +10,7 @@ import (
 	_ "embed"
 )
 
-//go:embed app.go.res
+//go:embed entry.go
 var entrypoint []byte
 
 func fatal(err error) {
@@ -19,7 +19,7 @@ func fatal(err error) {
 	}
 }
 
-func main() {
+func Build() {
 	os.Setenv("GOPRIVATE", "tractor.dev/*")
 	gobin, err := exec.LookPath("go")
 	fatal(err)
@@ -41,7 +41,7 @@ func main() {
 	run(gobin, "mod", "init", appname)
 	run(gobin, "get", "-u", "tractor.dev/hostbridge")
 	run(gobin, "get")
-	run(gobin, "build", "-o", appname, ".")
+	run(gobin, "build", "-tags", "entrypoint", "-o", appname, ".")
 
 	fatal(os.Remove("main.go"))
 	fatal(os.Remove("go.mod"))

@@ -1,4 +1,4 @@
-package app
+package demo
 
 import (
 	"bytes"
@@ -17,12 +17,10 @@ import (
 	"golang.org/x/net/html"
 	"golang.org/x/net/websocket"
 	"tractor.dev/hostbridge/client"
+	"tractor.dev/hostbridge/clientjs/dist"
 
 	_ "embed"
 )
-
-//go:embed qtalk.min.js
-var qtalkjs []byte
 
 func Run(delegate interface{}, fsys fs.FS) {
 	c, err := client.Spawn()
@@ -39,9 +37,9 @@ func Run(delegate interface{}, fsys fs.FS) {
 
 	http.Handle("/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Upgrade") != "websocket" {
-			if r.URL.Path == "/-/qtalk.min.js" {
+			if r.URL.Path == "/-/client.js" {
 				w.Header().Add("Content-Type", "text/javascript")
-				w.Write(qtalkjs)
+				w.Write(dist.ClientJS)
 				return
 			}
 			http.FileServer(http.FS(fsys)).ServeHTTP(w, r)
