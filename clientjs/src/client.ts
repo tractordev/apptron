@@ -1,6 +1,13 @@
 // @ts-ignore
 import * as qtalk from "../lib/qtalk.min.js";
 
+(async ()=>{
+  if (window) {
+    // @ts-ignore
+    window.$host = await connect(`ws://${window.location.host}/`)
+  }
+})()
+
 export async function connect(url: string): Promise<Client> {
   return new Client(await qtalk.connect(url, new qtalk.JSONCodec()))
 }
@@ -16,10 +23,8 @@ export class Client {
     return new Screen(this.rpc)
   }
 
-  get shell() {
-    return {
-      ShowFilePicker: (fd: FileDialog): Promise<string[]> => this.rpc.shell.ShowFilePicker(fd),
-    }
+  get shell(): shell {
+    return new Shell(this.rpc)
   }
 
   get window() {
@@ -33,6 +38,10 @@ export class Client {
 
 }
 
+export interface screen {
+  Displays(): Promise<Display[]>
+}
+
 class Screen {
   rpc: any
 
@@ -43,11 +52,75 @@ class Screen {
   Displays(): Promise<Display[]> {
     return this.rpc.screen.Displays()
   }
-
 }
 
-export interface screen {
-  Displays(): Promise<Display[]>
+export interface shell {
+  ShowNotification(n: Notification): void
+  ShowMessage(msg: MessageDialog): void
+  ShowFilePicker(fd: FileDialog): Promise<string[]>
+  ReadClipboard(): Promise<string>
+  WriteClipboard(text: string): Promise<boolean>
+  RegisterShortcut(accelerator: string): Promise<boolean>
+  IsShortcutRegistered(accelerator: string): Promise<boolean>
+  UnregisterShortcut(accelerator: string): Promise<boolean>
+  UnregisterAllShortcuts(): Promise<boolean>
+}
+
+class Shell {
+  rpc: any
+
+  constructor(rpc: any) {
+    this.rpc = rpc
+  }
+
+  ShowNotification(n: Notification): void {
+    this.rpc.shell.ShowNotification(n)
+  }
+
+  ShowMessage(msg: MessageDialog): void {
+    this.rpc.shell.ShowMessage(msg)
+  }
+
+  ShowFilePicker(fd: FileDialog): Promise<string[]> {
+    return this.rpc.shell.ShowFilePicker(fd)
+  }
+
+  ReadClipboard(): Promise<string> {
+    return this.rpc.shell.ReadClipboard()
+  }
+
+  WriteClipboard(text: string): Promise<boolean> {
+    return this.rpc.shell.WriteClipboard(text)
+  }
+
+  RegisterShortcut(accelerator: string): Promise<boolean> {
+    return this.rpc.shell.RegisterShortcut(accelerator)
+  }
+
+  IsShortcutRegistered(accelerator: string): Promise<boolean> {
+    return this.rpc.shell.IsShortcutRegistered(accelerator)
+  }
+
+  UnregisterShortcut(accelerator: string): Promise<boolean> {
+    return this.rpc.shell.UnregisterShortcut(accelerator)
+  }
+  
+  UnregisterAllShortcuts(): Promise<boolean> {
+    return this.rpc.shell.UnregisterAllShortcuts()
+  }
+}
+
+export interface Notification {
+	Title:    string
+	Subtitle: string // for MacOS only
+	Body:     string
+}
+
+export interface MessageDialog {
+	Title:   string
+	Body:    string
+	Level:   string // info, warning, error
+	Buttons: string // ok, okcancel, yesno
 }
 
 export interface Size {

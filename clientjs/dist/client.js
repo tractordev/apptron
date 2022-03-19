@@ -1,3 +1,7 @@
+// deno-fmt-ignore-file
+// deno-lint-ignore-file
+// This code was bundled using `deno bundle` and it's not recommended to edit it manually
+
 var payloadSizes, debug4, frames, options1;
 function copy(a, c, b = 0) {
     b = Math.max(0, Math.min(b, c.byteLength));
@@ -6,8 +10,8 @@ function copy(a, c, b = 0) {
 }
 const MIN_READ = 32 * 1024, MAX_SIZE = 2 ** 32 - 2;
 class Buffer1 {
-    constructor(a16){
-        this._buf = a16 === void 0 ? new Uint8Array(0) : new Uint8Array(a16), this._off = 0;
+    constructor(a){
+        this._buf = a === void 0 ? new Uint8Array(0) : new Uint8Array(a), this._off = 0;
     }
     bytes(a = {
         copy: !0
@@ -97,8 +101,8 @@ class Buffer1 {
     }
 }
 class JSONCodec1 {
-    constructor(a1 = !1){
-        this.debug = a1;
+    constructor(a = !1){
+        this.debug = a;
     }
     encoder(a) {
         return new JSONEncoder1(a, this.debug);
@@ -108,8 +112,8 @@ class JSONCodec1 {
     }
 }
 class JSONEncoder1 {
-    constructor(a2, b9 = !1){
-        this.w = a2, this.enc = new TextEncoder, this.debug = b9;
+    constructor(a, b = !1){
+        this.w = a, this.enc = new TextEncoder, this.debug = b;
     }
     async encode(b) {
         this.debug && console.log("<<", b);
@@ -118,8 +122,8 @@ class JSONEncoder1 {
     }
 }
 class JSONDecoder1 {
-    constructor(a3, b1 = !1){
-        this.r = a3, this.dec = new TextDecoder, this.debug = b1;
+    constructor(a, b = !1){
+        this.r = a, this.dec = new TextDecoder, this.debug = b;
     }
     async decode(c) {
         const a = new Uint8Array(c), d = await this.r.read(a);
@@ -129,8 +133,8 @@ class JSONDecoder1 {
     }
 }
 class FrameCodec1 {
-    constructor(a4){
-        this.codec = a4;
+    constructor(a){
+        this.codec = a;
     }
     encoder(a) {
         return new FrameEncoder1(a, this.codec);
@@ -140,8 +144,8 @@ class FrameCodec1 {
     }
 }
 class FrameEncoder1 {
-    constructor(a5, b2){
-        this.w = a5, this.codec = b2;
+    constructor(a, b){
+        this.w = a, this.codec = b;
     }
     async encode(e) {
         const a = new Buffer1, f = this.codec.encoder(a);
@@ -155,8 +159,8 @@ class FrameEncoder1 {
     }
 }
 class FrameDecoder1 {
-    constructor(a6, b3){
-        this.r = a6, this.dec = b3;
+    constructor(a, b){
+        this.r = a, this.dec = b;
     }
     async decode(e) {
         const a = new Uint8Array(4), b = await this.r.read(a);
@@ -180,8 +184,7 @@ function cleanSelector(a) {
 }
 class RespondMux1 {
     constructor(){
-        this.handlers = {
-        };
+        this.handlers = {};
     }
     async respondRPC(b, a) {
         const c = this.handler(a);
@@ -207,8 +210,8 @@ class RespondMux1 {
     }
 }
 class Call1 {
-    constructor(a7, b4){
-        this.selector = a7, this.decoder = b4;
+    constructor(a, b){
+        this.selector = a, this.decoder = b;
     }
     receive() {
         return this.decoder.decode();
@@ -220,8 +223,8 @@ class ResponseHeader1 {
     }
 }
 class Response {
-    constructor(a8, b5){
-        this.channel = a8, this.codec = b5, this.error = void 0, this.continue = !1;
+    constructor(a, b){
+        this.channel = a, this.codec = b, this.error = void 0, this.continue = !1;
     }
     send(a) {
         this.codec.encoder(this.channel).encode(a);
@@ -231,8 +234,8 @@ class Response {
     }
 }
 class Client1 {
-    constructor(a9, b6){
-        this.session = a9, this.codec = b6;
+    constructor(a, b){
+        this.session = a, this.codec = b;
     }
     async call(b, c) {
         const a = await this.session.open();
@@ -244,8 +247,8 @@ class Client1 {
             const h = await g.decode(), d = new Response(a, e);
             if (d.error = h.Error, d.error !== void 0 && d.error !== null) throw d.error;
             return d.reply = await g.decode(), d.continue = h.Continue, d.continue || await a.close(), d;
-        } catch (d1) {
-            return await a.close(), console.error(d1, b, c), Promise.reject(d1);
+        } catch (d) {
+            return await a.close(), console.error(d, b, c), Promise.reject(d);
         }
     }
 }
@@ -255,28 +258,27 @@ async function Respond1(a, d, b) {
     const i = new ResponseHeader1, c = new responder1(a, e, i);
     return b || (b = new RespondMux1), await b.respondRPC(c, g), c.responded || await c.return(null), Promise.resolve();
 }
-function VirtualCaller1(b8) {
-    function a(b7, c1) {
-        return new Proxy(Object.assign(()=>{
-        }, {
-            path: b7,
+function VirtualCaller1(b1) {
+    function a1(b2, c1) {
+        return new Proxy(Object.assign(()=>{}, {
+            path: b2,
             callable: c1
         }), {
             get (b, c, d) {
-                return c.startsWith("__") ? Reflect.get(b, c, d) : a(b.path ? `${b.path}.${c}` : c, b.callable);
+                return c.startsWith("__") ? Reflect.get(b, c, d) : a1(b.path ? `${b.path}.${c}` : c, b.callable);
             },
             apply ({ path: a , callable: b  }, d, c = []) {
                 return b(a, c);
             }
         });
     }
-    return a("", (a, c)=>b8.call(a, c).then((a)=>a.reply
+    return a1("", (a2, c)=>b1.call(a2, c).then((a)=>a.reply
         )
     );
 }
 class responder1 {
-    constructor(a10, b7, c){
-        this.ch = a10, this.codec = b7, this.header = c, this.responded = !1;
+    constructor(a, b, c){
+        this.ch = a, this.codec = b, this.header = c, this.responded = !1;
     }
     send(a) {
         return this.codec.encoder(this.ch).encode(a);
@@ -292,8 +294,8 @@ class responder1 {
     }
 }
 class Peer1 {
-    constructor(a11, b8){
-        this.session = a11, this.codec = b8, this.caller = new Client1(a11, b8), this.responder = new RespondMux1;
+    constructor(a, b){
+        this.session = a, this.codec = b, this.caller = new Client1(a, b), this.responder = new RespondMux1;
     }
     async respond() {
         while(!0){
@@ -315,10 +317,10 @@ class Peer1 {
         return VirtualCaller1(this.caller);
     }
 }
-function concat(c, d) {
+function concat(c2, d) {
     const a = new Uint8Array(d);
     let b = 0;
-    return c.forEach((c)=>{
+    return c2.forEach((c)=>{
         a.set(c, b), b += c.length;
     }), a;
 }
@@ -436,8 +438,8 @@ payloadSizes = new Map([
     bytes: !1
 };
 class Encoder {
-    constructor(a12){
-        this.w = a12;
+    constructor(a){
+        this.w = a;
     }
     async encode(c) {
         debug4.messages && console.log("<<ENC", c);
@@ -449,8 +451,8 @@ class Encoder {
     }
 }
 class Decoder {
-    constructor(a13){
-        this.r = a13;
+    constructor(a){
+        this.r = a;
     }
     async decode() {
         const a = await readPacket(this.r);
@@ -572,8 +574,8 @@ function Unmarshal(b) {
 }
 const channelMaxPacket1 = 1 << 15, maxPacketLength1 = Number.MAX_VALUE, channelWindowSize1 = 64 * channelMaxPacket1;
 class Channel1 {
-    constructor(a14){
-        this.localId = 0, this.remoteId = 0, this.maxIncomingPayload = 0, this.maxRemotePayload = 0, this.sentEOF = !1, this.sentClose = !1, this.remoteWin = 0, this.myWindow = 0, this.ready = new queue, this.session = a14, this.writers = [], this.readBuf = new ReadBuffer;
+    constructor(a){
+        this.localId = 0, this.remoteId = 0, this.maxIncomingPayload = 0, this.maxRemotePayload = 0, this.sentEOF = !1, this.sentClose = !1, this.remoteWin = 0, this.myWindow = 0, this.ready = new queue, this.session = a, this.writers = [], this.readBuf = new ReadBuffer;
     }
     ident() {
         return this.localId;
@@ -582,8 +584,8 @@ class Channel1 {
         let a = await this.readBuf.read(b);
         if (a !== null) try {
             await this.adjustWindow(a);
-        } catch (a15) {
-            if (a15 !== "EOF") throw a15;
+        } catch (a3) {
+            if (a3 !== "EOF") throw a3;
         }
         return a;
     }
@@ -690,8 +692,8 @@ class Channel1 {
     }
 }
 class Session1 {
-    constructor(a15){
-        this.conn = a15, this.enc = new Encoder(a15), this.dec = new Decoder(a15), this.channels = [], this.incoming = new queue, this.done = this.loop();
+    constructor(a){
+        this.conn = a, this.enc = new Encoder(a), this.dec = new Decoder(a), this.channels = [], this.incoming = new queue, this.done = this.loop();
     }
     async open() {
         const a = this.newChannel();
@@ -775,46 +777,46 @@ function connect2(b, a) {
     });
 }
 class Conn {
-    constructor(b10){
-        this.isClosed = !1, this.waiters = [], this.chunks = [], this.ws = b10, this.ws.binaryType = "arraybuffer", this.ws.onmessage = (a)=>{
+    constructor(b3){
+        this.isClosed = !1, this.waiters = [], this.chunks = [], this.ws = b3, this.ws.binaryType = "arraybuffer", this.ws.onmessage = (a)=>{
             const b = new Uint8Array(a.data);
             if (this.chunks.push(b), this.waiters.length > 0) {
                 const a = this.waiters.shift();
                 a && a();
             }
         };
-        const a17 = this.ws.onclose;
+        const a4 = this.ws.onclose;
         this.ws.onclose = (b)=>{
-            a17 && a17.bind(this.ws)(b), this.close();
+            a4 && a4.bind(this.ws)(b), this.close();
         };
     }
-    read(a) {
+    read(a5) {
         return new Promise((b)=>{
-            var c = ()=>{
+            var c3 = ()=>{
                 if (this.isClosed) {
                     b(null);
                     return;
                 }
                 if (this.chunks.length === 0) {
-                    this.waiters.push(c);
+                    this.waiters.push(c3);
                     return;
                 }
                 let d = 0;
-                while(d < a.length){
+                while(d < a5.length){
                     const c = this.chunks.shift();
                     if (c === null || c === void 0) {
                         b(null);
                         return;
                     }
-                    const e = c.slice(0, a.length - d);
-                    if (a.set(e, d), d += e.length, c.length > e.length) {
+                    const e = c.slice(0, a5.length - d);
+                    if (a5.set(e, d), d += e.length, c.length > e.length) {
                         const a = c.slice(e.length);
                         this.chunks.unshift(a);
                     }
                 }
                 b(d);
             };
-            c();
+            c3();
         });
     }
     write(a) {
@@ -826,14 +828,11 @@ class Conn {
         ), this.ws.close();
     }
 }
-const mod = function() {
-    return {
-        connect: connect2,
-        Conn
-    };
-}();
-frames = {
+const mod = {
+    connect: connect2,
+    Conn
 };
+frames = {};
 function frameElementID(a) {
     return a.frameElement ? a.frameElement.id : "";
 }
@@ -857,36 +856,36 @@ window.addEventListener("message", (b)=>{
     }
 });
 class Conn1 {
-    constructor(a18){
-        this.isClosed = !1, this.waiters = [], this.chunks = [], a18 && a18.contentWindow ? (this.frame = a18.contentWindow, frames[a18.id] = this) : (this.frame = window.parent, frames[frameElementID(window.parent)] = this);
+    constructor(a){
+        this.isClosed = !1, this.waiters = [], this.chunks = [], a && a.contentWindow ? (this.frame = a.contentWindow, frames[a.id] = this) : (this.frame = window.parent, frames[frameElementID(window.parent)] = this);
     }
-    read(a) {
+    read(a6) {
         return new Promise((b)=>{
-            var c = ()=>{
+            var c4 = ()=>{
                 if (this.isClosed) {
                     b(null);
                     return;
                 }
                 if (this.chunks.length === 0) {
-                    this.waiters.push(c);
+                    this.waiters.push(c4);
                     return;
                 }
                 let d = 0;
-                while(d < a.length){
+                while(d < a6.length){
                     const c = this.chunks.shift();
                     if (c === null || c === void 0) {
                         b(null);
                         return;
                     }
-                    const e = c.slice(0, a.length - d);
-                    if (a.set(e, d), d += e.length, c.length > e.length) {
+                    const e = c.slice(0, a6.length - d);
+                    if (a6.set(e, d), d += e.length, c.length > e.length) {
                         const a = c.slice(e.length);
                         this.chunks.unshift(a);
                     }
                 }
                 b(d);
             };
-            c();
+            c4();
         });
     }
     write(a) {
@@ -914,10 +913,15 @@ function open1(a, d, b) {
     }
     return c;
 }
-async function connect3(url) {
-    return new Client2(await connect1(url, new JSONCodec1()));
+(async ()=>{
+    if (window) {
+        window.$host = await connect(`ws://${window.location.host}/`);
+    }
+})();
+async function connect(url) {
+    return new Client(await connect1(url, new JSONCodec1()));
 }
-class Client2 {
+class Client {
     rpc;
     constructor(peer){
         this.rpc = peer.virtualize();
@@ -926,9 +930,7 @@ class Client2 {
         return new Screen(this.rpc);
     }
     get shell() {
-        return {
-            ShowFilePicker: (fd)=>this.rpc.shell.ShowFilePicker(fd)
-        };
+        return new Shell(this.rpc);
     }
     get window() {
         return {
@@ -941,18 +943,51 @@ class Client2 {
 }
 class Screen {
     rpc;
-    constructor(rpc1){
-        this.rpc = rpc1;
+    constructor(rpc){
+        this.rpc = rpc;
     }
     Displays() {
         return this.rpc.screen.Displays();
     }
 }
+class Shell {
+    rpc;
+    constructor(rpc){
+        this.rpc = rpc;
+    }
+    ShowNotification(n) {
+        this.rpc.shell.ShowNotification(n);
+    }
+    ShowMessage(msg) {
+        this.rpc.shell.ShowMessage(msg);
+    }
+    ShowFilePicker(fd) {
+        return this.rpc.shell.ShowFilePicker(fd);
+    }
+    ReadClipboard() {
+        return this.rpc.shell.ReadClipboard();
+    }
+    WriteClipboard(text) {
+        return this.rpc.shell.WriteClipboard(text);
+    }
+    RegisterShortcut(accelerator) {
+        return this.rpc.shell.RegisterShortcut(accelerator);
+    }
+    IsShortcutRegistered(accelerator) {
+        return this.rpc.shell.IsShortcutRegistered(accelerator);
+    }
+    UnregisterShortcut(accelerator) {
+        return this.rpc.shell.UnregisterShortcut(accelerator);
+    }
+    UnregisterAllShortcuts() {
+        return this.rpc.shell.UnregisterAllShortcuts();
+    }
+}
 class Window {
     ID;
     rpc;
-    constructor(rpc2, id){
-        this.rpc = rpc2;
+    constructor(rpc, id){
+        this.rpc = rpc;
         this.ID = id;
     }
     async destroy() {
@@ -1007,7 +1042,7 @@ class Window {
         return await this.rpc.window.SetTitle(this.ID, title);
     }
 }
-export { connect3 as connect };
-export { Client2 as Client };
+export { connect as connect };
+export { Client as Client };
 export { Window as Window };
 
