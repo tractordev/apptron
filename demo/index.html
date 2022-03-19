@@ -5,15 +5,16 @@
   <meta name="main-window" content="center=true" />
   <script src="/-/hostbridge.js"></script>
   <script>
-    window.clicked = async () => {
-      window.output.value = await $host.shell.ShowFilePicker({Mode: "pickfile"})
-    }
     $host.ready.then(() => {
       $host.shell.ShowMessage({Body: "Hello"})
     })
+
+    async function clickme() {
+      window.output.value = await $host.shell.ShowFilePicker({Mode: "pickfile"})
+    }
   </script>
 </head>
 <body>
-  <button onclick="clicked()">Click Me</button> <input type="text" id="output" />
+  <button onclick="clickme()">Click Me</button> <input type="text" id="output" />
 </body>
 </html>
