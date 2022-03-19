@@ -3,8 +3,9 @@ import * as qtalk from "../lib/qtalk.min.js";
 
 (async ()=>{
   if (window) {
+    const client = await connect(`ws://${window.location.host}/`)
     // @ts-ignore
-    window.$host = await connect(`ws://${window.location.host}/`)
+    window["$host"] = client;
   }
 })()
 

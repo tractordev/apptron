@@ -915,7 +915,8 @@ function open1(a, d, b) {
 }
 (async ()=>{
     if (window) {
-        window.$host = await connect(`ws://${window.location.host}/`);
+        const client = await connect(`ws://${window.location.host}/`);
+        window["$host"] = client;
     }
 })();
 async function connect(url) {
