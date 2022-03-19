@@ -99,7 +99,11 @@ func Spawn() (*Client, error) {
 	if bridgecmd == "" {
 		bridgecmd = "hostbridge"
 	}
-	cmd := exec.Command(bridgecmd)
+	cmdpath, err := exec.LookPath(bridgecmd)
+	if err != nil {
+		return nil, err
+	}
+	cmd := exec.Command(cmdpath)
 	wc, err := cmd.StdinPipe()
 	if err != nil {
 		return nil, err

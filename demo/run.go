@@ -1,3 +1,5 @@
+//go:build !entrypoint
+
 package demo
 
 import (
@@ -5,8 +7,12 @@ import (
 	"context"
 	"io"
 	"io/fs"
+	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
+	"os/exec"
+	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -23,9 +29,26 @@ import (
 )
 
 func Run(delegate interface{}, fsys fs.FS) {
+	_, err := exec.LookPath("hostbridge")
+	if err != nil {
+		f, _ := fsys.Open("hostbridge")
+		d, _ := ioutil.ReadAll(f)
+		f.Close()
+		dir, err := ioutil.TempDir("", "hostbridge-*")
+		if err != nil {
+			log.Fatal(err)
+		}
+		path := filepath.Join(dir, "hostbridge")
+		if err := ioutil.WriteFile(path, d, 0755); err != nil {
+			log.Fatal(err)
+		}
+		os.Setenv("BRIDGECMD", path)
+		log.Println(path)
+	}
+
 	c, err := client.Spawn()
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 	defer c.Close()
 
