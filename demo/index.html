@@ -2,12 +2,14 @@
 <html>
 <head>
   <title>Hostbridge Demo</title>
-  <meta name="window" content="center=true" />
-  <script type="module">
-    import {connect} from "/-/client.js"
-    window.$host = await connect(`ws://${window.location.host}/`)
+  <meta name="main-window" content="center=true" />
+  <script type="module" src="/hostbridge.js"></script>
+  <script>
     window.clicked = async () => {
       window.output.value = await $host.shell.ShowFilePicker({Mode: "pickfile"})
+    }
+    window.onload = async () => {
+      
     }
   </script>
 </head>

@@ -21,6 +21,7 @@
 /hostbridge
 /electronish
 /_local
+/demo/demo
 
 lib/hostbridge/target
 lib/libhostbridge.a

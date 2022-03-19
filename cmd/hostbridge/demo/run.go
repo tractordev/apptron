@@ -58,7 +58,7 @@ func Run(delegate interface{}, fsys fs.FS) {
 
 	http.Handle("/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Upgrade") != "websocket" {
-			if r.URL.Path == "/-/client.js" {
+			if r.URL.Path == "/hostbridge.js" {
 				w.Header().Add("Content-Type", "text/javascript")
 				w.Write(dist.ClientJS)
 				return
