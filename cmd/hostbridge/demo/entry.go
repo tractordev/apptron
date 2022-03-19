@@ -5,7 +5,7 @@ package main
 import (
 	"embed"
 
-	"tractor.dev/hostbridge/demo"
+	"tractor.dev/hostbridge/cmd/hostbridge/demo"
 )
 
 //go:embed *

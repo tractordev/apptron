@@ -11,7 +11,7 @@ import (
 	"github.com/progrium/qtalk-go/mux"
 	"tractor.dev/hostbridge/bridge"
 	"tractor.dev/hostbridge/bridge/core"
-	"tractor.dev/hostbridge/demo"
+	"tractor.dev/hostbridge/cmd/hostbridge/demo"
 )
 
 const Version = "0.1.0"

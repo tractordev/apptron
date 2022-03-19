@@ -47,7 +47,7 @@ func Build() {
 	run(gobin, "build", "-o", appname, ".")
 
 	for _, name := range []string{"go.mod", "go.sum", "main.go", "hostbridge"} {
-		fatal(os.Remove(name))
+		os.Remove(name)
 	}
 
 }

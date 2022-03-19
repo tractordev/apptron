@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Hostbridge Demo</title>
+  <meta name="window" content="center=true" />
+  <script type="module">
+    import {connect} from "/-/client.js"
+    window.$host = await connect(`ws://${window.location.host}/`)
+    window.clicked = async () => {
+      window.output.value = await $host.shell.ShowFilePicker({Mode: "pickfile"})
+    }
+  </script>
+</head>
+<body>
+  <button onclick="clicked()">Click Me</button> <input type="text" id="output" />
+</body>
+</html>
