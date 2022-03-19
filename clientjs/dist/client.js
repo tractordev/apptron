@@ -913,10 +913,11 @@ function open1(a, d, b) {
     }
     return c;
 }
-(async ()=>{
+(()=>{
     if (window) {
-        const client = await connect(`ws://${window.location.host}/`);
-        window["$host"] = client;
+        window.requestAnimationFrame(async ()=>{
+            window["$host"] = await connect(`ws://${window.location.host}/`);
+        });
     }
 })();
 async function connect(url) {
