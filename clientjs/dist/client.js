@@ -917,7 +917,6 @@ async function connect(url) {
     return new Client(await connect1(url, new JSONCodec1()));
 }
 class Client {
-    ready;
     rpc;
     app;
     menu;
@@ -926,26 +925,60 @@ class Client {
     window;
     onevent;
     constructor(peer){
-        this.ready = Promise.resolve();
         this.rpc = peer.virtualize();
         this.app = new AppModule(this.rpc);
         this.menu = new MenuModule(this.rpc);
         this.screen = new ScreenModule(this.rpc);
         this.shell = new ShellModule(this.rpc);
         this.window = new WindowModule(this.rpc);
-        (async ()=>{
-            const resp = await peer.call("Listen");
-            while(true){
-                const e = await resp.receive();
-                if (e === null) {
-                    break;
-                }
-                if (this.onevent) {
-                    this.onevent(e);
-                }
-            }
-        })();
+        this.handleEvents(peer);
         peer.respond();
+    }
+    async handleEvents(peer) {
+        const resp = await peer.call("Listen");
+        while(true){
+            const obj = await resp.receive();
+            if (obj === null) {
+                break;
+            }
+            const event = obj;
+            if (this.onevent) {
+                this.onevent(event);
+            }
+            switch(event.Name){
+                case "menu":
+                    if (this.menu.onclick) this.menu.onclick(event);
+                    break;
+                case "shortcut":
+                    if (this.shell.onshortcut) this.shell.onshortcut(event);
+                    break;
+                default:
+                    const w = this.window.windows[event.WindowID];
+                    if (w) {
+                        switch(event.Name){
+                            case "close":
+                                if (w.onclose) w.onclose(event);
+                                break;
+                            case "destroy":
+                                if (w.ondestroyed) w.ondestroyed(event);
+                                delete this.window.windows[event.WindowID];
+                                break;
+                            case "focus":
+                                if (w.onfocused) w.onfocused(event);
+                                break;
+                            case "blur":
+                                if (w.onblurred) w.onblurred(event);
+                                break;
+                            case "resize":
+                                if (w.onresized) w.onresized(event);
+                                break;
+                            case "move":
+                                if (w.onmoved) w.onmoved(event);
+                                break;
+                        }
+                    }
+            }
+        }
     }
 }
 class AppModule {
@@ -962,6 +995,7 @@ class AppModule {
 }
 class MenuModule {
     rpc;
+    onclick;
     constructor(rpc){
         this.rpc = rpc;
     }
@@ -980,6 +1014,7 @@ class ScreenModule {
 }
 class ShellModule {
     rpc;
+    onshortcut;
     constructor(rpc){
         this.rpc = rpc;
     }
@@ -1013,12 +1048,19 @@ class ShellModule {
 }
 class WindowModule {
     rpc;
+    main;
+    windows;
     constructor(rpc){
         this.rpc = rpc;
+        this.main = new Window(this.rpc, 0);
+        this.windows = {
+            0: this.main
+        };
     }
     async New(options) {
         const w = await this.rpc.window.New(options);
-        return new Window(this.rpc, w.ID);
+        this.windows[w.ID] = new Window(this.rpc, w.ID);
+        return this.windows[w.ID];
     }
 }
 class Menu {
@@ -1032,8 +1074,12 @@ class Menu {
 class Window {
     ID;
     rpc;
+    onclose;
     onmoved;
     onresized;
+    ondestroyed;
+    onfocused;
+    onblurred;
     constructor(rpc, id){
         this.rpc = rpc;
         this.ID = id;

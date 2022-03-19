@@ -17,62 +17,63 @@ export class Client {
   onevent?: (e: Event) => void
 
   constructor(peer: qtalk.Peer) {
-    peer.respond()
     this.rpc = peer.virtualize()
     this.app = new AppModule(this.rpc)
     this.menu = new MenuModule(this.rpc)
     this.screen = new ScreenModule(this.rpc)
     this.shell = new ShellModule(this.rpc)
     this.window = new WindowModule(this.rpc)
-    ;(async () => {
-      const resp = await peer.call("Listen")
-      while (true) {
-        const obj = await resp.receive()
-        if (obj === null) {
-          break;
-        }
-        const event = obj as Event
-        if (this.onevent) {
-          this.onevent(event)
-        }
-        const w = this.window.windows
-        switch (event.Name) {
-          case "close":
-            if (w[event.WindowID].onclose) 
-              w[event.WindowID].onclose(event)
-            break
-          case "destroy":
-            if (w[event.WindowID].ondestroyed) 
-              w[event.WindowID].ondestroyed(event)
-            delete w[event.WindowID]
-            break
-          case "focus":
-            if (w[event.WindowID].onfocused) 
-              w[event.WindowID].onfocused(event)
-            break
-          case "blur":
-            if (w[event.WindowID].onblurred) 
-              w[event.WindowID].onblurred(event)
-            break
-          case "resize":
-            if (w[event.WindowID].onresized) 
-              w[event.WindowID].onresized(event)
-            break
-          case "move":
-            if (w[event.WindowID].onmoved) 
-              w[event.WindowID].onmoved(event)
-            break
-          case "menu":
-            if (this.menu.onclick)
-              this.menu.onclick(event)
-            break
-          case "shortcut":
-            if (this.shell.onshortcut)
-              this.shell.onshortcut(event)
-            break
-        }
+    this.handleEvents(peer)
+    peer.respond()
+  }
+
+  async handleEvents(peer: qtalk.Peer) {
+    const resp = await peer.call("Listen")
+    while (true) {
+      const obj = await resp.receive()
+      if (obj === null) {
+        break;
       }
-    })()
+      const event = obj as Event
+      if (this.onevent) {
+        this.onevent(event)
+      }
+      switch (event.Name) {
+        case "menu":
+          if (this.menu.onclick)
+            this.menu.onclick(event)
+          break
+        case "shortcut":
+          if (this.shell.onshortcut)
+            this.shell.onshortcut(event)
+          break
+        default:
+          const w = this.window.windows[event.WindowID]
+          if (w) {
+            switch (event.Name) {
+              case "close":
+                if (w.onclose) w.onclose(event)
+                break
+              case "destroy":
+                if (w.ondestroyed) w.ondestroyed(event)
+                delete this.window.windows[event.WindowID]
+                break
+              case "focus":
+                if (w.onfocused) w.onfocused(event)
+                break
+              case "blur":
+                if (w.onblurred) w.onblurred(event)
+                break
+              case "resize":
+                if (w.onresized) w.onresized(event)
+                break
+              case "move":
+                if (w.onmoved) w.onmoved(event)
+                break
+            }
+          }
+      }
+    }
   }
 }
 
@@ -210,6 +211,7 @@ class WindowModule {
   constructor(rpc: any) {
     this.rpc = rpc
     this.main = new Window(this.rpc, 0)
+    this.windows = {0: this.main}
   }
 
   async New(options: WindowOptions): Promise<Window> {

@@ -5,3 +5,4 @@ build:
 
 docs:
 	npx typedoc src/client.ts
+.PHONY: docs
