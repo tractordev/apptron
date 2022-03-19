@@ -3,14 +3,14 @@
 <head>
   <title>Hostbridge Demo</title>
   <meta name="main-window" content="center=true" />
-  <script type="module" src="/hostbridge.js"></script>
+  <script src="/-/hostbridge.js"></script>
   <script>
     window.clicked = async () => {
       window.output.value = await $host.shell.ShowFilePicker({Mode: "pickfile"})
     }
-    setTimeout(() => {
+    $host.ready.then(() => {
       $host.shell.ShowMessage({Body: "Hello"})
-    },500)
+    })
   </script>
 </head>
 <body>

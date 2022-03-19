@@ -1,20 +1,13 @@
 // @ts-ignore
 import * as qtalk from "../lib/qtalk.min.js";
 
-(()=>{
-  if (window) {
-    window.requestAnimationFrame(async () => {
-      // @ts-ignore
-      window["$host"] = await connect(`ws://${window.location.host}/`)
-    })
-  }
-})()
 
 export async function connect(url: string): Promise<Client> {
   return new Client(await qtalk.connect(url, new qtalk.JSONCodec()))
 }
 
 export class Client {
+  ready: Promise<void>
   rpc: any
   app: app
   menu: menu
@@ -25,6 +18,7 @@ export class Client {
   onevent?: (e: Event) => void
 
   constructor(peer: qtalk.Peer) {
+    this.ready = Promise.resolve()
     this.rpc = peer.virtualize()
     this.app = new AppModule(this.rpc)
     this.menu = new MenuModule(this.rpc)

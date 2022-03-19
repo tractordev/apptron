@@ -913,17 +913,11 @@ function open1(a, d, b) {
     }
     return c;
 }
-(()=>{
-    if (window) {
-        window.requestAnimationFrame(async ()=>{
-            window["$host"] = await connect(`ws://${window.location.host}/`);
-        });
-    }
-})();
 async function connect(url) {
     return new Client(await connect1(url, new JSONCodec1()));
 }
 class Client {
+    ready;
     rpc;
     app;
     menu;
@@ -932,6 +926,7 @@ class Client {
     window;
     onevent;
     constructor(peer){
+        this.ready = Promise.resolve();
         this.rpc = peer.virtualize();
         this.app = new AppModule(this.rpc);
         this.menu = new MenuModule(this.rpc);
