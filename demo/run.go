@@ -1,5 +1,3 @@
-//go:build !entrypoint
-
 package demo
 
 import (

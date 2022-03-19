@@ -1,4 +1,4 @@
-//go:build entrypoint
+//go:build exclude
 
 package main
 

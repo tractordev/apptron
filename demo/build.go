@@ -1,5 +1,3 @@
-//go:build !entrypoint
-
 package demo
 
 import (
@@ -41,12 +39,12 @@ func Build() {
 	}
 
 	fatal(copyFile(selfbin, filepath.Join(dir, "hostbridge")))
-	fatal(ioutil.WriteFile("main.go", entrypoint, 0644))
+	fatal(ioutil.WriteFile("main.go", entrypoint[19:], 0644))
 
 	run(gobin, "mod", "init", appname)
 	run(gobin, "get", "-u", "tractor.dev/hostbridge")
 	run(gobin, "get")
-	run(gobin, "build", "-tags", "entrypoint", "-o", appname, ".")
+	run(gobin, "build", "-o", appname, ".")
 
 	for _, name := range []string{"go.mod", "go.sum", "main.go", "hostbridge"} {
 		fatal(os.Remove(name))
