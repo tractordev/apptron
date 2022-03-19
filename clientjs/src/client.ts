@@ -16,35 +16,80 @@ export async function connect(url: string): Promise<Client> {
 
 export class Client {
   rpc: any
+  app: app
+  menu: menu
+  screen: screen
+  shell: shell
+  window: window
+
+  onevent?: (e: Event) => void
 
   constructor(peer: qtalk.Peer) {
     this.rpc = peer.virtualize()
+    this.app = new AppModule(this.rpc)
+    this.menu = new MenuModule(this.rpc)
+    this.screen = new ScreenModule(this.rpc)
+    this.shell = new ShellModule(this.rpc)
+    this.window = new WindowModule(this.rpc)
+    ;(async () => {
+      const resp = await peer.call("Listen")
+      while (true) {
+        const e = await resp.receive()
+        if (e === null) {
+          break;
+        }
+        if (this.onevent) {
+          this.onevent(e as Event)
+        }
+      }
+    })()
+    peer.respond()
+  }
+}
+
+export interface app {
+  Menu(): Promise<Menu>
+  SetMenu(m: Menu): void 
+  //NewIndicator(icon, items)
+}
+
+class AppModule {
+  rpc: any
+
+  constructor(rpc: any) {
+    this.rpc = rpc
   }
 
-  get screen(): screen {
-    return new Screen(this.rpc)
+  Menu(): Promise<Menu> {
+    return this.rpc.app.Menu()
   }
 
-  get shell(): shell {
-    return new Shell(this.rpc)
+  SetMenu(m: Menu): void {
+    this.rpc.app.SetMenu(m)
+  }
+}
+
+export interface menu {
+  New(items: MenuItem[]): Promise<Menu>
+}
+
+class MenuModule {
+  rpc: any
+
+  constructor(rpc: any) {
+    this.rpc = rpc
   }
 
-  get window() {
-    return {
-      New: async (options: WindowOptions): Promise<Window> => {
-        const w = await this.rpc.window.New(options)
-        return new Window(this.rpc, w.ID)
-      },
-    }
+  New(items: MenuItem[]): Promise<Menu> {
+    return this.rpc.menu.New(items)
   }
-
 }
 
 export interface screen {
   Displays(): Promise<Display[]>
 }
 
-class Screen {
+class ScreenModule {
   rpc: any
 
   constructor(rpc: any) {
@@ -68,7 +113,7 @@ export interface shell {
   UnregisterAllShortcuts(): Promise<boolean>
 }
 
-class Shell {
+class ShellModule {
   rpc: any
 
   constructor(rpc: any) {
@@ -110,6 +155,143 @@ class Shell {
   UnregisterAllShortcuts(): Promise<boolean> {
     return this.rpc.shell.UnregisterAllShortcuts()
   }
+}
+
+
+export interface window {
+  New(options: WindowOptions): Promise<Window>
+}
+
+class WindowModule {
+  rpc: any
+
+  constructor(rpc: any) {
+    this.rpc = rpc
+  }
+
+  async New(options: WindowOptions): Promise<Window> {
+    const w = await this.rpc.window.New(options)
+    return new Window(this.rpc, w.ID)
+  }
+}
+
+export class Menu {
+  ID: number
+  rpc: any
+
+  constructor(rpc: any, id: number) {
+    this.rpc = rpc
+    this.ID = id
+  }
+}
+
+
+export class Window {
+  ID: number 
+  rpc: any
+
+  onmoved?: (e: Event) => void
+  onresized?: (e: Event) => void
+  // TODO: more events
+
+  constructor(rpc: any, id: number) {
+    this.rpc = rpc
+    this.ID = id
+  }
+
+  // Destroy
+  destroy() {
+    this.rpc.window.Destroy(this.ID)
+  }
+
+  // Focus
+  focus() {
+    this.rpc.window.Focus(this.ID)
+  }
+
+  // GetOuterPosition
+  getOuterPosition(): Promise<Position> {
+    return this.rpc.window.GetOuterPosition(this.ID)
+  }
+
+  // GetOuterSize
+  getOuterSize(): Promise<Size> {
+    return this.rpc.window.GetOuterSize(this.ID)
+  }
+
+  // IsDestroyed
+  isDestroyed(): Promise<boolean> {
+    return this.rpc.window.IsDestroyed(this.ID)
+  }
+
+  // IsVisible
+  isVisible(): Promise<boolean> {
+    return this.rpc.window.IsVisible(this.ID)
+  }
+
+  // SetVisible
+  setVisible(visible: boolean) {
+    return this.rpc.window.SetVisible(this.ID, visible)
+  }
+
+  // SetMaximized
+  setMaximized(maximized: boolean) {
+    return this.rpc.window.SetMaximized(this.ID, maximized)
+  }
+
+  // SetMinimized
+  setMinimized(minimized: boolean) {
+    return this.rpc.window.SetMinimized(this.ID, minimized)
+  }
+
+  // SetFullscreen
+  setFullscreen(fullscreen: boolean) {
+    return this.rpc.window.SetFullscreen(this.ID, fullscreen)
+  }
+
+  // SetMinSize
+  setMinSize(size: Size) {
+    return this.rpc.window.SetMinSize(this.ID, size)
+  }
+
+  // SetMaxSize
+  setMaxSize(size: Size) {
+    return this.rpc.window.SetMaxSize(this.ID, size)
+  }
+
+  // SetResizable
+  setResizable(resizable: boolean) {
+    return this.rpc.window.SetResizable(this.ID, resizable)
+  }
+
+  // SetAlwaysOnTop
+  setAlwaysOnTop(always: boolean) {
+    return this.rpc.window.SetAlwaysOnTop(this.ID, always)
+  }
+
+  // SetSize
+  setSize(size: Size) {
+    return this.rpc.window.SetSize(this.ID, size)
+  }
+
+  // SetPosition
+  setPosition(position: Position) {
+    return this.rpc.window.SetPosition(this.ID, position)
+  }
+
+  // SetTitle
+  setTitle(title: string) {
+    return this.rpc.window.SetTitle(this.ID, title)
+  }
+}
+
+export interface MenuItem {
+	ID:          number
+	Title:       string
+	Enabled:     boolean
+	Selected:    boolean
+	Accelerator: string
+	SubMenu:     MenuItem[]
 }
 
 export interface Notification {
@@ -170,97 +352,13 @@ export interface FileDialog {
 	Filters:   string[] // each string is comma delimited (go,rs,toml) with optional label prefix (text:go,txt)
 }
 
-export class Window {
-  ID: number 
-  rpc: any
 
-  constructor(rpc: any, id: number) {
-    this.rpc = rpc
-    this.ID = id
-  }
-
-  // Destroy
-  async destroy() {
-    await this.rpc.window.Destroy(this.ID)
-  }
-
-  // Focus
-  async focus() {
-    await this.rpc.window.Focus(this.ID)
-  }
-
-  // GetOuterPosition
-  async getOuterPosition(): Promise<Position> {
-    return await this.rpc.window.GetOuterPosition(this.ID)
-  }
-
-  // GetOuterSize
-  async getOuterSize(): Promise<Size> {
-    return await this.rpc.window.GetOuterSize(this.ID)
-  }
-
-  // IsDestroyed
-  async isDestroyed(): Promise<boolean> {
-    return await this.rpc.window.IsDestroyed(this.ID)
-  }
-
-  // IsVisible
-  async isVisible(): Promise<boolean> {
-    return await this.rpc.window.IsVisible(this.ID)
-  }
-
-  // SetVisible
-  async setVisible(visible: boolean) {
-    return await this.rpc.window.SetVisible(this.ID, visible)
-  }
-
-  // SetMaximized
-  async setMaximized(maximized: boolean) {
-    return await this.rpc.window.SetMaximized(this.ID, maximized)
-  }
-
-  // SetMinimized
-  async setMinimized(minimized: boolean) {
-    return await this.rpc.window.SetMinimized(this.ID, minimized)
-  }
-
-  // SetFullscreen
-  async setFullscreen(fullscreen: boolean) {
-    return await this.rpc.window.SetFullscreen(this.ID, fullscreen)
-  }
-
-  // SetMinSize
-  async setMinSize(size: Size) {
-    return await this.rpc.window.SetMinSize(this.ID, size)
-  }
-
-  // SetMaxSize
-  async setMaxSize(size: Size) {
-    return await this.rpc.window.SetMaxSize(this.ID, size)
-  }
-
-  // SetResizable
-  async setResizable(resizable: boolean) {
-    return await this.rpc.window.SetResizable(this.ID, resizable)
-  }
-
-  // SetAlwaysOnTop
-  async setAlwaysOnTop(always: boolean) {
-    return await this.rpc.window.SetAlwaysOnTop(this.ID, always)
-  }
-
-  // SetSize
-  async setSize(size: Size) {
-    return await this.rpc.window.SetSize(this.ID, size)
-  }
-
-  // SetPosition
-  async setPosition(position: Position) {
-    return await this.rpc.window.SetPosition(this.ID, position)
-  }
-
-  // SetTitle
-  async setTitle(title: string) {
-    return await this.rpc.window.SetTitle(this.ID, title)
-  }
+export interface Event {
+	Type:     number
+	Name:     string
+	WindowID: number
+	Position: Position
+	Size:     Size
+	MenuID:   number
+	Shortcut: string
 }

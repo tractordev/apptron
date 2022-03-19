@@ -41,7 +41,6 @@ func Run(delegate interface{}, fsys fs.FS) {
 			log.Fatal(err)
 		}
 		os.Setenv("BRIDGECMD", path)
-		log.Println(path)
 	}
 
 	c, err := client.Spawn()

@@ -8,9 +8,9 @@
     window.clicked = async () => {
       window.output.value = await $host.shell.ShowFilePicker({Mode: "pickfile"})
     }
-    window.onload = async () => {
-      
-    }
+    setTimeout(() => {
+      $host.shell.ShowMessage({Body: "Hello"})
+    },500)
   </script>
 </head>
 <body>

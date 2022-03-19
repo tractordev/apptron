@@ -925,25 +925,56 @@ async function connect(url) {
 }
 class Client {
     rpc;
+    app;
+    menu;
+    screen;
+    shell;
+    window;
+    onevent;
     constructor(peer){
         this.rpc = peer.virtualize();
-    }
-    get screen() {
-        return new Screen(this.rpc);
-    }
-    get shell() {
-        return new Shell(this.rpc);
-    }
-    get window() {
-        return {
-            New: async (options)=>{
-                const w = await this.rpc.window.New(options);
-                return new Window(this.rpc, w.ID);
+        this.app = new AppModule(this.rpc);
+        this.menu = new MenuModule(this.rpc);
+        this.screen = new ScreenModule(this.rpc);
+        this.shell = new ShellModule(this.rpc);
+        this.window = new WindowModule(this.rpc);
+        (async ()=>{
+            const resp = await peer.call("Listen");
+            while(true){
+                const e = await resp.receive();
+                if (e === null) {
+                    break;
+                }
+                if (this.onevent) {
+                    this.onevent(e);
+                }
             }
-        };
+        })();
+        peer.respond();
     }
 }
-class Screen {
+class AppModule {
+    rpc;
+    constructor(rpc){
+        this.rpc = rpc;
+    }
+    Menu() {
+        return this.rpc.app.Menu();
+    }
+    SetMenu(m) {
+        this.rpc.app.SetMenu(m);
+    }
+}
+class MenuModule {
+    rpc;
+    constructor(rpc){
+        this.rpc = rpc;
+    }
+    New(items) {
+        return this.rpc.menu.New(items);
+    }
+}
+class ScreenModule {
     rpc;
     constructor(rpc){
         this.rpc = rpc;
@@ -952,7 +983,7 @@ class Screen {
         return this.rpc.screen.Displays();
     }
 }
-class Shell {
+class ShellModule {
     rpc;
     constructor(rpc){
         this.rpc = rpc;
@@ -985,66 +1016,87 @@ class Shell {
         return this.rpc.shell.UnregisterAllShortcuts();
     }
 }
-class Window {
+class WindowModule {
+    rpc;
+    constructor(rpc){
+        this.rpc = rpc;
+    }
+    async New(options) {
+        const w = await this.rpc.window.New(options);
+        return new Window(this.rpc, w.ID);
+    }
+}
+class Menu {
     ID;
     rpc;
     constructor(rpc, id){
         this.rpc = rpc;
         this.ID = id;
     }
-    async destroy() {
-        await this.rpc.window.Destroy(this.ID);
+}
+class Window {
+    ID;
+    rpc;
+    onmoved;
+    onresized;
+    constructor(rpc, id){
+        this.rpc = rpc;
+        this.ID = id;
     }
-    async focus() {
-        await this.rpc.window.Focus(this.ID);
+    destroy() {
+        this.rpc.window.Destroy(this.ID);
     }
-    async getOuterPosition() {
-        return await this.rpc.window.GetOuterPosition(this.ID);
+    focus() {
+        this.rpc.window.Focus(this.ID);
     }
-    async getOuterSize() {
-        return await this.rpc.window.GetOuterSize(this.ID);
+    getOuterPosition() {
+        return this.rpc.window.GetOuterPosition(this.ID);
     }
-    async isDestroyed() {
-        return await this.rpc.window.IsDestroyed(this.ID);
+    getOuterSize() {
+        return this.rpc.window.GetOuterSize(this.ID);
     }
-    async isVisible() {
-        return await this.rpc.window.IsVisible(this.ID);
+    isDestroyed() {
+        return this.rpc.window.IsDestroyed(this.ID);
     }
-    async setVisible(visible) {
-        return await this.rpc.window.SetVisible(this.ID, visible);
+    isVisible() {
+        return this.rpc.window.IsVisible(this.ID);
     }
-    async setMaximized(maximized) {
-        return await this.rpc.window.SetMaximized(this.ID, maximized);
+    setVisible(visible) {
+        return this.rpc.window.SetVisible(this.ID, visible);
     }
-    async setMinimized(minimized) {
-        return await this.rpc.window.SetMinimized(this.ID, minimized);
+    setMaximized(maximized) {
+        return this.rpc.window.SetMaximized(this.ID, maximized);
     }
-    async setFullscreen(fullscreen) {
-        return await this.rpc.window.SetFullscreen(this.ID, fullscreen);
+    setMinimized(minimized) {
+        return this.rpc.window.SetMinimized(this.ID, minimized);
     }
-    async setMinSize(size) {
-        return await this.rpc.window.SetMinSize(this.ID, size);
+    setFullscreen(fullscreen) {
+        return this.rpc.window.SetFullscreen(this.ID, fullscreen);
     }
-    async setMaxSize(size) {
-        return await this.rpc.window.SetMaxSize(this.ID, size);
+    setMinSize(size) {
+        return this.rpc.window.SetMinSize(this.ID, size);
     }
-    async setResizable(resizable) {
-        return await this.rpc.window.SetResizable(this.ID, resizable);
+    setMaxSize(size) {
+        return this.rpc.window.SetMaxSize(this.ID, size);
     }
-    async setAlwaysOnTop(always) {
-        return await this.rpc.window.SetAlwaysOnTop(this.ID, always);
+    setResizable(resizable) {
+        return this.rpc.window.SetResizable(this.ID, resizable);
     }
-    async setSize(size) {
-        return await this.rpc.window.SetSize(this.ID, size);
+    setAlwaysOnTop(always) {
+        return this.rpc.window.SetAlwaysOnTop(this.ID, always);
     }
-    async setPosition(position) {
-        return await this.rpc.window.SetPosition(this.ID, position);
+    setSize(size) {
+        return this.rpc.window.SetSize(this.ID, size);
     }
-    async setTitle(title) {
-        return await this.rpc.window.SetTitle(this.ID, title);
+    setPosition(position) {
+        return this.rpc.window.SetPosition(this.ID, position);
+    }
+    setTitle(title) {
+        return this.rpc.window.SetTitle(this.ID, title);
     }
 }
 export { connect as connect };
 export { Client as Client };
+export { Menu as Menu };
 export { Window as Window };
 
