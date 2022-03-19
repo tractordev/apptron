@@ -83,6 +83,7 @@ type Window struct {
 	OnResized   func(event Event)
 	OnClose     func(event Event)
 	OnFocused   func(event Event)
+	OnBlurred   func(event Event)
 	OnDestroyed func(event Event)
 }
 

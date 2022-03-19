@@ -7,7 +7,6 @@ export async function connect(url: string): Promise<Client> {
 }
 
 export class Client {
-  ready: Promise<void>
   rpc: any
   app: app
   menu: menu
@@ -18,7 +17,7 @@ export class Client {
   onevent?: (e: Event) => void
 
   constructor(peer: qtalk.Peer) {
-    this.ready = Promise.resolve()
+    peer.respond()
     this.rpc = peer.virtualize()
     this.app = new AppModule(this.rpc)
     this.menu = new MenuModule(this.rpc)
@@ -28,16 +27,52 @@ export class Client {
     ;(async () => {
       const resp = await peer.call("Listen")
       while (true) {
-        const e = await resp.receive()
-        if (e === null) {
+        const obj = await resp.receive()
+        if (obj === null) {
           break;
         }
+        const event = obj as Event
         if (this.onevent) {
-          this.onevent(e as Event)
+          this.onevent(event)
+        }
+        const w = this.window.windows
+        switch (event.Name) {
+          case "close":
+            if (w[event.WindowID].onclose) 
+              w[event.WindowID].onclose(event)
+            break
+          case "destroy":
+            if (w[event.WindowID].ondestroyed) 
+              w[event.WindowID].ondestroyed(event)
+            delete w[event.WindowID]
+            break
+          case "focus":
+            if (w[event.WindowID].onfocused) 
+              w[event.WindowID].onfocused(event)
+            break
+          case "blur":
+            if (w[event.WindowID].onblurred) 
+              w[event.WindowID].onblurred(event)
+            break
+          case "resize":
+            if (w[event.WindowID].onresized) 
+              w[event.WindowID].onresized(event)
+            break
+          case "move":
+            if (w[event.WindowID].onmoved) 
+              w[event.WindowID].onmoved(event)
+            break
+          case "menu":
+            if (this.menu.onclick)
+              this.menu.onclick(event)
+            break
+          case "shortcut":
+            if (this.shell.onshortcut)
+              this.shell.onshortcut(event)
+            break
         }
       }
     })()
-    peer.respond()
   }
 }
 
@@ -64,11 +99,15 @@ class AppModule {
 }
 
 export interface menu {
+  onclick?: (e: Event) => void
+
   New(items: MenuItem[]): Promise<Menu>
 }
 
 class MenuModule {
   rpc: any
+
+  onclick?: (e: Event) => void
 
   constructor(rpc: any) {
     this.rpc = rpc
@@ -96,6 +135,8 @@ class ScreenModule {
 }
 
 export interface shell {
+  onshortcut?: (e: Event) => void
+
   ShowNotification(n: Notification): void
   ShowMessage(msg: MessageDialog): void
   ShowFilePicker(fd: FileDialog): Promise<string[]>
@@ -109,6 +150,8 @@ export interface shell {
 
 class ShellModule {
   rpc: any
+
+  onshortcut?: (e: Event) => void
 
   constructor(rpc: any) {
     this.rpc = rpc
@@ -153,19 +196,26 @@ class ShellModule {
 
 
 export interface window {
+  main: Window
+  windows: {[id: number]: Window}
+
   New(options: WindowOptions): Promise<Window>
 }
 
 class WindowModule {
   rpc: any
+  main: Window
+  windows: {[id: number]: Window}
 
   constructor(rpc: any) {
     this.rpc = rpc
+    this.main = new Window(this.rpc, 0)
   }
 
   async New(options: WindowOptions): Promise<Window> {
     const w = await this.rpc.window.New(options)
-    return new Window(this.rpc, w.ID)
+    this.windows[w.ID] = new Window(this.rpc, w.ID)
+    return this.windows[w.ID]
   }
 }
 
@@ -184,9 +234,12 @@ export class Window {
   ID: number 
   rpc: any
 
+  onclose?: (e: Event) => void
   onmoved?: (e: Event) => void
   onresized?: (e: Event) => void
-  // TODO: more events
+  ondestroyed?: (e: Event) => void
+  onfocused?: (e: Event) => void
+  onblurred?: (e: Event) => void
 
   constructor(rpc: any, id: number) {
     this.rpc = rpc

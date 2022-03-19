@@ -25,6 +25,8 @@ type MenuItem struct {
 
 type MenuModule struct {
 	client *Client
+
+	OnClick func(event Event)
 }
 
 // New
