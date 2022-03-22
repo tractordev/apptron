@@ -1,6 +1,8 @@
 package bridge
 
 import (
+	"sync"
+
 	"github.com/progrium/qtalk-go/codec"
 	"github.com/progrium/qtalk-go/fn"
 	"github.com/progrium/qtalk-go/rpc"
@@ -16,15 +18,27 @@ import (
 func NewServer() *rpc.Server {
 	mux := rpc.NewRespondMux()
 
+	var listeners sync.Map
+
 	mux.Handle("Listen", rpc.HandlerFunc(func(r rpc.Responder, c *rpc.Call) {
 		c.Receive(nil)
 		r.Continue(nil)
-		core.EventHandler = func(event core.Event) {
-			if event.Type > 0 {
-				r.Send(event)
-			}
-		}
+		listeners.Store(r, struct{}{})
 	}))
+
+	core.EventHandler = func(event core.Event) {
+		if event.Type > 0 {
+			listeners.Range(func(v, _ interface{}) bool {
+				r := v.(rpc.Responder)
+				if err := r.Send(event); err != nil {
+					//log.Println(err)
+					listeners.Delete(v)
+				}
+				return true
+			})
+
+		}
+	}
 
 	mux.Handle("Shutdown", rpc.HandlerFunc(func(r rpc.Responder, c *rpc.Call) {
 		core.Quit()

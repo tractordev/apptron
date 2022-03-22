@@ -104,6 +104,7 @@ func Spawn() (*Client, error) {
 		return nil, err
 	}
 	cmd := exec.Command(cmdpath)
+	cmd.Stderr = os.Stderr
 	wc, err := cmd.StdinPipe()
 	if err != nil {
 		return nil, err

@@ -50,7 +50,9 @@ func EventLoop() unsafe.Pointer {
 }
 
 func Run(handler func(event Event)) {
-	EventHandler = handler
+	if handler != nil {
+		EventHandler = handler
+	}
 	eventLoop := *(*C.EventLoop)(EventLoop())
 	C.run(eventLoop, C.closure(C.go_app_main_loop))
 }
