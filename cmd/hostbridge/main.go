@@ -11,7 +11,7 @@ import (
 	"github.com/progrium/qtalk-go/mux"
 	"tractor.dev/hostbridge/bridge"
 	"tractor.dev/hostbridge/bridge/core"
-	"tractor.dev/hostbridge/cmd/hostbridge/demo"
+	"tractor.dev/hostbridge/cmd/hostbridge/build"
 )
 
 const Version = "0.1.0"
@@ -24,8 +24,8 @@ func main() {
 	flagDebug := flag.Bool("debug", false, "debug mode")
 	flag.Parse()
 
-	if flag.Arg(0) == "demo-build" {
-		demo.Build()
+	if flag.Arg(0) == "build" {
+		build.Build()
 		return
 	}
 

@@ -5,7 +5,7 @@ package main
 import (
 	"embed"
 
-	"tractor.dev/hostbridge/cmd/hostbridge/demo"
+	"tractor.dev/hostbridge/apputil"
 )
 
 //go:embed *
@@ -14,5 +14,5 @@ var dir embed.FS
 type rpc struct{}
 
 func main() {
-	demo.Run(&rpc{}, dir)
+	apputil.Run(dir, &rpc{})
 }
