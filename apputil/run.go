@@ -46,7 +46,7 @@ func Run(fsys fs.FS, userMethods interface{}) {
 		}
 	}
 
-	l, err := net.Listen("tcp4", ":0")
+	l, err := net.Listen("tcp4", "127.0.0.1:0")
 	if err != nil {
 		log.Fatal(err)
 	}
