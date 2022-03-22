@@ -71,7 +71,8 @@ func Run(fsys fs.FS, userMethods interface{}) {
 			Width:  640,
 			Height: 480,
 		},
-		URL: fmt.Sprintf("http://%s/", l.Addr().String()),
+		Visible: true,
+		URL:     fmt.Sprintf("http://%s/", l.Addr().String()),
 	}))
 	if err != nil {
 		log.Fatal(err)
