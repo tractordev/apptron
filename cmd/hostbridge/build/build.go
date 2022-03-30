@@ -1,6 +1,7 @@
 package build
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -8,6 +9,8 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
+	"time"
 
 	_ "embed"
 )
@@ -32,31 +35,54 @@ func Build() {
 	fatal(err)
 	appname := filepath.Base(dir)
 
-	for _, name := range []string{"go.mod", "main.go", "hostbridge"} {
-		if _, err := os.Stat(name); err == nil {
-			log.Fatalf("unable to run in dir with %s", name)
+	parts := strings.Split(dir, string(filepath.Separator))
+	workdir := filepath.Join(os.TempDir(), strings.Join(parts[len(parts)-3:], "-"))
+	os.MkdirAll(workdir, 0755)
+
+	fmt.Printf("building %s ...\n", appname)
+
+	start := time.Now()
+
+	binFile := filepath.Join(workdir, "hostbridge")
+	if _, err := os.Stat(binFile); err != nil {
+		fatal(copyFile(selfbin, binFile))
+	}
+
+	mainFile := filepath.Join(workdir, "main.go")
+	if _, err := os.Stat(mainFile); err != nil {
+		fatal(ioutil.WriteFile(mainFile, entrypoint[19:], 0644))
+	}
+
+	di, err := ioutil.ReadDir(dir)
+	fatal(err)
+	for _, fi := range di {
+		if !fi.IsDir() && fi.Name() != appname {
+			fatal(copyFile(filepath.Join(dir, fi.Name()), filepath.Join(workdir, fi.Name())))
 		}
 	}
 
-	fatal(copyFile(selfbin, filepath.Join(dir, "hostbridge")))
-	fatal(ioutil.WriteFile("main.go", entrypoint[19:], 0644))
+	var buf bytes.Buffer
 
-	run(gobin, "mod", "init", appname)
-	run(gobin, "get", "-u", "tractor.dev/hostbridge")
-	run(gobin, "get")
-	run(gobin, "build", "-o", appname, ".")
-
-	for _, name := range []string{"go.mod", "go.sum", "main.go", "hostbridge"} {
-		os.Remove(name)
+	modFile := filepath.Join(workdir, "go.mod")
+	if _, err := os.Stat(modFile); err != nil {
+		run(&buf, workdir, gobin, "mod", "init", appname)
+		run(&buf, workdir, gobin, "get", "-u", "tractor.dev/hostbridge")
+		run(&buf, workdir, gobin, "get")
 	}
+
+	run(&buf, workdir, gobin, "build", "-o", filepath.Join(dir, appname), ".")
+
+	fmt.Printf("done! [%s]\n", time.Since(start).Round(time.Millisecond))
 
 }
 
-func run(args ...string) {
+func run(buf *bytes.Buffer, dir string, args ...string) {
 	cmd := exec.Command(args[0], args[1:]...)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
+	cmd.Dir = dir
+	cmd.Stdout = buf
+	cmd.Stderr = buf
 	if err := cmd.Run(); err != nil {
+		buf.WriteTo(os.Stderr)
 		log.Fatal(err)
 	}
 }
