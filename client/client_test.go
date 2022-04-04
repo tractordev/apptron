@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"tractor.dev/hostbridge/bridge"
-	"tractor.dev/hostbridge/bridge/core"
+	"tractor.dev/hostbridge/bridge/platform"
 )
 
 func init() {
@@ -16,9 +16,9 @@ func init() {
 func TestMain(m *testing.M) {
 	go func() {
 		m.Run()
-		core.Quit()
+		platform.Terminate()
 	}()
-	core.Run(nil)
+	platform.Main()
 }
 
 func setupBridgeClient(t *testing.T) (*Client, func()) {

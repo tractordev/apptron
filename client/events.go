@@ -22,16 +22,15 @@ const (
 )
 
 func (e EventType) String() string {
-	return []string{"none", "close", "destroy", "focus", "blur", "resize", "move", "menu", "shortcut"}[e]
+	return []string{"", "close", "destroy", "focus", "blur", "resize", "move", "menu", "shortcut"}[e]
 }
 
 type Event struct {
 	Type     EventType
-	Name     string
-	WindowID Handle
+	Window   Handle
 	Position Position
 	Size     Size
-	MenuID   uint16
+	MenuItem int
 	Shortcut string
 }
 
@@ -50,32 +49,32 @@ func dispatchEvents(client *Client, resp *rpc.Response) {
 		}
 		switch e.Type {
 		case EventMoved:
-			w := client.Window.byID(e.WindowID)
+			w := client.Window.byID(e.Window)
 			if w != nil && w.OnMoved != nil {
 				w.OnMoved(e)
 			}
 		case EventResized:
-			w := client.Window.byID(e.WindowID)
+			w := client.Window.byID(e.Window)
 			if w != nil && w.OnResized != nil {
 				w.OnResized(e)
 			}
 		case EventClose:
-			w := client.Window.byID(e.WindowID)
+			w := client.Window.byID(e.Window)
 			if w != nil && w.OnClose != nil {
 				w.OnClose(e)
 			}
 		case EventDestroyed:
-			w := client.Window.byID(e.WindowID)
+			w := client.Window.byID(e.Window)
 			if w != nil && w.OnDestroyed != nil {
 				w.OnDestroyed(e)
 			}
 		case EventFocused:
-			w := client.Window.byID(e.WindowID)
+			w := client.Window.byID(e.Window)
 			if w != nil && w.OnFocused != nil {
 				w.OnFocused(e)
 			}
 		case EventBlurred:
-			w := client.Window.byID(e.WindowID)
+			w := client.Window.byID(e.Window)
 			if w != nil && w.OnBlurred != nil {
 				w.OnBlurred(e)
 			}

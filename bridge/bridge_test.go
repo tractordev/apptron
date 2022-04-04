@@ -9,8 +9,8 @@ import (
 	"github.com/progrium/qtalk-go/codec"
 	"github.com/progrium/qtalk-go/fn"
 	"github.com/progrium/qtalk-go/talk"
-	"tractor.dev/hostbridge/bridge/core"
-	"tractor.dev/hostbridge/bridge/window"
+	"tractor.dev/hostbridge/bridge/api/window"
+	"tractor.dev/hostbridge/bridge/platform"
 )
 
 func init() {
@@ -21,9 +21,9 @@ func TestMain(m *testing.M) {
 	// call flag.Parse() here if TestMain uses flags
 	go func() {
 		m.Run()
-		core.Quit()
+		platform.Terminate()
 	}()
-	core.Run(nil)
+	platform.Main()
 }
 
 func TestBridge(t *testing.T) {

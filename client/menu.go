@@ -7,7 +7,7 @@ import (
 )
 
 type Menu struct {
-	ID Handle
+	Handle Handle
 
 	/*
 		Items []Item
@@ -15,10 +15,11 @@ type Menu struct {
 }
 
 type MenuItem struct {
-	ID          uint16
+	ID          int
 	Title       string
-	Enabled     bool
+	Disabled    bool
 	Selected    bool
+	Separator   bool
 	Accelerator string
 	SubMenu     []MenuItem
 }
@@ -32,5 +33,11 @@ type MenuModule struct {
 // New
 func (m *MenuModule) New(ctx context.Context, items []MenuItem) (ret Menu, err error) {
 	_, err = m.client.Call(ctx, "menu.New", fn.Args{items}, &ret)
+	return
+}
+
+// Popup
+func (m *MenuModule) Popup(ctx context.Context, menu Menu) (err error) {
+	_, err = m.client.Call(ctx, "menu.Popup", fn.Args{menu.Handle}, nil)
 	return
 }

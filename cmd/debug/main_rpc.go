@@ -9,12 +9,12 @@ import (
 	"runtime"
 
 	"tractor.dev/hostbridge/bridge"
-	"tractor.dev/hostbridge/bridge/core"
+	"tractor.dev/hostbridge/bridge/platform"
 	"tractor.dev/hostbridge/client"
 )
 
-var quitId uint16 = 999
-var quitAllId uint16 = 9999
+var quitId int = 999
+var quitAllId int = 9999
 
 func init() {
 	runtime.GOMAXPROCS(1)
@@ -23,7 +23,7 @@ func init() {
 
 func main() {
 	go Run()
-	core.Run(nil)
+	platform.Main()
 }
 
 func Run() {
@@ -50,37 +50,31 @@ func Run() {
 			// NOTE(nick): when setting the window menu with wry, the first item title will always be the name of the executable on MacOS
 			// so, this property is ignored:
 			// @Robustness: maybe we want to make that more visible to the user somehow?
-			Title:   "this doesnt matter",
-			Enabled: true,
+			Title: "this doesnt matter",
 			SubMenu: []client.MenuItem{
 				{
 					ID:          121,
 					Title:       "About",
-					Enabled:     true,
 					Accelerator: "Control+I",
 				},
 				{
-					ID:      122,
-					Title:   "Disabled",
-					Enabled: false,
+					ID:    122,
+					Title: "Disabled",
 				},
 				{
 					ID:          quitId,
 					Title:       "Quit",
-					Enabled:     true,
 					Accelerator: "CommandOrControl+Q",
 				},
 			},
 		},
 		{
-			ID:      23,
-			Title:   "hello world",
-			Enabled: true,
+			ID:    23,
+			Title: "hello world",
 			SubMenu: []client.MenuItem{
 				{
-					ID:      777,
-					Title:   "This is an amazing menu option",
-					Enabled: true,
+					ID:    777,
+					Title: "This is an amazing menu option",
 				},
 			},
 		},

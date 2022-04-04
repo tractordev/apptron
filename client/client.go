@@ -73,7 +73,7 @@ func (c *Client) ServeData(d []byte) string {
 
 func New(peer *talk.Peer) *Client {
 	client := &Client{Peer: peer}
-	client.Window = &WindowModule{client: client}
+	client.Window = &WindowModule{client: client, windows: make(map[Handle]*Window)}
 	client.Screen = &ScreenModule{client: client}
 	client.App = &AppModule{client: client}
 	client.Menu = &MenuModule{client: client}
