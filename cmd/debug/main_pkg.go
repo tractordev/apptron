@@ -11,6 +11,7 @@ import (
 	"github.com/progrium/macdriver/core"
 	"tractor.dev/hostbridge/bridge/api/app"
 	"tractor.dev/hostbridge/bridge/api/menu"
+	"tractor.dev/hostbridge/bridge/api/system"
 	"tractor.dev/hostbridge/bridge/api/window"
 	"tractor.dev/hostbridge/bridge/platform"
 )
@@ -161,15 +162,17 @@ func run() {
 
 	// fmt.Println("Read clipboard data:", shell.ReadClipboard())
 
-	// displays := screen.Displays()
-	// fmt.Println("Displays:")
+	core.Dispatch(func() {
+		displays := system.Displays()
+		fmt.Println("Displays:")
 
-	// for _, it := range displays {
-	// 	fmt.Println("", it.Name)
-	// 	fmt.Println("  Size:", it.Size)
-	// 	fmt.Println("  Position:", it.Position)
-	// 	fmt.Println("  ScaleFactor:", it.ScaleFactor)
-	// }
+		for _, it := range displays {
+			fmt.Println("", it.Name)
+			fmt.Println("  Size:", it.Size)
+			fmt.Println("  Position:", it.Position)
+			fmt.Println("  ScaleFactor:", it.ScaleFactor)
+		}
+	})
 
 	// didRegister1 := shell.RegisterShortcut("Control+Shift+R")
 	// fmt.Println("didRegister", didRegister1)

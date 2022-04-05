@@ -10,7 +10,7 @@ export class Client {
   rpc: any
   app: app
   menu: menu
-  screen: screen
+  system: system
   shell: shell
   window: window
 
@@ -20,7 +20,7 @@ export class Client {
     this.rpc = peer.virtualize()
     this.app = new AppModule(this.rpc)
     this.menu = new MenuModule(this.rpc)
-    this.screen = new ScreenModule(this.rpc)
+    this.system = new SystemModule(this.rpc)
     this.shell = new ShellModule(this.rpc)
     this.window = new WindowModule(this.rpc)
     this.handleEvents(peer)
@@ -119,11 +119,11 @@ class MenuModule {
   }
 }
 
-export interface screen {
+export interface system {
   Displays(): Promise<Display[]>
 }
 
-class ScreenModule {
+class SystemModule {
   rpc: any
 
   constructor(rpc: any) {
@@ -131,7 +131,7 @@ class ScreenModule {
   }
 
   Displays(): Promise<Display[]> {
-    return this.rpc.screen.Displays()
+    return this.rpc.system.Displays()
   }
 }
 

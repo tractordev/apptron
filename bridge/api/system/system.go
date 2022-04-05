@@ -1,4 +1,4 @@
-package screen
+package system
 
 import "tractor.dev/hostbridge/bridge/misc"
 
@@ -22,5 +22,5 @@ type Position = misc.Position
 type Size = misc.Size
 
 func (m module) Displays() []Display {
-	return []Display{}
+	return Displays()
 }

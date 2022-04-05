@@ -920,7 +920,7 @@ class Client {
     rpc;
     app;
     menu;
-    screen;
+    system;
     shell;
     window;
     onevent;
@@ -928,7 +928,7 @@ class Client {
         this.rpc = peer.virtualize();
         this.app = new AppModule(this.rpc);
         this.menu = new MenuModule(this.rpc);
-        this.screen = new ScreenModule(this.rpc);
+        this.system = new SystemModule(this.rpc);
         this.shell = new ShellModule(this.rpc);
         this.window = new WindowModule(this.rpc);
         this.handleEvents(peer);
@@ -1003,13 +1003,13 @@ class MenuModule {
         return this.rpc.menu.New(items);
     }
 }
-class ScreenModule {
+class SystemModule {
     rpc;
     constructor(rpc){
         this.rpc = rpc;
     }
     Displays() {
-        return this.rpc.screen.Displays();
+        return this.rpc.system.Displays();
     }
 }
 class ShellModule {

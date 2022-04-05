@@ -21,7 +21,7 @@ type Client struct {
 	*talk.Peer
 
 	Window *WindowModule
-	Screen *ScreenModule
+	System *SystemModule
 	Shell  *ShellModule
 	App    *AppModule
 	Menu   *MenuModule
@@ -74,7 +74,7 @@ func (c *Client) ServeData(d []byte) string {
 func New(peer *talk.Peer) *Client {
 	client := &Client{Peer: peer}
 	client.Window = &WindowModule{client: client, windows: make(map[Handle]*Window)}
-	client.Screen = &ScreenModule{client: client}
+	client.System = &SystemModule{client: client}
 	client.App = &AppModule{client: client}
 	client.Menu = &MenuModule{client: client}
 	client.Shell = &ShellModule{client: client}

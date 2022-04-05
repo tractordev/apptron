@@ -13,12 +13,12 @@ type Display struct {
 	ScaleFactor float64
 }
 
-type ScreenModule struct {
+type SystemModule struct {
 	client *Client
 }
 
 // Displays
-func (m *ScreenModule) Displays(ctx context.Context) (ret []Display, err error) {
-	_, err = m.client.Call(ctx, "screen.Displays", fn.Args{}, &ret)
+func (m *SystemModule) Displays(ctx context.Context) (ret []Display, err error) {
+	_, err = m.client.Call(ctx, "system.Displays", fn.Args{}, &ret)
 	return
 }

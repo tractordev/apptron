@@ -6,13 +6,13 @@ import (
 	"testing"
 )
 
-func TestScreenModule(t *testing.T) {
+func TestSystemModule(t *testing.T) {
 	client, cleanup := setupBridgeClient(t)
 	defer cleanup()
 
 	ctx := context.Background()
 
-	d, err := client.Screen.Displays(ctx)
+	d, err := client.System.Displays(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}

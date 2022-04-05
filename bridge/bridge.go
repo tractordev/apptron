@@ -7,8 +7,8 @@ import (
 
 	"tractor.dev/hostbridge/bridge/api/app"
 	"tractor.dev/hostbridge/bridge/api/menu"
-	"tractor.dev/hostbridge/bridge/api/screen"
 	"tractor.dev/hostbridge/bridge/api/shell"
+	"tractor.dev/hostbridge/bridge/api/system"
 	"tractor.dev/hostbridge/bridge/api/window"
 	"tractor.dev/hostbridge/bridge/event"
 	"tractor.dev/hostbridge/bridge/platform"
@@ -32,7 +32,7 @@ func NewServer() *rpc.Server {
 	mux.Handle("window", fn.HandlerFrom(window.Module))
 	mux.Handle("menu", fn.HandlerFrom(menu.Module))
 	mux.Handle("app", fn.HandlerFrom(app.Module))
-	mux.Handle("screen", fn.HandlerFrom(screen.Module))
+	mux.Handle("system", fn.HandlerFrom(system.Module))
 	mux.Handle("shell", fn.HandlerFrom(shell.Module))
 
 	return &rpc.Server{
