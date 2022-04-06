@@ -29,6 +29,11 @@ func main() {
 		return
 	}
 
+	if flag.Arg(0) == "clean" {
+		build.Clean()
+		return
+	}
+
 	if *flagDebug {
 		fmt.Fprintf(os.Stderr, "hostbridge %s\n", Version)
 	}

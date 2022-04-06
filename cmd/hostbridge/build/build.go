@@ -24,6 +24,14 @@ func fatal(err error) {
 	}
 }
 
+func Clean() {
+	dir, err := os.Getwd()
+	fatal(err)
+	parts := strings.Split(dir, string(filepath.Separator))
+	workdir := filepath.Join(os.TempDir(), strings.Join(parts[len(parts)-3:], "-"))
+	fatal(os.RemoveAll(workdir))
+}
+
 func Build() {
 	os.Setenv("GOPRIVATE", "tractor.dev/*")
 	gobin, err := exec.LookPath("go")
