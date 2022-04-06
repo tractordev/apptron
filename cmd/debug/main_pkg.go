@@ -13,6 +13,7 @@ import (
 	"tractor.dev/hostbridge/bridge/api/menu"
 	"tractor.dev/hostbridge/bridge/api/system"
 	"tractor.dev/hostbridge/bridge/api/window"
+	"tractor.dev/hostbridge/bridge/event"
 	"tractor.dev/hostbridge/bridge/platform"
 )
 
@@ -32,6 +33,11 @@ func main() {
 }
 
 func run() {
+	event.Listen(struct{}{}, func(e event.Event) error {
+		log.Println(e)
+		return nil
+	})
+
 	items := []menu.Item{
 		{
 			Title: "App",
@@ -61,7 +67,7 @@ func run() {
 	}
 	m := menu.New(items)
 	app.SetMenu(m)
-	fatal(app.Run())
+	fatal(app.Run(app.Options{}))
 
 	trayTemplate := []menu.Item{
 		{
@@ -82,7 +88,7 @@ func run() {
 			},
 		},
 		{
-			Title:       "Quit App",
+			Title:       "Quit",
 			Accelerator: "Command+T",
 		},
 	}
@@ -173,6 +179,27 @@ func run() {
 			fmt.Println("  ScaleFactor:", it.ScaleFactor)
 		}
 	})
+
+	// go func() {
+	// 	<-time.After(3 * time.Second)
+	// 	platform.Dispatch(func() {
+	// 		mnu := menu.New([]menu.Item{
+	// 			{
+	// 				ID:    1,
+	// 				Title: "Hello",
+	// 			},
+	// 			{
+	// 				ID:    2,
+	// 				Title: "One",
+	// 			},
+	// 			{
+	// 				ID:    3,
+	// 				Title: "Two",
+	// 			},
+	// 		})
+	// 		mnu.Popup()
+	// 	})
+	// }()
 
 	// didRegister1 := shell.RegisterShortcut("Control+Shift+R")
 	// fmt.Println("didRegister", didRegister1)

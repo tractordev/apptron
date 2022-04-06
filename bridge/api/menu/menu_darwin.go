@@ -1,30 +1,19 @@
 package menu
 
 import (
-	"fmt"
-	"log"
-	"os"
+	"io"
+	"time"
 
 	"github.com/progrium/macdriver/cocoa"
 	mac "github.com/progrium/macdriver/core"
 	"github.com/progrium/macdriver/objc"
+	"tractor.dev/hostbridge/bridge/event"
 	"tractor.dev/hostbridge/bridge/resource"
 )
 
 type Menu struct {
 	menu
 	cocoa.NSMenu `json:"-"`
-}
-
-// WIP
-func (m *module) Popup(handle resource.Handle) {
-	menu, err := Get(handle)
-	if err != nil {
-		log.Fatal(err)
-	}
-	// TODO: use mouse cursor position
-	// BLOCKS! handle somehow?
-	fmt.Fprintln(os.Stderr, menu.NSMenu.PopUpMenuPositioningItem_atLocation_inView_(nil, mac.Point(100, 100), nil))
 }
 
 func New(items []Item) *Menu {
@@ -35,7 +24,6 @@ func New(items []Item) *Menu {
 		},
 		NSMenu: cocoa.NSMenu_New(),
 	}
-	resource.Retain(menu.Handle, menu)
 
 	menu.SetAutoenablesItems(true)
 
@@ -44,6 +32,24 @@ func New(items []Item) *Menu {
 	}
 
 	return menu
+}
+
+func (m *Menu) Destroy() {
+	m.NSMenu.Release()
+}
+
+func (m *Menu) Popup() int {
+	ch := make(chan int, 1)
+	event.Listen(time.Now(), func(e event.Event) error {
+		if e.Type == event.MenuItem {
+			ch <- e.MenuItem
+		}
+		return io.EOF
+	})
+	if m.NSMenu.PopUpMenuPositioningItem_atLocation_inView_(nil, cocoa.NSEvent_mouseLocation(), nil) {
+		return <-ch
+	}
+	return 0
 }
 
 func newMenuItem(i Item) cocoa.NSMenuItem {

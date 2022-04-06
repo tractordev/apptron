@@ -27,7 +27,7 @@ func main() {
 
 	ctx := context.Background()
 
-	if err := c.App.Run(ctx); err != nil {
+	if err := c.App.Run(ctx, client.AppOptions{}); err != nil {
 		panic(err)
 	}
 
@@ -106,25 +106,6 @@ func main() {
 	if err := c.App.NewIndicator(ctx, iconData, trayTemplate); err != nil {
 		log.Fatal(err)
 	}
-
-	// m, err := c.Menu.New(ctx, []client.MenuItem{
-	// 	{
-	// 		ID:      10,
-	// 		Title:   "AAA",
-	// 		Enabled: true,
-	// 	},
-	// 	{
-	// 		ID:      20,
-	// 		Title:   "BBB",
-	// 		Enabled: true,
-	// 	},
-	// })
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-	// if err := c.Menu.Popup(ctx, m); err != nil {
-	// 	log.Fatal(err)
-	// }
 
 	select {}
 }

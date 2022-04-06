@@ -1,6 +1,7 @@
 package menu
 
 import (
+	"tractor.dev/hostbridge/bridge/misc"
 	"tractor.dev/hostbridge/bridge/resource"
 )
 
@@ -39,6 +40,25 @@ type Item struct {
 	SubMenu     []Item
 }
 
+type Position = misc.Position
+
 func (m *module) New(items []Item) *Menu {
-	return New(items)
+	mm := New(items)
+	resource.Retain(mm.Handle, mm)
+	return mm
+}
+
+func (mm *module) Destroy(h resource.Handle) (err error) {
+	var m *Menu
+	if m, err = Get(h); err == nil {
+		m.Destroy()
+		resource.Release(h)
+	}
+	return
+}
+
+func (mm *module) Popup(items []Item) int {
+	m := New(items)
+	defer m.Destroy()
+	return m.Popup()
 }
