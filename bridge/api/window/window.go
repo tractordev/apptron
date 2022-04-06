@@ -108,10 +108,10 @@ func (m *module) New(options Options, call *rpc.Call) (*Window, error) {
 	return New(options)
 }
 
-func (m *module) Destroy(h resource.Handle) (ret bool, err error) {
+func (m *module) Destroy(h resource.Handle) (err error) {
 	var w *Window
-	if w, err = Get(h); err != nil {
-		ret = w.Destroy()
+	if w, err = Get(h); err == nil {
+		w.Destroy()
 		resource.Release(h)
 	}
 	return

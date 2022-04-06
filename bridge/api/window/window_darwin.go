@@ -179,10 +179,9 @@ func New(options Options) (*Window, error) {
 	return win, nil
 }
 
-func (w *Window) Destroy() bool {
+func (w *Window) Destroy() {
 	w.NSWindow.Close()
 	w.NSWindow.Release()
-	return true
 }
 
 func (w *Window) Focus() {
