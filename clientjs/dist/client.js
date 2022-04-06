@@ -986,6 +986,9 @@ class AppModule {
     constructor(rpc){
         this.rpc = rpc;
     }
+    Run(options) {
+        this.rpc.app.Run(options);
+    }
     Menu() {
         return this.rpc.app.Menu();
     }

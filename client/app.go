@@ -10,9 +10,15 @@ type AppModule struct {
 	client *Client
 }
 
+type AppOptions struct {
+	Identifier          string
+	RunsAfterLastWindow bool
+	AccessoryMode       bool
+}
+
 // Run
-func (m *AppModule) Run(ctx context.Context) (err error) {
-	_, err = m.client.Call(ctx, "app.Run", fn.Args{}, nil)
+func (m *AppModule) Run(ctx context.Context, opts AppOptions) (err error) {
+	_, err = m.client.Call(ctx, "app.Run", fn.Args{opts}, nil)
 	return
 }
 

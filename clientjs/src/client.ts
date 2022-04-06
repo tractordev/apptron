@@ -78,6 +78,7 @@ export class Client {
 }
 
 export interface app {
+  Run(options: AppOptions): void
   Menu(): Promise<Menu>
   SetMenu(m: Menu): void 
   //NewIndicator(icon, items)
@@ -88,6 +89,10 @@ class AppModule {
 
   constructor(rpc: any) {
     this.rpc = rpc
+  }
+
+  Run(options: AppOptions): void {
+    this.rpc.app.Run(options)
   }
 
   Menu(): Promise<Menu> {
@@ -371,6 +376,12 @@ export interface Display {
 	Size:        Size
 	Position:    Position
 	ScaleFactor: number
+}
+
+export interface AppOptions {
+  Identifier:          string
+	RunsAfterLastWindow: boolean
+	AccessoryMode:       boolean
 }
 
 export interface WindowOptions {

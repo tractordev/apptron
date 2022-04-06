@@ -43,12 +43,12 @@ func NewIndicator(icon []byte, items []menu.Item) {
 	obj.SetMenu(menu.NSMenu)
 }
 
-func Run() error {
+func Run(options Options) error {
 	mainBundle := cocoa.NSBundle_Main()
 	bundleClass := mainBundle.Class()
 	bundleClass.AddMethod("__bundleIdentifier", func(self objc.Object) objc.Object {
 		if self.Pointer() == mainBundle.Pointer() {
-			return mac.String("com.progrium.hostbridge")
+			return mac.String(options.Identifier)
 		}
 		// After the swizzle this will point to the original method, and return the
 		// original bundle identifier.
@@ -58,14 +58,18 @@ func Run() error {
 
 	DelegateClass := objc.NewClass("AppDelegate", "NSObject")
 	DelegateClass.AddMethod("applicationShouldTerminateAfterLastWindowClosed:", func(notification objc.Object) bool {
-		return false // debugging
+		return !options.RunsAfterLastWindow
 	})
 	DelegateClass.AddMethod("applicationWillFinishLaunching:", func(notification objc.Object) {
 		if mainMenu == nil {
 			mainMenu = menu.New([]menu.Item{})
 		}
 		app.SetMainMenu(mainMenu.NSMenu)
-		app.SetActivationPolicy(cocoa.NSApplicationActivationPolicyRegular)
+		if options.AccessoryMode {
+			app.SetActivationPolicy(cocoa.NSApplicationActivationPolicyAccessory)
+		} else {
+			app.SetActivationPolicy(cocoa.NSApplicationActivationPolicyRegular)
+		}
 	})
 	DelegateClass.AddMethod("applicationDidFinishLaunching:", func(notification objc.Object) {
 		app.ActivateIgnoringOtherApps(true)

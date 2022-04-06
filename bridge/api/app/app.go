@@ -17,6 +17,12 @@ func init() {
 	Module = &module{}
 }
 
+type Options struct {
+	Identifier          string
+	RunsAfterLastWindow bool
+	AccessoryMode       bool
+}
+
 func (m *module) Menu() *menu.Menu {
 	return Menu()
 }
@@ -36,6 +42,9 @@ func (m *module) NewIndicator(iconSel string, items []menu.Item, call *rpc.Call)
 	NewIndicator(icon, items)
 }
 
-func (m *module) Run() error {
-	return Run()
+func (m *module) Run(options Options) error {
+	if options.Identifier == "" {
+		options.Identifier = "com.progrium.Apptron"
+	}
+	return Run(options)
 }
