@@ -12,6 +12,7 @@ import (
 	"tractor.dev/hostbridge/bridge"
 	"tractor.dev/hostbridge/bridge/platform"
 	"tractor.dev/hostbridge/cmd/hostbridge/build"
+	"tractor.dev/hostbridge/cmd/hostbridge/bundle"
 )
 
 const Version = "0.2.0"
@@ -31,6 +32,11 @@ func main() {
 
 	if flag.Arg(0) == "clean" {
 		build.Clean()
+		return
+	}
+
+	if flag.Arg(0) == "bundle" {
+		bundle.Bundle()
 		return
 	}
 

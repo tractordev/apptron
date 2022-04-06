@@ -4,7 +4,6 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
 	"log"
 	"runtime"
 
@@ -14,6 +13,7 @@ import (
 	"tractor.dev/hostbridge/bridge/api/system"
 	"tractor.dev/hostbridge/bridge/api/window"
 	"tractor.dev/hostbridge/bridge/event"
+	"tractor.dev/hostbridge/bridge/misc"
 	"tractor.dev/hostbridge/bridge/platform"
 )
 
@@ -93,15 +93,8 @@ func run() {
 		},
 	}
 
-	iconPath := "assets/icon.png"
-	if runtime.GOOS == "windows" {
-		iconPath = "assets/icon.ico"
-	}
-
-	iconData, err := ioutil.ReadFile(iconPath)
-	if err != nil {
-		fmt.Println("Error reading icon file:", err)
-	}
+	iconData, err := misc.Assets.ReadFile("icon.png")
+	fatal(err)
 
 	platform.Dispatch(func() {
 		app.NewIndicator(iconData, trayTemplate)

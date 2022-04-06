@@ -5,11 +5,10 @@ package main
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
-	"runtime"
 
+	"tractor.dev/hostbridge/bridge/misc"
 	"tractor.dev/hostbridge/client"
 )
 
@@ -93,12 +92,7 @@ func main() {
 		},
 	}
 
-	iconPath := "assets/icon.png"
-	if runtime.GOOS == "windows" {
-		iconPath = "assets/icon.ico"
-	}
-
-	iconData, err := ioutil.ReadFile(iconPath)
+	iconData, err := misc.Assets.ReadFile("icon.png")
 	if err != nil {
 		fmt.Println("Error reading icon file:", err)
 	}
