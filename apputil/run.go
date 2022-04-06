@@ -15,6 +15,10 @@ import (
 	"tractor.dev/hostbridge/client"
 )
 
+type clientSetter interface {
+	SetClient(b *client.Client)
+}
+
 // Run takes a filesystem and optional userMethods value to start a simple hostbridge
 // program that serves the filesystem over HTTP to be used by hostbridge windows. It
 // launches a main window pointing at index.html from the filesystem, using meta tags
@@ -40,10 +44,15 @@ func Run(fsys fs.FS, userMethods interface{}) {
 	}
 	defer bridge.Close()
 
+	if cs, ok := userMethods.(clientSetter); ok {
+		cs.SetClient(bridge)
+	}
+
 	bridge.OnEvent = func(event client.Event) {
-		if event.Type == client.EventClose && event.WindowID == 1 {
-			bridge.Close()
-		}
+		// TODO: figure out how to identify main window now
+		// if event.Type == client.EventClose && event.Window == 1 {
+		// 	bridge.Close()
+		// }
 	}
 
 	l, err := net.Listen("tcp4", "127.0.0.1:0")
@@ -66,6 +75,11 @@ func Run(fsys fs.FS, userMethods interface{}) {
 	go srv.Serve(l)
 
 	ctx := context.Background()
+
+	if err := bridge.App.Run(ctx, client.AppOptions{}); err != nil {
+		log.Fatal(err)
+	}
+
 	_, err = bridge.Window.New(ctx, OptionsFromHTML(fsys, "index.html", "window", client.WindowOptions{
 		Size: client.Size{
 			Width:  640,
