@@ -37,7 +37,7 @@ func (m *MenuModule) New(ctx context.Context, items []MenuItem) (ret Menu, err e
 }
 
 // Popup
-func (m *MenuModule) Popup(ctx context.Context, menu Menu) (ret int, err error) {
-	_, err = m.client.Call(ctx, "menu.Popup", fn.Args{menu.Handle}, &ret)
+func (m *MenuModule) Popup(ctx context.Context, items []MenuItem) (ret int, err error) {
+	_, err = m.client.Call(ctx, "menu.Popup", fn.Args{items}, &ret)
 	return
 }

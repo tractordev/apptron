@@ -1032,6 +1032,9 @@ class MenuModule {
     New(items) {
         return this.rpc.menu.New(items);
     }
+    Popup(items) {
+        return this.rpc.menu.Popup(items);
+    }
 }
 class SystemModule {
     rpc;

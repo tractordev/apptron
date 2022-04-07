@@ -136,6 +136,7 @@ export interface menu {
   onclick?: (e: Event) => void
 
   New(items: MenuItem[]): Promise<Menu>
+  Popup(items: MenuItem[]): Promise<number>
 }
 
 class MenuModule {
@@ -149,6 +150,10 @@ class MenuModule {
 
   New(items: MenuItem[]): Promise<Menu> {
     return this.rpc.menu.New(items)
+  }
+
+  Popup(items: MenuItem[]): Promise<number> {
+    return this.rpc.menu.Popup(items)
   }
 }
 
