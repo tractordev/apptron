@@ -515,6 +515,7 @@ var strToKeyCode = map[string]KeyCode{
 	"SHIFT":      ShiftLeft,
 	"SHIFTLEFT":  ShiftLeft,
 	"SHIFTRIGHT": ShiftRight,
+	"CONTROL":    ControlLeft,
 	"CTRL":       ControlLeft,
 	"CTRLLEFT":   ControlLeft,
 	"CTRLRIGHT":  ControlRight,

@@ -1,9 +1,14 @@
 package keycode
 
 func init() {
+	strToKeyCode["COMMAND"] = SuperLeft
 	strToKeyCode["CMD"] = SuperLeft
 	strToKeyCode["CMDLEFT"] = SuperLeft
 	strToKeyCode["CMDRIGHT"] = SuperRight
+
+	strToKeyCode["OPTION"] = AltLeft
+	strToKeyCode["OPTIONLEFT"] = AltLeft
+	strToKeyCode["OPTIONRIGHT"] = AltRight
 }
 
 func Scancode(k KeyCode) uint8 {
