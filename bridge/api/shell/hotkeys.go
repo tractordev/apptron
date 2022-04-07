@@ -1,7 +1,6 @@
 package shell
 
 import (
-	"log"
 	"reflect"
 	"strings"
 	"sync"
@@ -75,10 +74,8 @@ func RegisterShortcut(accelerator string) bool {
 
 	hk := hotkey.New(mods, key)
 	if err := hk.Register(); err != nil {
-		log.Println("register failed")
 		return false
 	}
-	log.Println("registered")
 	hotkeys.Store(accelerator, hk)
 	once.Do(func() {
 		resetLoop = make(chan bool, 1)
