@@ -26,7 +26,7 @@ A framework, application, or tool built with apptron may choose to embed the app
 make apptron
 ```
 
-The dependencies for building are [Go](https://go.dev/), [Rust](https://www.rust-lang.org/tools/install) (for the moment), and platform libraries (for example, XCode Developer Tools on Mac).
+The dependencies for building are [Go](https://go.dev/), and platform libraries (for example, XCode Developer Tools on Mac).
 
 ## Builtin Electron alternative
 
