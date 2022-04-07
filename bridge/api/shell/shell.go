@@ -52,8 +52,11 @@ func (m module) WriteClipboard(text string) bool {
 	return WriteClipboard(text)
 }
 
-func (m module) RegisterShortcut(accelerator string) bool {
-	return RegisterShortcut(accelerator)
+func (m module) RegisterShortcut(accelerator string) {
+	// hotkey does its own dispatch so
+	// this avoids a deadlock assuming
+	// all rpc calls are dispatched
+	go RegisterShortcut(accelerator)
 }
 
 func (m module) IsShortcutRegistered(accelerator string) bool {
@@ -64,6 +67,6 @@ func (m module) UnregisterShortcut(accelerator string) bool {
 	return UnregisterShortcut(accelerator)
 }
 
-func (m module) UnregisterAllShortcuts() bool {
-	return UnregisterAllShortcuts()
+func (m module) UnregisterAllShortcuts() {
+	UnregisterAllShortcuts()
 }

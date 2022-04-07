@@ -30,6 +30,10 @@ func main() {
 		panic(err)
 	}
 
+	if err := c.Shell.RegisterShortcut(ctx, "CMD+S"); err != nil {
+		panic(err)
+	}
+
 	options := client.WindowOptions{
 		Title: "Demo window",
 		// NOTE(nick): resizing a transparent window on MacOS seems really slow?
@@ -101,5 +105,5 @@ func main() {
 		log.Fatal(err)
 	}
 
-	select {}
+	c.Wait()
 }
