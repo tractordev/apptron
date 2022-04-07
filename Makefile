@@ -1,10 +1,8 @@
 ROOT_DIR := $(dir $(realpath $(lastword $(MAKEFILE_LIST))))
 GO_FILES := $(shell find . -name "*.go") 
 
-#CGO_LDFLAGS="./lib/libhostbridge.a -ldl -framework Carbon -framework Cocoa -framework CoreFoundation -framework CoreVideo -framework IOKit -framework WebKit" \
-
-hostbridge: clientjs/dist/client.js $(GO_FILES)
-	go build -o ./hostbridge ./cmd/hostbridge/main.go
+apptron: clientjs/dist/client.js $(GO_FILES)
+	go build -o ./apptron ./cmd/apptron/main.go
 
 debug-pkg: $(GO_FILES)
 	go build -tags pkg -o ./debug-pkg ./cmd/debug
@@ -12,7 +10,7 @@ debug-pkg: $(GO_FILES)
 debug-app: clientjs/dist/client.js $(GO_FILES) 
 	go build -tags app -o ./debug-app ./cmd/debug
 
-debug-cmd: hostbridge $(GO_FILES)
+debug-cmd: apptron $(GO_FILES)
 	go build -tags cmd -o ./debug-cmd ./cmd/debug
 
 clientjs/dist/client.js: clientjs/lib/*.js clientjs/src/*.ts
@@ -20,4 +18,4 @@ clientjs/dist/client.js: clientjs/lib/*.js clientjs/src/*.ts
 
 .PHONY: clean
 clean:
-	rm -rf ./debug-pkg ./debug-app ./debug-cmd ./hostbridge
+	rm -rf ./debug-pkg ./debug-app ./debug-cmd ./apptron

@@ -8,12 +8,12 @@ import (
 	"log"
 	"os"
 
-	"tractor.dev/hostbridge/bridge/misc"
-	"tractor.dev/hostbridge/client"
+	"tractor.dev/apptron/bridge/misc"
+	"tractor.dev/apptron/client"
 )
 
 func main() {
-	os.Setenv("BRIDGECMD", "./hostbridge")
+	os.Setenv("BRIDGECMD", "./apptron")
 	c, err := client.Spawn()
 	if err != nil {
 		panic(err)

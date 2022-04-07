@@ -14,7 +14,7 @@ import (
 
 	_ "embed"
 
-	"tractor.dev/hostbridge/cmd/hostbridge/sign"
+	"tractor.dev/apptron/cmd/apptron/sign"
 )
 
 //go:embed entry.go
@@ -53,10 +53,10 @@ func Build() {
 
 	start := time.Now()
 
-	binFile := filepath.Join(workdir, "hostbridge")
+	binFile := filepath.Join(workdir, "apptron")
 	if _, err := os.Stat(binFile); err != nil {
 		fatal(copyFile(selfbin, binFile))
-		err, errlog := sign.Sign(dir, "com.progrium.Hostbridge", binFile)
+		err, errlog := sign.Sign(dir, "com.progrium.Apptron", binFile)
 		if err != nil {
 			errlog.WriteTo(os.Stderr)
 			log.Fatal(err)
@@ -81,7 +81,7 @@ func Build() {
 	modFile := filepath.Join(workdir, "go.mod")
 	if _, err := os.Stat(modFile); err != nil {
 		run(&buf, workdir, gobin, "mod", "init", appname)
-		run(&buf, workdir, gobin, "get", "-u", "tractor.dev/hostbridge")
+		run(&buf, workdir, gobin, "get", "-u", "tractor.dev/apptron")
 		run(&buf, workdir, gobin, "get")
 	}
 

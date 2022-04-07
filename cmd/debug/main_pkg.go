@@ -8,14 +8,14 @@ import (
 	"runtime"
 
 	"github.com/progrium/macdriver/core"
-	"tractor.dev/hostbridge/bridge/api/app"
-	"tractor.dev/hostbridge/bridge/api/menu"
-	"tractor.dev/hostbridge/bridge/api/shell"
-	"tractor.dev/hostbridge/bridge/api/system"
-	"tractor.dev/hostbridge/bridge/api/window"
-	"tractor.dev/hostbridge/bridge/event"
-	"tractor.dev/hostbridge/bridge/misc"
-	"tractor.dev/hostbridge/bridge/platform"
+	"tractor.dev/apptron/bridge/api/app"
+	"tractor.dev/apptron/bridge/api/menu"
+	"tractor.dev/apptron/bridge/api/shell"
+	"tractor.dev/apptron/bridge/api/system"
+	"tractor.dev/apptron/bridge/api/window"
+	"tractor.dev/apptron/bridge/event"
+	"tractor.dev/apptron/bridge/misc"
+	"tractor.dev/apptron/bridge/platform"
 )
 
 func init() {
@@ -197,7 +197,7 @@ func run() {
 
 	// core.Dispatch(func() {
 	// 	ret := shell.ShowFilePicker(shell.FileDialog{
-	// 		Directory: "/Users/progrium/Source/github.com/tractordev/hostbridge",
+	// 		Directory: "/Users/progrium/Source/github.com/tractordev/apptron",
 	// 		Filters:   []string{"go,js"},
 	// 		Title:     "TITLE",
 	// 		Mode:      "pickfiles",

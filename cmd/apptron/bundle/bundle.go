@@ -9,10 +9,10 @@ import (
 	"path/filepath"
 	"strings"
 
-	"tractor.dev/hostbridge/bridge/misc"
-	"tractor.dev/hostbridge/cmd/hostbridge/build"
-	"tractor.dev/hostbridge/cmd/hostbridge/bundle/bundler"
-	"tractor.dev/hostbridge/cmd/hostbridge/sign"
+	"tractor.dev/apptron/bridge/misc"
+	"tractor.dev/apptron/cmd/apptron/build"
+	"tractor.dev/apptron/cmd/apptron/bundle/bundler"
+	"tractor.dev/apptron/cmd/apptron/sign"
 )
 
 func fatal(err error) {

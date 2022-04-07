@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Hostbridge Demo</title>
+  <title>Apptron Demo</title>
   <meta name="window" content="center=true" />
-  <script src="/-/hostbridge.js"></script>
+  <script src="/-/apptron.js"></script>
   <script>
     $host.ready.then(async () => {
       //$host.shell.ShowMessage({Body: "Hello"})
@@ -19,7 +19,8 @@
       const resp = await fetch("./icon.png")
       $host.app.NewIndicator(await resp.arrayBuffer(), [
         {ID: 1, Title: "Hello FOO"},
-        {ID: 2, Title: "Hello BAR"}
+        {ID: 2, Title: "Hello BAR"},
+        {Title: "Quit"},
       ])
     })
 

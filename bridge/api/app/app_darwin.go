@@ -4,9 +4,9 @@ import (
 	"github.com/progrium/macdriver/cocoa"
 	mac "github.com/progrium/macdriver/core"
 	"github.com/progrium/macdriver/objc"
-	"tractor.dev/hostbridge/bridge/api/menu"
-	"tractor.dev/hostbridge/bridge/event"
-	"tractor.dev/hostbridge/bridge/platform"
+	"tractor.dev/apptron/bridge/api/menu"
+	"tractor.dev/apptron/bridge/event"
+	"tractor.dev/apptron/bridge/platform"
 )
 
 var (

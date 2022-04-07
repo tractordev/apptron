@@ -16,9 +16,9 @@ import (
 // If the command is found in PATH or any step fails for any reason, TempCommand returns
 // an empty string and a no-op function.
 //
-// This is intended to be used when embedding the hostbridge binary in a program, using this
+// This is intended to be used when embedding the apptron binary in a program, using this
 // to write it out to disk temporarily, the path to which can be used to set the BRIDGECMD
-// env var used by the hostbridge client Spawn function. It should also be cleaned up when
+// env var used by the apptron client Spawn function. It should also be cleaned up when
 // the program finishes.
 func TempCommand(fsys fs.FS, cmdpath string) (string, func()) {
 	cmdname := filepath.Base(cmdpath)

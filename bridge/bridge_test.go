@@ -9,8 +9,8 @@ import (
 	"github.com/progrium/qtalk-go/codec"
 	"github.com/progrium/qtalk-go/fn"
 	"github.com/progrium/qtalk-go/talk"
-	"tractor.dev/hostbridge/bridge/api/window"
-	"tractor.dev/hostbridge/bridge/platform"
+	"tractor.dev/apptron/bridge/api/window"
+	"tractor.dev/apptron/bridge/platform"
 )
 
 func init() {

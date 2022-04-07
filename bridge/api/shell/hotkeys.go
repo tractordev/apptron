@@ -6,8 +6,8 @@ import (
 	"sync"
 
 	"golang.design/x/hotkey"
-	"tractor.dev/hostbridge/bridge/event"
-	"tractor.dev/hostbridge/bridge/keycode"
+	"tractor.dev/apptron/bridge/event"
+	"tractor.dev/apptron/bridge/keycode"
 )
 
 var hotkeys sync.Map

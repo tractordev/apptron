@@ -57,12 +57,12 @@ func TestShellModule(t *testing.T) {
 	client.Shell.OnShortcut = func(e Event) {
 		fmt.Println(e)
 	}
-	_, err = client.Shell.RegisterShortcut(ctx, "Control+Shift+T")
+	err = client.Shell.RegisterShortcut(ctx, "Control+Shift+T")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	_, err = client.Shell.UnregisterAllShortcuts(ctx)
+	err = client.Shell.UnregisterAllShortcuts(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}

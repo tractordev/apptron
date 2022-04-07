@@ -4,9 +4,9 @@ import (
 	"context"
 
 	"github.com/progrium/qtalk-go/rpc"
-	"tractor.dev/hostbridge/bridge/api/menu"
-	"tractor.dev/hostbridge/bridge/misc"
-	"tractor.dev/hostbridge/bridge/resource"
+	"tractor.dev/apptron/bridge/api/menu"
+	"tractor.dev/apptron/bridge/misc"
+	"tractor.dev/apptron/bridge/resource"
 )
 
 var Module *module

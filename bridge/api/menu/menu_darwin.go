@@ -7,8 +7,8 @@ import (
 	"github.com/progrium/macdriver/cocoa"
 	mac "github.com/progrium/macdriver/core"
 	"github.com/progrium/macdriver/objc"
-	"tractor.dev/hostbridge/bridge/event"
-	"tractor.dev/hostbridge/bridge/resource"
+	"tractor.dev/apptron/bridge/event"
+	"tractor.dev/apptron/bridge/resource"
 )
 
 type Menu struct {

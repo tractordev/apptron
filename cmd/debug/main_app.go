@@ -6,11 +6,11 @@ import (
 	"embed"
 	"os"
 
-	"tractor.dev/hostbridge/apputil"
-	"tractor.dev/hostbridge/client"
+	"tractor.dev/apptron/apputil"
+	"tractor.dev/apptron/client"
 )
 
-//go:embed index.html icon.png
+//go:embed index.html
 var dir embed.FS
 
 type rpc struct {
@@ -22,6 +22,6 @@ func (r *rpc) SetClient(b *client.Client) {
 }
 
 func main() {
-	os.Setenv("BRIDGECMD", "./hostbridge")
+	os.Setenv("BRIDGECMD", "./apptron")
 	apputil.Run(dir, &rpc{})
 }

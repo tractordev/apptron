@@ -97,7 +97,7 @@ func Dial(addr string) (*Client, error) {
 func Spawn() (*Client, error) {
 	bridgecmd := os.Getenv("BRIDGECMD")
 	if bridgecmd == "" {
-		bridgecmd = "hostbridge"
+		bridgecmd = "apptron"
 	}
 	cmdpath, err := exec.LookPath(bridgecmd)
 	if err != nil {

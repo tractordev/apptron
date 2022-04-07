@@ -5,8 +5,8 @@ package main
 import (
 	"embed"
 
-	"tractor.dev/hostbridge/apputil"
-	"tractor.dev/hostbridge/client"
+	"tractor.dev/apptron/apputil"
+	"tractor.dev/apptron/client"
 )
 
 //go:embed *

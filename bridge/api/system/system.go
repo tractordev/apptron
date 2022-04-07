@@ -1,6 +1,6 @@
 package system
 
-import "tractor.dev/hostbridge/bridge/misc"
+import "tractor.dev/apptron/bridge/misc"
 
 var Module *module
 

@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"golang.org/x/net/html"
-	"tractor.dev/hostbridge/client"
+	"tractor.dev/apptron/client"
 )
 
 // OptionsFromHTML will use fsys to open filename and parse it as HTML to find a meta element within

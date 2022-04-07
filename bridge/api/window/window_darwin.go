@@ -7,8 +7,8 @@ import (
 	mac "github.com/progrium/macdriver/core"
 	"github.com/progrium/macdriver/objc"
 	"github.com/progrium/macdriver/webkit"
-	"tractor.dev/hostbridge/bridge/event"
-	"tractor.dev/hostbridge/bridge/resource"
+	"tractor.dev/apptron/bridge/event"
+	"tractor.dev/apptron/bridge/resource"
 )
 
 type Window struct {

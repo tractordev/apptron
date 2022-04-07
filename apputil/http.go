@@ -9,8 +9,8 @@ import (
 	"github.com/progrium/qtalk-go/mux"
 	"github.com/progrium/qtalk-go/rpc"
 	"golang.org/x/net/websocket"
-	"tractor.dev/hostbridge/client"
-	"tractor.dev/hostbridge/clientjs/dist"
+	"tractor.dev/apptron/client"
+	"tractor.dev/apptron/clientjs/dist"
 )
 
 //go:embed loader.js
@@ -21,18 +21,18 @@ var loader []byte
 //
 // 	/-/ws: 						the WebSocket endpoint
 // 	/-/client.js: 		the JavaScript client module
-// 	/-/hostbridge.js:	the JavaScript loader
+// 	/-/apptron.js:	the JavaScript loader
 //
 // The WebSocket endpoint establishes a qtalk session that will proxy to the provided
-// hostbridge Client. The client module served is the embeded JS client
+// apptron Client. The client module served is the embeded JS client
 // from the clientjs/dist "package". The loader is what would be included by an HTML
-// page to create a $host global that points to the hostbridge client instance
+// page to create a $host global that points to the apptron client instance
 // created after connecting to the WebSocket endpoint. The $host global also has a
 // ready property which is a Promise resolved when the client is connected and ready
 // to be used.
 //
 // The optional muxExt callback allows you to handle custom RPC selectors that will
-// be matched against before attempting to pass them to the hostbridge Client.
+// be matched against before attempting to pass them to the apptron Client.
 //
 // If none of the endpoints are matched against, a NotFound error is returned. If
 // serving other endpoints, put this behind a check for the /-/ path prefix.
@@ -50,7 +50,7 @@ func (b *backend) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	case "/-/client.js":
 		w.Header().Add("Content-Type", "text/javascript")
 		w.Write(dist.ClientJS)
-	case "/-/hostbridge.js":
+	case "/-/apptron.js":
 		w.Header().Add("Content-Type", "text/javascript")
 		w.Write(loader)
 	case "/-/ws":

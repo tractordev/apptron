@@ -12,28 +12,28 @@ import (
 
 	"github.com/progrium/qtalk-go/fn"
 	"github.com/progrium/qtalk-go/rpc"
-	"tractor.dev/hostbridge/client"
+	"tractor.dev/apptron/client"
 )
 
 type clientSetter interface {
 	SetClient(b *client.Client)
 }
 
-// Run takes a filesystem and optional userMethods value to start a simple hostbridge
-// program that serves the filesystem over HTTP to be used by hostbridge windows. It
+// Run takes a filesystem and optional userMethods value to start a simple apptron
+// program that serves the filesystem over HTTP to be used by apptron windows. It
 // launches a main window pointing at index.html from the filesystem, using meta tags
 // via OptionsFromHTML to define options for this main window. It also serves a backend
-// using BackendServer that lets you include /-/hostbridge.js which creates a "$host" global
-// that exposes the hostbridge API. This API can be extended by the methods on the
+// using BackendServer that lets you include /-/apptron.js which creates a "$host" global
+// that exposes the apptron API. This API can be extended by the methods on the
 // userMethods value, made accessible as callables via "$host.rpc.user".
 //
-// If the hostbridge binary is included in the filesystem as "./hostbridge", then it will
+// If the apptron binary is included in the filesystem as "./apptron", then it will
 // use TempCommand to write it to disk and the BRIDGECMD environment variable to use it.
 //
-// This can be used either as-is or as a reference for your own hostbridge programs, but is
+// This can be used either as-is or as a reference for your own apptron programs, but is
 // mainly used by programs produced by the built-in build subcommand.
 func Run(fsys fs.FS, userMethods interface{}) {
-	if path, cleanup := TempCommand(fsys, "hostbridge"); path != "" {
+	if path, cleanup := TempCommand(fsys, "apptron"); path != "" {
 		os.Setenv("BRIDGECMD", path)
 		defer cleanup()
 	}

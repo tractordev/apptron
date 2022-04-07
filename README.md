@@ -1,8 +1,10 @@
-# hostbridge (alpha)
+# apptron (alpha)
 
 *This is currently sponsorware, so it is only available to sponsors or others with explicit access. You may run into toolchain issues working with a private repository, if so please refer to this [wiki page](https://github.com/tractordev/tractordev.github.io/wiki/Private-Repository).*
 
-Hostbridge is an executable that exposes common APIs for building webview-based desktop applications and integrating with the GUI shell in a way that is platform (Win, Mac, Linux) and language agnostic. This makes it a simple, compact primitive for building your own native cross-platform Electron-style applications, alternative or specialized Electron-style frameworks, or even simple scripts for customizing your desktop experience. 
+Apptron is an executable that exposes common APIs for building webview-based desktop applications and integrating with the GUI shell in a way that is platform (Win, Mac, Linux) and language agnostic. This makes it a simple, compact primitive for building your own native cross-platform Electron-style applications, alternative or specialized Electron-style frameworks, or even simple scripts for customizing your desktop experience. 
+
+*NOTE: Windows and Linux support is only availble in the v0.1 tag while re-implementing the bridge backends*
 
 It provides these high-level API modules:
 
@@ -12,37 +14,37 @@ It provides these high-level API modules:
 - **shell**: native desktop shell dialogs, notifications, clipboard, global shortcuts
 - **system**: system resource information (displays, cpu/memory, OS info)
 
-Hostbridge runs as a subprocess helper with communication over STDIO using [qtalk](https://github.com/tractordev/qtalk). Running as a subprocess means regardless of language it is always distributed as the same single binary, frees your program from the restrictive and error-prone GUI app threading model, and avoids native extensions/FFI that can complicate the build and install for your program.
+Apptron runs as a subprocess helper with communication over STDIO using [qtalk](https://github.com/tractordev/qtalk). Running as a subprocess means regardless of language it is always distributed as the same single binary, frees your program from the restrictive and error-prone GUI app threading model, and avoids native extensions/FFI that can complicate the build and install for your program.
 
 Currently there are two languages supported: Go and JavaScript. Adding language support is straightforward and can be done using [this guide]().
 
 ## Getting and distributing
 
-A framework, application, or tool built with hostbridge may choose to embed the hostbridge binary within itself, but soon it will be available to download as a standalone binary for use as a package dependency or to write scripts against directly. For now, you can clone this repo and build the binary with:
+A framework, application, or tool built with apptron may choose to embed the apptron binary within itself, but soon it will be available to download as a standalone binary for use as a package dependency or to write scripts against directly. For now, you can clone this repo and build the binary with:
 
 ```bash
-make hostbridge
+make apptron
 ```
 
 The dependencies for building are [Go](https://go.dev/), [Rust](https://www.rust-lang.org/tools/install) (for the moment), and platform libraries (for example, XCode Developer Tools on Mac).
 
 ## Builtin Electron alternative
 
-Since hostbridge is just an API for native app functionality, you still need to write and bundle your application. This is why hostbridge can be seen as a runtime primitive for building your own Electron framework. To get started quickly, there is a build subcommand that can take some web assets and produce a single distributable binary. This build command is built-in to the hostbridge binary, but also requires Go installed to run. Perhaps eventually Go can be bundled with it as well.
+Since apptron is just an API for native app functionality, you still need to write and bundle your application. This is why apptron can be seen as a runtime primitive for building your own Electron framework. To get started quickly, there is a build subcommand that can take some web assets and produce a single distributable binary. This build command is built-in to the apptron binary, but also requires Go installed to run. Perhaps eventually Go can be bundled with it as well.
 
 This framework is very simple, much simpler than Electron. The minimal workflow is:
 
- - build or install `hostbridge`
+ - build or install `apptron`
  - make an `index.html` file 
- - run `hostbridge build` in that directory
+ - run `apptron build` in that directory
  - get an executable that contains and runs the page in a native window
  
-Any other assets in the directory are bundled and served as well. Any page can include `/-/hostbridge.js` and then use the `$host` global to access the hostbridge API to create other windows, etc letting you build an entire native application with HTML and JavaScript, without a drop of NodeJS or NPM modules.
+Any other assets in the directory are bundled and served as well. Any page can include `/-/apptron.js` and then use the `$host` global to access the apptron API to create other windows, etc letting you build an entire native application with HTML and JavaScript, without a drop of NodeJS or NPM modules.
 
-From the `demo` directory, which includes an example HTML file for this, assuming `hostbridge` was built in the project root, you can run:
+From the `demo` directory, which includes an example HTML file for this, assuming `apptron` was built in the project root, you can run:
 
 ```bash
-../hostbridge build
+../apptron build
 ```
 
 There should now be a `demo` executable (named after the directory) that starts a native application based on your web assets. The main window can be customized from the HTML by including a meta tag in the `index.html` like `<meta name="window" content="center=true,width=800,height=600" />`.
@@ -53,11 +55,11 @@ Since this framework and builder is meant as an *example* and a quick developmen
 
 ## Building your own application
 
-As long as you have a hostbridge client in your language, you can build a program against the hostbridge API giving you much more control over how you build your application, or whether it's even a full blown application. It could be a Python script. 
+As long as you have a apptron client in your language, you can build a program against the apptron API giving you much more control over how you build your application, or whether it's even a full blown application. It could be a Python script. 
 
 The above builder is basically just a wrapper around a pre-made Go program, which conveniently has support to bundle static files into the binary it produces. Rust has this capability built-in as well, but many languages have a tool or mechanism to do something like this.
 
-To see how you can work against the hostbridge API directly, lets recreate a program similar to what the above builder wrote for us. This could be any language, but for convenience, we'll be using Go.
+To see how you can work against the apptron API directly, lets recreate a program similar to what the above builder wrote for us. This could be any language, but for convenience, we'll be using Go.
 
 ```golang
 package main
@@ -69,15 +71,15 @@ import (
 	"net/http"
 	"strings"
 
-	"tractor.dev/hostbridge/client"
-	"tractor.dev/hostbridge/apputil"
+	"tractor.dev/apptron/client"
+	"tractor.dev/apptron/apputil"
 )
 
 //go:embed *.html
 var assets embed.FS
 
 func main() {
-	// this starts the hostbridge subprocess
+	// this starts the apptron subprocess
 	// and returns a client for its API
 	bridge, err := client.Spawn()
 	if err != nil {
@@ -88,18 +90,12 @@ func main() {
 		// just so we can see what kind of events
 		// we get. most are from window interactions
 		log.Println(event)
-
-		// if a close is attempted on our main window,
-		// we close the client which will end the program
-		if event.Type == client.EventClose && event.WindowID == 1 {
-			bridge.Close()
-		}
 	}
 
 	http.Handle("/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// handle requests for the /-/hostbridge.js file and
+		// handle requests for the /-/apptron.js file and
 		// the WebSocket endpoint it connects to, which then
-		// proxies to our hostbridge client
+		// proxies to our apptron client
 		if strings.HasPrefix(r.URL.Path, "/-/") {
 			apputil.BackendServer(bridge, nil).ServeHTTP(w, r)
 			return
@@ -110,6 +106,11 @@ func main() {
 	go http.ListenAndServe(":8888", nil)
 
 	ctx := context.Background()
+
+	// this starts the application event loop
+	if err := bridge.App.Run(ctx, client.AppOptions{}); err != nil {
+		log.Fatal(err)
+	}
 
 	// set up some default window options that can be overwritten by a
 	// meta tag with name="window" in the index.html of our embedded assets
@@ -127,7 +128,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	// meanwhile wait until hostbridge exits,
+	// meanwhile wait until apptron exits,
 	// most likely from our main window being closed
 	bridge.Wait()
 }
@@ -136,7 +137,7 @@ func main() {
 
 Now we can put this file in a directory with an `index.html` (maybe from the `demo` dir again) and simply run `go build` to get a binary.
 
-Since we're doing similar things as our builder does, we can reuse some of those utility functions. However, you could also make a program without them, and instead doing all hostbridge calls from Go, perhaps exposing them to JavaScript some other way or not at all.
+Since we're doing similar things as our builder does, we can reuse some of those utility functions. However, you could also make a program without them, and instead doing all apptron calls from Go, perhaps exposing them to JavaScript some other way or not at all.
 
 For example, here is an even simpler Go program that doesn't even make a window (so it doesn't need to serve any files). It simply lets you pick some files using the native file picker dialog and then prints them out. 
 
@@ -148,7 +149,7 @@ import (
 	"fmt"
 	"log"
 
-	"tractor.dev/hostbridge/client"
+	"tractor.dev/apptron/client"
 )
 
 func main() {
@@ -173,12 +174,12 @@ func main() {
 }
 ```
 
-For something as simple as using this one native dialog, we don't have to invoke CGO and compile against tons of system headers. Hostbridge makes these APIs much more accessible for simple programs and scripts. 
+For something as simple as using this one native dialog, we don't have to invoke CGO and compile against tons of system headers. apptron makes these APIs much more accessible for simple programs and scripts. 
 
 ## Getting help
 
-There is a `#hostbridge` channel in the Progrium Discord. Feel free to ask for help or get involved in development there or file issues or PRs here.
+There is a `#apptron` channel in the Progrium Discord. Feel free to ask for help or get involved in development there or file issues or PRs here.
 
 ## License
 
-TBD while sponsorware
+MIT

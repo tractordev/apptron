@@ -9,13 +9,13 @@ import (
 	"runtime"
 
 	"github.com/progrium/qtalk-go/mux"
-	"tractor.dev/hostbridge/bridge"
-	"tractor.dev/hostbridge/bridge/platform"
-	"tractor.dev/hostbridge/cmd/hostbridge/build"
-	"tractor.dev/hostbridge/cmd/hostbridge/bundle"
+	"tractor.dev/apptron/bridge"
+	"tractor.dev/apptron/bridge/platform"
+	"tractor.dev/apptron/cmd/apptron/build"
+	"tractor.dev/apptron/cmd/apptron/bundle"
 )
 
-const Version = "0.2.0"
+const Version = "0.3.0"
 
 func init() {
 	runtime.LockOSThread()
@@ -41,7 +41,7 @@ func main() {
 	}
 
 	if *flagDebug {
-		fmt.Fprintf(os.Stderr, "hostbridge %s\n", Version)
+		fmt.Fprintf(os.Stderr, "apptron %s\n", Version)
 	}
 
 	sess, err := mux.DialIO(os.Stdout, os.Stdin)
