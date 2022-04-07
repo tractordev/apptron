@@ -20,6 +20,7 @@
 
 /debug-pkg
 /debug-rpc
+/debug-app
 /debug-cmd
 /hostbridge
 /_local

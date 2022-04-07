@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Hostbridge Demo</title>
+  <title>Hostbridge Debug</title>
   <meta name="window" content="center=true" />
   <script src="/-/hostbridge.js"></script>
   <script>
@@ -16,11 +16,11 @@
         return false
       }, false)
 
-      const resp = await fetch("./icon.png")
-      $host.app.NewIndicator(await resp.arrayBuffer(), [
-        {ID: 1, Title: "Hello FOO"},
-        {ID: 2, Title: "Hello BAR"}
-      ])
+      // const resp = await fetch("./icon.png")
+      // $host.app.NewIndicator(await resp.arrayBuffer(), [
+      //   {ID: 1, Title: "Hello FOO"},
+      //   {ID: 2, Title: "Hello BAR"}
+      // ])
     })
 
     async function popup() {
