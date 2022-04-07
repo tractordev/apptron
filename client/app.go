@@ -10,15 +10,27 @@ type AppModule struct {
 	client *Client
 }
 
+type AppOptions struct {
+	Identifier          string
+	RunsAfterLastWindow bool
+	AccessoryMode       bool
+}
+
+// Run
+func (m *AppModule) Run(ctx context.Context, opts AppOptions) (err error) {
+	_, err = m.client.Call(ctx, "app.Run", fn.Args{opts}, nil)
+	return
+}
+
 // Menu
-func (m *AppModule) Menu(ctx context.Context) (ret *Menu, err error) {
+func (m *AppModule) Menu(ctx context.Context) (ret Menu, err error) {
 	_, err = m.client.Call(ctx, "app.Menu", fn.Args{}, &ret)
 	return
 }
 
 // SetMenu
 func (m *AppModule) SetMenu(ctx context.Context, menu Menu) (err error) {
-	_, err = m.client.Call(ctx, "app.SetMenu", fn.Args{menu.ID}, nil)
+	_, err = m.client.Call(ctx, "app.SetMenu", fn.Args{menu.Handle}, nil)
 	return
 }
 

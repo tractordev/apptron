@@ -7,11 +7,29 @@
   <script>
     $host.ready.then(() => {
       $host.shell.ShowMessage({Body: "Hello"})
+      $host.onevent = (e) => {
+        console.log(e)
+      }
+      window.output.addEventListener('contextmenu', function (e) { 
+        e.preventDefault()
+        popup()
+        return false
+      }, false);
     })
+
+    async function popup() {
+      const id = await $host.rpc.menu.Popup([
+        {ID: 1, Title: "Hello FOO"},
+        {ID: 2, Title: "Hello BAR"}
+      ])
+      console.log("menu:", id)
+    }
 
     async function clickme() {
       window.output.value = await $host.shell.ShowFilePicker({Mode: "pickfile"})
     }
+
+    
   </script>
 </head>
 <body>

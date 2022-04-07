@@ -67,8 +67,8 @@ func (m *ShellModule) WriteClipboard(ctx context.Context, text string) (ret bool
 }
 
 // RegisterShortcut
-func (m *ShellModule) RegisterShortcut(ctx context.Context, accelerator string) (ret bool, err error) {
-	_, err = m.client.Call(ctx, "shell.RegisterShortcut", fn.Args{accelerator}, &ret)
+func (m *ShellModule) RegisterShortcut(ctx context.Context, accelerator string) (err error) {
+	_, err = m.client.Call(ctx, "shell.RegisterShortcut", fn.Args{accelerator}, nil)
 	return
 }
 
@@ -85,7 +85,7 @@ func (m *ShellModule) UnregisterShortcut(ctx context.Context, accelerator string
 }
 
 // UnregisterAllShortcuts
-func (m *ShellModule) UnregisterAllShortcuts(ctx context.Context) (ret bool, err error) {
-	_, err = m.client.Call(ctx, "shell.UnregisterAllShortcuts", fn.Args{}, &ret)
+func (m *ShellModule) UnregisterAllShortcuts(ctx context.Context) (err error) {
+	_, err = m.client.Call(ctx, "shell.UnregisterAllShortcuts", fn.Args{}, nil)
 	return
 }

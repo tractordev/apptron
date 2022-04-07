@@ -23,12 +23,10 @@ func TestAppModule(t *testing.T) {
 
 	err = client.App.NewIndicator(ctx, icon, []MenuItem{
 		{
-			Title:   "One",
-			Enabled: true,
+			Title: "One",
 		},
 		{
-			Title:   "Two",
-			Enabled: true,
+			Title: "Two",
 		},
 	})
 	if err != nil {

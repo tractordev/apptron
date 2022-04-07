@@ -12,18 +12,18 @@
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
 
+.DS_Store
+
 # Dependency directories (remove the comment below to include it)
 # vendor/
 
-/debug-ffi
+
+/debug-pkg
 /debug-rpc
 /debug-cmd
 /hostbridge
-/electronish
 /_local
 /demo/demo
+/demo/Demo.app
 /demo/main.go
-
-lib/hostbridge/target
-lib/libhostbridge.a
 

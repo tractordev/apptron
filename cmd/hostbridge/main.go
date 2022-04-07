@@ -10,11 +10,12 @@ import (
 
 	"github.com/progrium/qtalk-go/mux"
 	"tractor.dev/hostbridge/bridge"
-	"tractor.dev/hostbridge/bridge/core"
+	"tractor.dev/hostbridge/bridge/platform"
 	"tractor.dev/hostbridge/cmd/hostbridge/build"
+	"tractor.dev/hostbridge/cmd/hostbridge/bundle"
 )
 
-const Version = "0.1.0"
+const Version = "0.2.0"
 
 func init() {
 	runtime.LockOSThread()
@@ -26,6 +27,16 @@ func main() {
 
 	if flag.Arg(0) == "build" {
 		build.Build()
+		return
+	}
+
+	if flag.Arg(0) == "clean" {
+		build.Clean()
+		return
+	}
+
+	if flag.Arg(0) == "bundle" {
+		bundle.Bundle()
 		return
 	}
 
@@ -41,7 +52,7 @@ func main() {
 	go srv.Respond(sess, context.Background())
 	go func() {
 		sess.Wait()
-		core.Quit()
+		platform.Terminate()
 	}()
-	core.Run(nil)
+	platform.Main()
 }

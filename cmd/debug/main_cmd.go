@@ -5,8 +5,10 @@ package main
 import (
 	"context"
 	"fmt"
+	"log"
 	"os"
 
+	"tractor.dev/hostbridge/bridge/misc"
 	"tractor.dev/hostbridge/client"
 )
 
@@ -18,16 +20,29 @@ func main() {
 	}
 	defer c.Close()
 
+	c.OnEvent = func(e client.Event) {
+		log.Println(e)
+	}
+
 	ctx := context.Background()
+
+	if err := c.App.Run(ctx, client.AppOptions{}); err != nil {
+		panic(err)
+	}
+
+	if err := c.Shell.RegisterShortcut(ctx, "CMD+S"); err != nil {
+		panic(err)
+	}
 
 	options := client.WindowOptions{
 		Title: "Demo window",
 		// NOTE(nick): resizing a transparent window on MacOS seems really slow?
 		Transparent: true,
 		Frameless:   false,
+		Resizable:   true,
 		Visible:     true,
 		//Position: window.Position{X: 10, Y: 10},
-		//Size: window.Size{ Width: 360, Height: 240 },
+		Size:   client.Size{Width: 360, Height: 240},
 		Center: true,
 		HTML: `
 			<!doctype html>
@@ -57,5 +72,38 @@ func main() {
 		panic(err)
 	}
 
-	select {}
+	trayTemplate := []client.MenuItem{
+		{
+			Title: "Click on this here thing",
+		},
+		{
+			Title: "Secret stuff",
+			SubMenu: []client.MenuItem{
+				{
+					ID:    1,
+					Title: "I'm nested!!",
+				},
+				{
+					ID:       101,
+					Disabled: true,
+					Title:    "Can't touch this",
+				},
+			},
+		},
+		{
+			Title:       "Quit",
+			Accelerator: "Command+T",
+		},
+	}
+
+	iconData, err := misc.Assets.ReadFile("icon.png")
+	if err != nil {
+		fmt.Println("Error reading icon file:", err)
+	}
+
+	if err := c.App.NewIndicator(ctx, iconData, trayTemplate); err != nil {
+		log.Fatal(err)
+	}
+
+	c.Wait()
 }

@@ -14,12 +14,10 @@ func TestMenuModule(t *testing.T) {
 
 	m, err := client.Menu.New(ctx, []MenuItem{
 		{
-			Title:   "One",
-			Enabled: true,
+			Title: "One",
 		},
 		{
-			Title:   "Two",
-			Enabled: true,
+			Title: "Two",
 		},
 	})
 	if err != nil {
