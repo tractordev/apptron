@@ -1,3 +1,4 @@
+// dist embeds the final client.js file of clientjs
 package dist
 
 import (

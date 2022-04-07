@@ -1,3 +1,4 @@
+// client is the API client to bridge that you actually use
 package client
 
 import (

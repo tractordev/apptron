@@ -1,3 +1,5 @@
+package bundler
+
 // Package main is a sample macOS-app-bundling program to demonstrate how to
 // automate the process described in this tutorial:
 //
@@ -35,7 +37,6 @@
 // - https://el-tramo.be/blog/fancy-dmg/
 // - https://github.com/remko/fancy-dmg/blob/master/Makefile
 // - https://github.com/shurcooL/trayhost
-package bundler
 
 import (
 	"bytes"

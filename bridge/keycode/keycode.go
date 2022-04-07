@@ -1,3 +1,5 @@
+package keycode
+
 // This file contains a substantial portion of the UI Events Specification by the W3C. In
 // particular, the variant names within `KeyCode` and their documentation are modified
 // versions of contents of the aforementioned specification.
@@ -12,7 +14,6 @@
 // These documents were used under the terms of the following license. This W3C license as well as
 // the W3C short notice apply to the `KeyCode` enums and their variants and the
 // documentation attached to their variants.
-
 // --------- BEGGINING OF W3C LICENSE --------------------------------------------------------------
 //
 // License
@@ -47,10 +48,7 @@
 // work will at all times remain with copyright holders.
 //
 // --------- END OF W3C LICENSE --------------------------------------------------------------------
-
 // --------- BEGGINING OF W3C SHORT NOTICE ---------------------------------------------------------
-//
-// tao: https://github.com/tauri-apps/tao
 //
 // Copyright © 2021 World Wide Web Consortium, (Massachusetts Institute of Technology, European
 // Research Consortium for Informatics and Mathematics, Keio University, Beihang). All Rights
@@ -61,7 +59,6 @@
 // [1] http://www.w3.org/Consortium/Legal/copyright-software
 //
 // --------- END OF W3C SHORT NOTICE ---------------------------------------------------------------
-package keycode
 
 type KeyCode uint
 
