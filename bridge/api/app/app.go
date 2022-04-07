@@ -36,10 +36,13 @@ func (m *module) SetMenu(handle resource.Handle) error {
 	return nil
 }
 
-func (m *module) NewIndicator(iconSel string, items []menu.Item, call *rpc.Call) {
-	var icon []byte
-	icon, _ = misc.FetchData(context.Background(), call, iconSel)
+func (m *module) NewIndicator(iconSel string, items []menu.Item, call *rpc.Call) error {
+	icon, err := misc.FetchData(context.Background(), call, iconSel)
+	if err != nil {
+		return err
+	}
 	NewIndicator(icon, items)
+	return nil
 }
 
 func (m *module) Run(options Options) error {
