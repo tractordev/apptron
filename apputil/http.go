@@ -56,6 +56,15 @@ func (b *backend) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	case "/-/ws":
 		websocket.Handler(func(ws *websocket.Conn) {
 			ws.PayloadType = websocket.BinaryFrame
+			sess := mux.New(ws)
+
+			// recreate a default handler on proxyTo
+			// that proxies to this session (for callbacks)
+			proxyToMux := b.proxyTo.Peer.RespondMux
+			proxyToMux.Remove("")
+			proxyToMux.Handle("", rpc.ProxyHandler(rpc.NewClient(sess, codec.JSONCodec{})))
+
+			// create a server to proxy calls to proxyTo
 			handler := rpc.NewRespondMux()
 			handler.Handle("", rpc.ProxyHandler(b.proxyTo.Client))
 			if b.muxExt != nil {
@@ -65,7 +74,7 @@ func (b *backend) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				Codec:   codec.JSONCodec{},
 				Handler: handler,
 			}
-			srv.Respond(mux.New(ws), nil)
+			srv.Respond(sess, nil)
 		}).ServeHTTP(w, r)
 	default:
 		http.NotFound(w, r)
