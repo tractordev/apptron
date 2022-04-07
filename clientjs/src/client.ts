@@ -7,7 +7,10 @@ export async function connect(url: string): Promise<Client> {
 }
 
 export class Client {
+  peer: qtalk.Peer
   rpc: any
+  data: {[index: string]: ArrayBuffer}
+
   app: app
   menu: menu
   system: system
@@ -17,14 +20,32 @@ export class Client {
   onevent?: (e: Event) => void
 
   constructor(peer: qtalk.Peer) {
+    this.data = {}
+    this.peer = peer
     this.rpc = peer.virtualize()
-    this.app = new AppModule(this.rpc)
-    this.menu = new MenuModule(this.rpc)
-    this.system = new SystemModule(this.rpc)
-    this.shell = new ShellModule(this.rpc)
-    this.window = new WindowModule(this.rpc)
+    this.app = new AppModule(this)
+    this.menu = new MenuModule(this)
+    this.system = new SystemModule(this)
+    this.shell = new ShellModule(this)
+    this.window = new WindowModule(this)
     this.handleEvents(peer)
-    peer.respond()
+    this.peer.respond()
+  }
+
+  async serveData(d: ArrayBuffer): Promise<string> {
+    const selector = toHexString(new Uint8Array(await crypto.subtle.digest("SHA-1", d)))
+    if (selector in this.data) {
+      return selector
+    }
+    this.data[selector] = d
+    this.peer.handle(selector, {respondRPC: async (resp: any, call: any) => {
+      await call.receive()
+      const ch = await resp.continue()
+      const data = new Uint8Array(this.data[selector])
+      await ch.write(data)
+      await ch.close()
+    }})
+    return selector
   }
 
   async handleEvents(peer: qtalk.Peer) {
@@ -81,14 +102,16 @@ export interface app {
   Run(options: AppOptions): void
   Menu(): Promise<Menu>
   SetMenu(m: Menu): void 
-  //NewIndicator(icon, items)
+  NewIndicator(icon: ArrayBuffer, items: MenuItem[]): void
 }
 
 class AppModule {
   rpc: any
+  client: Client
 
-  constructor(rpc: any) {
-    this.rpc = rpc
+  constructor(client: Client) {
+    this.rpc = client.rpc
+    this.client = client
   }
 
   Run(options: AppOptions): void {
@@ -101,6 +124,11 @@ class AppModule {
 
   SetMenu(m: Menu): void {
     this.rpc.app.SetMenu(m)
+  }
+
+  async NewIndicator(icon: ArrayBuffer, items: MenuItem[]): Promise<void> {
+    const selector = await this.client.serveData(icon)
+    this.rpc.app.NewIndicator(selector, items)
   }
 }
 
@@ -115,8 +143,8 @@ class MenuModule {
 
   onclick?: (e: Event) => void
 
-  constructor(rpc: any) {
-    this.rpc = rpc
+  constructor(client: Client) {
+    this.rpc = client.rpc
   }
 
   New(items: MenuItem[]): Promise<Menu> {
@@ -131,8 +159,8 @@ export interface system {
 class SystemModule {
   rpc: any
 
-  constructor(rpc: any) {
-    this.rpc = rpc
+  constructor(client: Client) {
+    this.rpc = client.rpc
   }
 
   Displays(): Promise<Display[]> {
@@ -159,8 +187,8 @@ class ShellModule {
 
   onshortcut?: (e: Event) => void
 
-  constructor(rpc: any) {
-    this.rpc = rpc
+  constructor(client: Client) {
+    this.rpc = client.rpc
   }
 
   ShowNotification(n: Notification): void {
@@ -213,8 +241,8 @@ class WindowModule {
   main: Window
   windows: {[id: number]: Window}
 
-  constructor(rpc: any) {
-    this.rpc = rpc
+  constructor(client: Client) {
+    this.rpc = client.rpc
     this.main = new Window(this.rpc, 0)
     this.windows = {0: this.main}
   }
@@ -421,4 +449,10 @@ export interface Event {
 	Size:     Size
 	MenuID:   number
 	Shortcut: string
+}
+
+function toHexString(byteArray: Uint8Array): string {
+  return Array.from(byteArray, function(byte: number) {
+    return ('0' + (byte & 0xFF).toString(16)).slice(-2);
+  }).join('')
 }

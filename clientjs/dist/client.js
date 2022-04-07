@@ -917,7 +917,9 @@ async function connect(url) {
     return new Client(await connect1(url, new JSONCodec1()));
 }
 class Client {
+    peer;
     rpc;
+    data;
     app;
     menu;
     system;
@@ -925,14 +927,33 @@ class Client {
     window;
     onevent;
     constructor(peer){
+        this.data = {};
+        this.peer = peer;
         this.rpc = peer.virtualize();
-        this.app = new AppModule(this.rpc);
-        this.menu = new MenuModule(this.rpc);
-        this.system = new SystemModule(this.rpc);
-        this.shell = new ShellModule(this.rpc);
-        this.window = new WindowModule(this.rpc);
+        this.app = new AppModule(this);
+        this.menu = new MenuModule(this);
+        this.system = new SystemModule(this);
+        this.shell = new ShellModule(this);
+        this.window = new WindowModule(this);
         this.handleEvents(peer);
-        peer.respond();
+        this.peer.respond();
+    }
+    async serveData(d) {
+        const selector = toHexString(new Uint8Array(await crypto.subtle.digest("SHA-1", d)));
+        if (selector in this.data) {
+            return selector;
+        }
+        this.data[selector] = d;
+        this.peer.handle(selector, {
+            respondRPC: async (resp, call)=>{
+                await call.receive();
+                const ch = await resp.continue();
+                const data = new Uint8Array(this.data[selector]);
+                await ch.write(data);
+                await ch.close();
+            }
+        });
+        return selector;
     }
     async handleEvents(peer) {
         const resp = await peer.call("Listen");
@@ -983,8 +1004,10 @@ class Client {
 }
 class AppModule {
     rpc;
-    constructor(rpc){
-        this.rpc = rpc;
+    client;
+    constructor(client){
+        this.rpc = client.rpc;
+        this.client = client;
     }
     Run(options) {
         this.rpc.app.Run(options);
@@ -995,12 +1018,16 @@ class AppModule {
     SetMenu(m) {
         this.rpc.app.SetMenu(m);
     }
+    async NewIndicator(icon, items) {
+        const selector = await this.client.serveData(icon);
+        this.rpc.app.NewIndicator(selector, items);
+    }
 }
 class MenuModule {
     rpc;
     onclick;
-    constructor(rpc){
-        this.rpc = rpc;
+    constructor(client){
+        this.rpc = client.rpc;
     }
     New(items) {
         return this.rpc.menu.New(items);
@@ -1008,8 +1035,8 @@ class MenuModule {
 }
 class SystemModule {
     rpc;
-    constructor(rpc){
-        this.rpc = rpc;
+    constructor(client){
+        this.rpc = client.rpc;
     }
     Displays() {
         return this.rpc.system.Displays();
@@ -1018,8 +1045,8 @@ class SystemModule {
 class ShellModule {
     rpc;
     onshortcut;
-    constructor(rpc){
-        this.rpc = rpc;
+    constructor(client){
+        this.rpc = client.rpc;
     }
     ShowNotification(n) {
         this.rpc.shell.ShowNotification(n);
@@ -1053,8 +1080,8 @@ class WindowModule {
     rpc;
     main;
     windows;
-    constructor(rpc){
-        this.rpc = rpc;
+    constructor(client){
+        this.rpc = client.rpc;
         this.main = new Window(this.rpc, 0);
         this.windows = {
             0: this.main
@@ -1138,6 +1165,11 @@ class Window {
     setTitle(title) {
         return this.rpc.window.SetTitle(this.ID, title);
     }
+}
+function toHexString(byteArray) {
+    return Array.from(byteArray, function(__byte) {
+        return ('0' + (__byte & 255).toString(16)).slice(-2);
+    }).join('');
 }
 export { connect as connect };
 export { Client as Client };
