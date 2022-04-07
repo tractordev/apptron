@@ -81,6 +81,7 @@ func RegisterShortcut(accelerator string) bool {
 		resetLoop = make(chan bool, 1)
 		go shortcutLoop()
 	})
+	resetLoop <- true
 	return true
 }
 
