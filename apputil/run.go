@@ -76,11 +76,11 @@ func Run(fsys fs.FS, userMethods interface{}) {
 
 	ctx := context.Background()
 
-	if err := bridge.App.Run(ctx, client.AppOptions{}); err != nil {
+	if err := bridge.App.Run(ctx, AppOptionsFromHTML(fsys, "index.html", "application", client.AppOptions{})); err != nil {
 		log.Fatal(err)
 	}
 
-	_, err = bridge.Window.New(ctx, OptionsFromHTML(fsys, "index.html", "window", client.WindowOptions{
+	_, err = bridge.Window.New(ctx, WindowOptionsFromHTML(fsys, "index.html", "window", client.WindowOptions{
 		Size: client.Size{
 			Width:  640,
 			Height: 480,

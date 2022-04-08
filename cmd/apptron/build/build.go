@@ -13,8 +13,6 @@ import (
 	"time"
 
 	_ "embed"
-
-	"tractor.dev/apptron/cmd/apptron/sign"
 )
 
 //go:embed entry.go
@@ -56,11 +54,11 @@ func Build() {
 	binFile := filepath.Join(workdir, "apptron")
 	if _, err := os.Stat(binFile); err != nil {
 		fatal(copyFile(selfbin, binFile))
-		err, errlog := sign.Sign(dir, "com.progrium.Apptron", binFile)
-		if err != nil {
-			errlog.WriteTo(os.Stderr)
-			log.Fatal(err)
-		}
+		// err, errlog := sign.Sign(dir, "com.progrium.Apptron", binFile)
+		// if err != nil {
+		// 	errlog.WriteTo(os.Stderr)
+		// 	log.Fatal(err)
+		// }
 	}
 
 	mainFile := filepath.Join(workdir, "main.go")

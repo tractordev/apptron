@@ -7,7 +7,7 @@ apptron: clientjs/dist/client.js $(GO_FILES)
 debug-pkg: $(GO_FILES)
 	go build -tags pkg -o ./debug-pkg ./cmd/debug
 
-debug-app: clientjs/dist/client.js $(GO_FILES) 
+debug-app: clientjs/dist/client.js cmd/debug/index.html $(GO_FILES) 
 	go build -tags app -o ./debug-app ./cmd/debug
 
 debug-cmd: apptron $(GO_FILES)
@@ -15,6 +15,10 @@ debug-cmd: apptron $(GO_FILES)
 
 clientjs/dist/client.js: clientjs/lib/*.js clientjs/src/*.ts
 	make -C clientjs build
+
+.PHONY: install
+install:
+	go install ./cmd/apptron
 
 .PHONY: clean
 clean:

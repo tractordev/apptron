@@ -25,9 +25,10 @@
 /hostbridge
 /apptron
 /_local
-/demo/demo
-/demo/Demo.app
-/demo/main.go
+/demos/helloworld/Helloworld.app
+/demos/helloworld/helloworld
+/demos/indicator/Indicator.app
+/demos/indicator/indicator
 /clientjs/docs
 
 

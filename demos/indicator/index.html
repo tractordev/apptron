@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Indicator Demo</title>
+  <meta name="application" content="accessory=true" />
+  <meta name="window" content="width=0,height=0" />
+  <script src="/-/apptron.js"></script>
+  <script>
+    $host.ready.then(async () => {
+
+      const icon = await fetch("./icon.png")
+      $host.app.NewIndicator(await icon.arrayBuffer(), [
+        {ID: 1, Title: "Say hello"},
+        {ID: 2, Title: "Notify me"},
+        {Separator: true},
+        {Title: "Quit"},
+      ])
+      
+      $host.onevent = (e) => {
+        switch (e.MenuItem) {
+        case 1:
+          $host.shell.ShowMessage({Body: "Hello!"})
+          break
+        case 2:
+          $host.shell.ShowNotification({
+            Title: "Notify you",
+            Body: "Whatever"
+          })
+          break
+        }
+      }
+
+    })
+  </script>
+</head>
+</html>

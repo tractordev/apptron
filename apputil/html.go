@@ -25,7 +25,7 @@ import (
 //
 // String values can optionally be wrapped in single quotes, boolean values must be true or false. Any errors
 // in parsing values will result in using the fallback struct value.
-func OptionsFromHTML(fsys fs.FS, filename, metaname string, fallback client.WindowOptions) client.WindowOptions {
+func WindowOptionsFromHTML(fsys fs.FS, filename, metaname string, fallback client.WindowOptions) client.WindowOptions {
 	f, err := fsys.Open(filename)
 	if err != nil {
 		return fallback
@@ -63,6 +63,20 @@ func OptionsFromHTML(fsys fs.FS, filename, metaname string, fallback client.Wind
 		HTML:    fallback.HTML,
 		IconSel: fallback.IconSel,
 		Icon:    fallback.Icon,
+	}
+}
+
+func AppOptionsFromHTML(fsys fs.FS, filename, metaname string, fallback client.AppOptions) client.AppOptions {
+	f, err := fsys.Open(filename)
+	if err != nil {
+		return fallback
+	}
+	opts := parseOptions(f, metaname)
+	f.Close()
+	return client.AppOptions{
+		Identifier: optString(opts["identifier"], fallback.Identifier),
+		Accessory:  optBool(opts["accessory"], fallback.Accessory),
+		Agent:      optBool(opts["agent"], fallback.Agent),
 	}
 }
 

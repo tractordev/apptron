@@ -1,0 +1,22 @@
+body {
+  border: 20px solid red;
+  margin: 0px;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  font-size: xx-large;
+  font-family:Verdana, Geneva, Tahoma, sans-serif;
+}
+main {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+input {
+  font-size: 48px;
+  padding: 8px;
+  
+}

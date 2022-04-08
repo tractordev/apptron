@@ -18,9 +18,9 @@ func init() {
 }
 
 type Options struct {
-	Identifier          string
-	RunsAfterLastWindow bool
-	AccessoryMode       bool
+	Identifier string
+	Agent      bool
+	Accessory  bool
 }
 
 func (m *module) Menu() *menu.Menu {

@@ -11,9 +11,9 @@ type AppModule struct {
 }
 
 type AppOptions struct {
-	Identifier          string
-	RunsAfterLastWindow bool
-	AccessoryMode       bool
+	Identifier string
+	Agent      bool
+	Accessory  bool
 }
 
 // Run

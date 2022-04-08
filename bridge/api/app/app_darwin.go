@@ -58,16 +58,16 @@ func Run(options Options) error {
 
 	DelegateClass := objc.NewClass("AppDelegate", "NSObject")
 	DelegateClass.AddMethod("applicationShouldTerminateAfterLastWindowClosed:", func(notification objc.Object) bool {
-		return !options.RunsAfterLastWindow
+		return !options.Agent
 	})
 	DelegateClass.AddMethod("applicationWillFinishLaunching:", func(notification objc.Object) {
 		if mainMenu == nil {
 			mainMenu = menu.New([]menu.Item{})
 		}
-		app.SetMainMenu(mainMenu.NSMenu)
-		if options.AccessoryMode {
+		if options.Accessory {
 			app.SetActivationPolicy(cocoa.NSApplicationActivationPolicyAccessory)
 		} else {
+			app.SetMainMenu(mainMenu.NSMenu)
 			app.SetActivationPolicy(cocoa.NSApplicationActivationPolicyRegular)
 		}
 	})
