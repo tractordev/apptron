@@ -40,6 +40,7 @@ func (c *Client) Close() error {
 	ctx := context.Background()
 	if _, err := c.Call(ctx, "Shutdown", nil, nil); err != nil &&
 		!errors.Is(err, net.ErrClosed) &&
+		!errors.Is(err, os.ErrClosed) &&
 		!errors.Is(err, io.EOF) &&
 		!errors.Is(err, syscall.EPIPE) &&
 		!errors.Is(err, syscall.ECONNRESET) {
@@ -50,6 +51,7 @@ func (c *Client) Close() error {
 	}
 	if err := c.Peer.Close(); err != nil &&
 		!errors.Is(err, net.ErrClosed) &&
+		!errors.Is(err, os.ErrClosed) &&
 		!errors.Is(err, io.EOF) &&
 		!errors.Is(err, syscall.EPIPE) &&
 		!errors.Is(err, syscall.ECONNRESET) {
