@@ -25,6 +25,8 @@
 /hostbridge
 /apptron
 /_local
+/demos/chrome/chrome
+/demos/chrome/Chrome.app
 /demos/helloworld/Helloworld.app
 /demos/helloworld/helloworld
 /demos/indicator/Indicator.app

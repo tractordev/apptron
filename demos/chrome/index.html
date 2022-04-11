@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+  <title>Apptron Demo</title>
+  <meta name="window" content="center=true,width=640,height=480,frameless=true" />
+  <script>
+
+    function clicked() {
+      $host.shell.ShowMessage({Body: "Hello world!"})
+    }
+    
+  </script>
+  <style>
+    :root {
+      --highlight: #777;
+      --shadow: #222;
+      --panel: #424242;
+    }
+    body {
+      position: absolute;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      right: 0;
+      margin: 0;
+    }
+    body > div {
+      position: absolute;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      right: 0;
+      margin: 0;
+      border-right: 1px solid var(--shadow);
+      border-bottom: 1px solid var(--shadow);
+      border-left: 1px solid var(--highlight);
+      border-top: 1px solid var(--highlight);
+      padding: 2px;
+      padding-right: 2px;
+      padding-bottom: 2px;
+      background-color: var(--panel);
+      display: flex;
+      flex-direction: column;
+    }
+    main {
+      flex-grow: 1;
+      border-right: 1px solid var(--highlight);
+      border-bottom: 1px solid var(--highlight);
+      border-top: 1px solid var(--shadow);
+      border-left: 1px solid var(--shadow);
+      display: flex;
+    }
+    main > div {
+      width: 100%;
+      border: 1px solid #333;
+      padding: 4px;
+      background-color: white;
+    }
+    .handle {
+      flex-grow: 1;
+      width: 100%;
+      background: linear-gradient(
+        to bottom,
+        #777,
+        #777 50%,
+        #222 50%,
+        #222
+      );
+      /* The rectangle in which to repeat. 
+        It can be fully wide in this case */
+      background-size: 100% 2px;
+      margin-top: 1px;
+      margin-bottom: 1px;
+      
+    }
+    .bar {
+      padding: 3px;
+      padding-left: 0px;
+      padding-top: 1px;
+      padding-bottom: 3px;
+      text-align: center;
+      line-height: 14px;
+      display: flex;
+    }
+    .title {
+      margin-left: auto;
+      margin-right: auto;
+      display: inline-block;
+      background-color: var(--panel);
+      padding-left: 6px;
+      padding-right: 6px;
+      font-size: 14px;
+      font-family: 'Roboto', sans-serif;
+      transform: translate(-50%, 0%);
+      position: absolute; 
+      left: 50%;
+      color: white;
+    }
+    .control {
+      margin-left: 1px;
+      margin-right: 4px;
+      width: 12px;
+      height: 12px;
+      border-right: 1px solid var(--highlight);
+      border-bottom: 1px solid var(--highlight);
+      border-top: 1px solid var(--shadow);
+      border-left: 1px solid var(--shadow);
+      background-color: #333;
+      
+    }
+    .control > div {
+      border-top: 1px solid var(--highlight);
+      border-left: 1px solid var(--highlight);
+      border-bottom: 1px solid var(--shadow);
+      border-right: 1px solid var(--shadow);
+      /* background: linear-gradient(-45deg, #e0e0e0, #828282 ); */
+      width: 10px;
+      height: 10px;
+    }
+  </style>
+</head>
+<body>
+<div>
+  <div class="bar">
+    <div class="control"><div style="background-color: #ed5a6d;"></div></div>
+    <div class="control"><div style="background-color: #f5bd4f;"></div></div>
+    <div class="control"><div style="background-color: #62c153;"></div></div>
+    <div class="handle">
+    </div>
+    <div class="title">
+      Title
+    </div>
+  </div>
+  <main>
+    <div>
+    Hello world
+    </div>
+  </main>
+</div>
+</body>
+</html>
