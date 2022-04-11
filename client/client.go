@@ -6,11 +6,14 @@ import (
 	"context"
 	"crypto/sha1"
 	"encoding/hex"
+	"errors"
 	"io"
 	"log"
+	"net"
 	"os"
 	"os/exec"
 	"sync"
+	"syscall"
 
 	"github.com/progrium/qtalk-go/codec"
 	"github.com/progrium/qtalk-go/mux"
@@ -35,13 +38,24 @@ type Client struct {
 
 func (c *Client) Close() error {
 	ctx := context.Background()
-	if _, err := c.Call(ctx, "Shutdown", nil, nil); err != nil {
+	if _, err := c.Call(ctx, "Shutdown", nil, nil); err != nil &&
+		!errors.Is(err, net.ErrClosed) &&
+		!errors.Is(err, io.EOF) &&
+		!errors.Is(err, syscall.EPIPE) &&
+		!errors.Is(err, syscall.ECONNRESET) {
 		return err
 	}
 	if c.cmd != nil {
 		c.cmd.Process.Kill()
 	}
-	return c.Peer.Close()
+	if err := c.Peer.Close(); err != nil &&
+		!errors.Is(err, net.ErrClosed) &&
+		!errors.Is(err, io.EOF) &&
+		!errors.Is(err, syscall.EPIPE) &&
+		!errors.Is(err, syscall.ECONNRESET) {
+		return err
+	}
+	return nil
 }
 
 func (c *Client) Wait() error {
