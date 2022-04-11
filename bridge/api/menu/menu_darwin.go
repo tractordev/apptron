@@ -79,13 +79,15 @@ func newMenuItem(i Item) cocoa.NSMenuItem {
 	// 	}
 	// }
 
-	// found in AppDelegate
-	item.SetAction(objc.Sel("menuClick:"))
+	if !i.Disabled && len(i.SubMenu) == 0 {
+		// found in AppDelegate
+		item.SetAction(objc.Sel("menuClick:"))
 
-	// special item titles
-	if i.Title == "Quit" {
-		item.SetTarget(cocoa.NSApp())
-		item.SetAction(objc.Sel("terminate:"))
+		// special item titles
+		if i.Title == "Quit" {
+			item.SetTarget(cocoa.NSApp())
+			item.SetAction(objc.Sel("terminate:"))
+		}
 	}
 
 	if len(i.SubMenu) > 0 {
