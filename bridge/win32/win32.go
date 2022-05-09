@@ -6,6 +6,10 @@ import (
 	"unsafe"
 )
 
+//
+// Imports
+//
+
 var (
 	kernel32 = syscall.NewLazyDLL("kernel32.dll")
 
@@ -15,16 +19,25 @@ var (
 var (
 	user32 = syscall.NewLazyDLL("user32.dll")
 
-	pCreateWindowExW  = user32.NewProc("CreateWindowExW")
-	pDefWindowProcW   = user32.NewProc("DefWindowProcW")
-	pDestroyWindow    = user32.NewProc("DestroyWindow")
-	pDispatchMessageW = user32.NewProc("DispatchMessageW")
-	pGetMessageW      = user32.NewProc("GetMessageW")
-	pPeekMessageW     = user32.NewProc("PeekMessageW")
-	pLoadCursorW      = user32.NewProc("LoadCursorW")
-	pPostQuitMessage  = user32.NewProc("PostQuitMessage")
-	pRegisterClassExW = user32.NewProc("RegisterClassExW")
-	pTranslateMessage = user32.NewProc("TranslateMessage")
+	pCreateWindowExW     = user32.NewProc("CreateWindowExW")
+	pDefWindowProcW      = user32.NewProc("DefWindowProcW")
+	pDestroyWindow       = user32.NewProc("DestroyWindow")
+	pDispatchMessageW    = user32.NewProc("DispatchMessageW")
+	pGetMessageW         = user32.NewProc("GetMessageW")
+	pPeekMessageW        = user32.NewProc("PeekMessageW")
+	pLoadCursorW         = user32.NewProc("LoadCursorW")
+	pPostQuitMessage     = user32.NewProc("PostQuitMessage")
+	pRegisterClassExW    = user32.NewProc("RegisterClassExW")
+	pTranslateMessage    = user32.NewProc("TranslateMessage")
+	pGetCursorPos        = user32.NewProc("GetCursorPos")
+	pSetForegroundWindow = user32.NewProc("SetForegroundWindow")
+
+	pCreateMenu       = user32.NewProc("CreateMenu")
+	pCreatePopupMenu  = user32.NewProc("CreatePopupMenu")
+	pDestroyMenu      = user32.NewProc("DestroyMenu")
+	pTrackPopupMenu   = user32.NewProc("TrackPopupMenu")
+	pInsertMenuItemW  = user32.NewProc("InsertMenuItemW")
+	pGetMenuItemCount = user32.NewProc("GetMenuItemCount")
 
 	pSetProcessDpiAwarenessContext = user32.NewProc("SetProcessDpiAwarenessContext")
 )
@@ -37,11 +50,6 @@ var (
 
 func GetModuleHandle() HINSTANCE {
 	ret, _, _ := pGetModuleHandleW.Call(uintptr(0))
-	/*
-	if ret == 0 {
-		return 0, err
-	}
-	*/
 	return HINSTANCE(ret)
 }
 
@@ -133,11 +141,62 @@ func SetProcessDpiAwarenessContext(context DPI_AWARENESS_CONTEXT) bool {
 	return ret != 0
 }
 
+func SetForegroundWindow(hwnd HWND) bool {
+	ret, _, _ := pSetForegroundWindow.Call(uintptr(hwnd))
+	return ret != 0
+}
+
+func GetCursorPos(pos *POINT) bool {
+	ret, _, _ := pGetCursorPos.Call(uintptr(unsafe.Pointer(pos)))
+	return ret != 0
+}
+
 func Shell_NotifyIconW(dwMessage DWORD, nid *NOTIFYICONDATA) bool {
 	ret, _, _ := pShell_NotifyIconW.Call(uintptr(dwMessage), uintptr(unsafe.Pointer(nid)))
 	return ret != 0
 }
 
+func CreatePopupMenu() HMENU {
+	ret, _, _ := pCreatePopupMenu.Call()
+	return HMENU(ret)
+}
+
+func DestroyMenu(menu HMENU) bool {
+	ret, _, _ := pDestroyMenu.Call(uintptr(menu))
+	return ret != 0
+}
+
+func TrackPopupMenu(menu HMENU, flags UINT, x int32, y int32, nReserved int32, hwnd HWND, rect *RECT) int32 {
+	result, _, _ := pTrackPopupMenu.Call(
+		uintptr(menu),
+		uintptr(flags),
+		uintptr(x),
+		uintptr(y),
+		uintptr(nReserved),
+		uintptr(hwnd),
+		uintptr(unsafe.Pointer(rect)),
+	)
+	return int32(result)
+}
+
+func InsertMenuItemW(menu HMENU, item UINT, byPosition int32, itemInfo *MENUITEMINFO) bool {
+	result, _, _ := pInsertMenuItemW.Call(
+		uintptr(menu),
+		uintptr(item),
+		uintptr(byPosition),
+		uintptr(unsafe.Pointer(itemInfo)),
+	)
+	return result != 0
+}
+
+func GetMenuItemCount(menu HMENU) int32 {
+	result, _, _ := pGetMenuItemCount.Call(uintptr(menu))
+	return int32(result)
+}
+
+//
+// Functions
+//
 
 func PollEvents() {
 	for {
@@ -214,7 +273,7 @@ func SetupTray() {
   trayIconData.uFlags = NIF_MESSAGE | NIF_ICON | NIF_TIP
   trayIconData.uCallbackMessage = Win32TrayIconMessage
   //trayIconData.hIcon = LoadIcon(GetModuleHandle(0), MAKEINTRESOURCE(101));
-  trayIconData.szTip[0] = 0
+  trayIconData.szTip[0] = 0 // @Incomplete: we should put the app name here
 
   Shell_NotifyIconW(NIM_ADD, &trayIconData)
 
@@ -229,11 +288,23 @@ func SetupTray() {
   }
 }
 
+func testWindowCallback(hwnd HWND, message uint32, wParam WPARAM, lParam LPARAM) LRESULT {
+	switch message {
+		case WM_CLOSE:
+			DestroyWindow(hwnd)
+		case WM_DESTROY:
+			PostQuitMessage(0)
+		default:
+			return DefWindowProc(hwnd, message, wParam, lParam)
+	}
+	return 0
+}
 
-func Main() {
+func CreateTestWindow() {
 	className := "testClass"
 
 	instance := GetModuleHandle()
+
 	cursor, err := LoadCursorResource(IDC_ARROW)
 	if err != nil {
 		log.Println(err)
@@ -241,7 +312,7 @@ func Main() {
 	}
 
 	wc := WNDCLASSEXW{
-		lpfnWndProc:   syscall.NewCallback(trayWindowCallback),
+		lpfnWndProc:   syscall.NewCallback(testWindowCallback),
 		hInstance:     instance,
 		hCursor:       cursor,
 		hbrBackground: COLOR_WINDOW + 1,

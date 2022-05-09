@@ -12,34 +12,9 @@ import (
 
 var (
 	mainMenu *menu.Menu
-	//app      cocoa.NSApplication
 )
 
 func init() {
-	//app = cocoa.NSApp()
-
-	//syscall.Syscall(procSetProcessDpiAwarenessContext.Addr(), DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2, 0, 0, 0)
-
-
-	/*
-  SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
-
-  //Win32RegisterWindowClass(TrayWindowClassName, GetModuleHandle(0), TrayWindowCallback);
-
-  WNDCLASSEX WindowClass = {sizeof(WindowClass)};
-  WindowClass.style = Style;
-  WindowClass.lpfnWndProc = Callback;
-  WindowClass.hInstance = HInstance;
-  WindowClass.hIcon = LoadIcon(WindowClass.hInstance, MAKEINTRESOURCE(101));
-  WindowClass.hCursor = LoadCursor(0, IDC_ARROW);
-  WindowClass.lpszClassName = Name;
-
-  return RegisterClassEx(&WindowClass) != 0;
-
-  TrayWindow = CreateWindowEx(0, TrayWindowClassName, 0, 0,
-                              0, 0, 1, 1,
-                              0, 0, GetModuleHandle(0), 0);
-  */
 }
 
 func Menu() *menu.Menu {
@@ -76,7 +51,7 @@ func Run(options Options) error {
 
 	win32.SetupTray()
   /*
-	win32.Main()
+	win32.CreateTestWindow()
 
 	for {
 		win32.PollEvents()
