@@ -96,7 +96,7 @@ func run() {
 		},
 	}
 
-	iconData, err := misc.Assets.ReadFile("icon.png")
+	iconData, err := misc.Assets.ReadFile("icon.ico")
 	fatal(err)
 
 	platform.Dispatch(func() {

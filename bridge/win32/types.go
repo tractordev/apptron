@@ -3,6 +3,7 @@ package win32
 type ATOM uint16
 type UINT uint32
 type BOOL int32
+type BYTE uint8
 type UINT_PTR uintptr
 type LONG_PTR uintptr
 type ULONG_PTR uintptr

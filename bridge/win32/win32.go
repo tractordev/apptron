@@ -40,6 +40,9 @@ var (
 	pInsertMenuItemW  = user32.NewProc("InsertMenuItemW")
 	pGetMenuItemCount = user32.NewProc("GetMenuItemCount")
 
+	pCreateIconFromResourceEx = user32.NewProc("CreateIconFromResourceEx")
+	pLookupIconIdFromDirectoryEx = user32.NewProc("LookupIconIdFromDirectoryEx")
+
 	pSetProcessDpiAwarenessContext = user32.NewProc("SetProcessDpiAwarenessContext")
 )
 
@@ -200,6 +203,30 @@ func GetMenuItemCount(menu HMENU) int32 {
 	return int32(result)
 }
 
+func CreateIconFromResourceEx(bytes *BYTE, size DWORD, icon BOOL, ver DWORD, cxDesired int32, cyDesired int32, flags UINT) HICON {
+	result, _, _ := pCreateIconFromResourceEx.Call(
+		uintptr(unsafe.Pointer(bytes)),
+		uintptr(size),
+		uintptr(icon),
+		uintptr(ver),
+		uintptr(cxDesired),
+		uintptr(cyDesired),
+		uintptr(flags),
+	)
+	return HICON(result)
+}
+
+func LookupIconIdFromDirectoryEx(bytes *BYTE, icon BOOL, cxDesired int32, cyDesired int32, flags UINT) int32 {
+	result, _, _ := pLookupIconIdFromDirectoryEx.Call(
+		uintptr(unsafe.Pointer(bytes)),
+		uintptr(icon),
+		uintptr(cxDesired),
+		uintptr(cyDesired),
+		uintptr(flags),
+	)
+	return int32(result)
+}
+
 //
 // Functions
 //
@@ -315,9 +342,11 @@ func trayWindowCallback(hwnd HWND, message uint32, wParam WPARAM, lParam LPARAM)
 
 					result := TrackPopupMenu(trayMenu, TPM_RIGHTBUTTON | TPM_NONOTIFY | TPM_RETURNCMD, int32(mousePosition.X), int32(mousePosition.Y), 0, hwnd, nil)
 
-					if trayCallback != nil {
-						trayCallback(result)
-					}
+					if result > 0 {
+						if trayCallback != nil {
+							trayCallback(result)
+						}
+					}	
 
 				default: break
 			}
@@ -364,6 +393,23 @@ func SetTrayMenu(menu HMENU, icon []byte, callback func(id int32)) bool {
   trayIconData.UFlags = NIF_MESSAGE | NIF_ICON | NIF_TIP
   trayIconData.UCallbackMessage = Win32TrayIconMessage
   // @Incomplete: figure out icons
+
+  // @Robustness: convert from PNG to ICO
+
+  iconSize := len(icon)
+  if iconSize > 0 {
+  	data := (*BYTE)(unsafe.Pointer(&icon[0]))
+
+  	offset := LookupIconIdFromDirectoryEx(data, TRUE, 0, 0, 0x00008000 /*LR_SHARED*/)
+
+  	if offset > 0 {
+	  	data = (*BYTE)(unsafe.Pointer(&icon[offset]))
+		  trayIconData.HIcon = CreateIconFromResourceEx(data, DWORD(iconSize), TRUE, 0x00030000, 32, 32, 0 /* LR_DEFAULTCOLOR */)
+  	}
+  }
+
+  // @Robustness: provide a default placeholder icon?
+
   //trayIconData.HIcon = LoadIcon(GetModuleHandle(0), MAKEINTRESOURCE(101));
   trayIconData.SzTip[0] = 0 // @Incomplete: we should put the app name here
 
