@@ -1,18 +1,6 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
-  <title>Apptron Demo</title>
-  <meta name="window" content="center=true,width=640,height=480,frameless=true" />
-  <script>
-
-    function clicked() {
-      $host.shell.ShowMessage({Body: "Hello world!"})
-    }
-    
-  </script>
   <style>
     :root {
       --highlight: #777;
@@ -69,14 +57,12 @@
         #222 50%,
         #222
       );
-      /* The rectangle in which to repeat. 
-        It can be fully wide in this case */
       background-size: 100% 2px;
       margin-top: 1px;
       margin-bottom: 1px;
       
     }
-    .bar {
+    .titlebar {
       padding: 3px;
       padding-left: 0px;
       padding-top: 1px;
@@ -116,28 +102,26 @@
       border-left: 1px solid var(--highlight);
       border-bottom: 1px solid var(--shadow);
       border-right: 1px solid var(--shadow);
-      /* background: linear-gradient(-45deg, #e0e0e0, #828282 ); */
       width: 10px;
       height: 10px;
+    }
+    iframe {
+      border: 0;
+      width: 100%;
     }
   </style>
 </head>
 <body>
 <div>
-  <div class="bar">
-    <div class="control"><div style="background-color: #ed5a6d;"></div></div>
-    <div class="control"><div style="background-color: #f5bd4f;"></div></div>
-    <div class="control"><div style="background-color: #62c153;"></div></div>
-    <div class="handle">
-    </div>
-    <div class="title">
-      Title
-    </div>
+  <div class="titlebar">
+    <div class="control apptron-close"><div style="background-color: #ed5a6d;"></div></div>
+    <div class="control apptron-minimize"><div style="background-color: #f5bd4f;"></div></div>
+    <div class="control apptron-maximize"><div style="background-color: #62c153;"></div></div>
+    <div class="handle apptron-draggable"></div>
+    <div class="title apptron-title"></div>
   </div>
   <main>
-    <div>
-    Hello world
-    </div>
+    <iframe class="apptron-frame"></iframe>
   </main>
 </div>
 </body>

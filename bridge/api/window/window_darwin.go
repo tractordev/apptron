@@ -1,6 +1,8 @@
 package window
 
 import (
+	"fmt"
+	"net/url"
 	"sync"
 
 	"github.com/progrium/macdriver/cocoa"
@@ -8,11 +10,43 @@ import (
 	"github.com/progrium/macdriver/objc"
 	"github.com/progrium/macdriver/webkit"
 	"tractor.dev/apptron/bridge/event"
+	"tractor.dev/apptron/bridge/misc"
 	"tractor.dev/apptron/bridge/resource"
 )
 
+var ChromeInject = `Array.from(document.querySelectorAll(".apptron-draggable")).forEach(el => el.addEventListener("mousedown", (e) => {
+	if (e.button!==0)return
+	const iframes = document.querySelectorAll("iframe")
+  Array.from(iframes).forEach(iframe => {
+    iframe.origPointerEvents = iframe.style.pointerEvents
+    iframe.style.pointerEvents = "none"
+  })
+	webkit.messageHandlers.apptron.postMessage({action:"move"})
+	const moving = (e) => webkit.messageHandlers.apptron.postMessage({action:"moving"})
+	document.addEventListener('mousemove', moving)
+	document.addEventListener('mouseup', () => {
+		Array.from(iframes).forEach(iframe => {
+      iframe.style.pointerEvents = iframe.origPointerEvents
+    })
+		document.removeEventListener('mousemove', moving)
+	}, {once: true})
+}))
+Array.from(document.querySelectorAll(".apptron-minimize")).forEach(el => el.addEventListener("mousedown", () => {
+	webkit.messageHandlers.apptron.postMessage({action:"minimize"})
+}))
+Array.from(document.querySelectorAll(".apptron-maximize")).forEach(el => el.addEventListener("mousedown", () => {
+	webkit.messageHandlers.apptron.postMessage({action:"maximize"})
+}))
+Array.from(document.querySelectorAll(".apptron-close")).forEach(el => el.addEventListener("mousedown", () => {
+	webkit.messageHandlers.apptron.postMessage({action:"close"})
+}))
+document.querySelector(".apptron-title").innerHTML = "%s"
+document.querySelector(".apptron-frame").src = "%s"
+`
+
 type Window struct {
 	window
+	moveOffset     mac.NSPoint
 	cocoa.NSWindow `json:"-"`
 }
 
@@ -94,6 +128,39 @@ func init() {
 			})
 		}
 	})
+	DelegateClass.AddMethod("userContentController:didReceiveScriptMessage:", func(self, cc, msg objc.Object) {
+		msgDict := mac.NSDictionary_fromRef(msg.Get("body"))
+		win := findWindow(msg.Get("webView").Get("window"))
+		if win == nil {
+			return
+		}
+		action := msgDict.ObjectForKey(mac.String("action")).String()
+		switch action {
+		case "minimize":
+			// TODO: known issue this doesnt work for frameless windows...
+			// 			 sort of defeats the point, but i'm sure theres a way
+			win.SetMinimized(true)
+		case "maximize":
+			// TODO: not tested since setmaximized is not implemented
+			win.SetMaximized(true)
+		case "close":
+			win.Destroy()
+		case "move":
+			pos := win.GetOuterPosition()
+			mouseLoc := cocoa.NSEvent_mouseLocation()
+			win.moveOffset = mac.NSPoint{
+				X: mouseLoc.X - pos.X,
+				Y: mouseLoc.Y - pos.Y,
+			}
+		case "moving":
+			mouseLoc := cocoa.NSEvent_mouseLocation()
+			win.SetPosition(misc.Position{
+				X: mouseLoc.X - win.moveOffset.X,
+				Y: mouseLoc.Y - win.moveOffset.Y,
+			})
+		default:
+		}
+	})
 	objc.RegisterClass(DelegateClass)
 }
 
@@ -116,20 +183,47 @@ func New(options Options) (*Window, error) {
 		frame = mac.Rect(options.Position.X, options.Position.Y, options.Size.Width, options.Size.Height)
 	}
 
+	delegate := objc.Get("WindowDelegate").Alloc().Init()
+
 	wkconfig := webkit.WKWebViewConfiguration_New()
+	cc := wkconfig.Get("userContentController")
+	if options.ChromeHTML != "" || options.ChromeURL != "" {
+		options.Frameless = true
+		cc.Send("addScriptMessageHandler:name:", delegate, mac.String("apptron"))
+		chromeScript := objc.Get("WKUserScript").Alloc().Send("initWithSource:injectionTime:forMainFrameOnly:", mac.String(fmt.Sprintf(ChromeInject, options.Title, options.URL)), mac.NSNumber_WithInt(1), mac.False)
+		cc.Send("addUserScript:", chromeScript)
+	}
+	if options.Script != "" {
+		userScript := objc.Get("WKUserScript").Alloc().Send("initWithSource:injectionTime:forMainFrameOnly:", mac.String(options.Script), mac.NSNumber_WithInt(1), mac.False)
+		cc.Send("addUserScript:", userScript)
+	}
 	wkconfig.Preferences().SetValueForKey(mac.True, mac.String("developerExtrasEnabled"))
 
 	wv := webkit.WKWebView_Init(mac.Rect(0, 0, 0, 0), wkconfig)
 	// NSViewHeightSizable = 16
 	// NSViewWidthSizable = 2
 	wv.Set("autoresizingMask:", 16|2)
-	if options.HTML != "" {
-		url := mac.NSURL_URLWithString_(mac.String("http://localhost"))
-		wv.LoadHTMLString_baseURL_(mac.String(options.HTML), url)
-	}
-	if options.URL != "" {
-		req := mac.NSURLRequest_Init(mac.URL(options.URL))
+	if options.ChromeURL != "" {
+		// TODO: chrome only supports options.URL/ChromeURL until we replace iframe with sub-webview
+		if options.ChromeURL[0] == '/' {
+			u, err := url.Parse(options.URL)
+			if err != nil {
+				panic(err)
+			}
+			u.Path = options.ChromeURL
+			options.ChromeURL = u.String()
+		}
+		req := mac.NSURLRequest_Init(mac.URL(options.ChromeURL))
 		wv.LoadRequest(req)
+	} else {
+		if options.HTML != "" {
+			url := mac.NSURL_URLWithString_(mac.String("http://localhost"))
+			wv.LoadHTMLString_baseURL_(mac.String(options.HTML), url)
+		}
+		if options.URL != "" {
+			req := mac.NSURLRequest_Init(mac.URL(options.URL))
+			wv.LoadRequest(req)
+		}
 	}
 
 	mask := uint(cocoa.NSTitledWindowMask |
@@ -166,7 +260,7 @@ func New(options Options) (*Window, error) {
 	}
 
 	nswin.SetFrameDisplay(frame, true)
-	nswin.SetDelegate_(objc.Get("WindowDelegate").Alloc().Init())
+	nswin.SetDelegate_(delegate)
 
 	win := &Window{
 		window: window{
@@ -266,7 +360,7 @@ func (w *Window) GetOuterPosition() Position {
 	frame := w.Frame()
 	return Position{
 		X: frame.Origin.X,
-		Y: frame.Origin.Y,
+		Y: frame.Origin.Y + frame.Size.Height,
 	}
 }
 

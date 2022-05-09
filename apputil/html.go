@@ -58,11 +58,12 @@ func WindowOptionsFromHTML(fsys fs.FS, filename, metaname string, fallback clien
 			Width:  optFloat(opts["max-width"], fallback.MaxSize.Width),
 			Height: optFloat(opts["max-height"], fallback.MaxSize.Height),
 		},
-		URL:     optString(opts["url"], fallback.URL),
-		Script:  fallback.Script,
-		HTML:    fallback.HTML,
-		IconSel: fallback.IconSel,
-		Icon:    fallback.Icon,
+		ChromeURL: optString(opts["chrome-url"], fallback.ChromeURL),
+		URL:       optString(opts["url"], fallback.URL),
+		Script:    fallback.Script,
+		HTML:      fallback.HTML,
+		IconSel:   fallback.IconSel,
+		Icon:      fallback.Icon,
 	}
 }
 

@@ -65,6 +65,8 @@ type Options struct {
 	URL         string
 	HTML        string
 	Script      string
+	ChromeURL   string
+	ChromeHTML  string // TODO
 }
 
 type Size = misc.Size
