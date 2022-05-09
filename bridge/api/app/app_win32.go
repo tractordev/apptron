@@ -30,6 +30,19 @@ func SetMenu(menu *menu.Menu) error {
 func NewIndicator(icon []byte, items []menu.Item) {
 	fmt.Println("NewIndicator", icon)
 
+  win32.SetProcessDpiAwarenessContext(win32.DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2)
+
+	menu := menu.New(items)
+	win32.SetupTray(menu.HMENU)
+
+	/*
+	m.Popup()
+	*/
+
+	for {
+		win32.PollEvents()
+	}
+
 	/*
 	obj := cocoa.NSStatusBar_System().StatusItemWithLength(cocoa.NSVariableStatusItemLength)
 	obj.Retain()
@@ -47,9 +60,7 @@ func NewIndicator(icon []byte, items []menu.Item) {
 }
 
 func Run(options Options) error {
-  win32.SetProcessDpiAwarenessContext(win32.DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2)
-
-	win32.SetupTray()
+  //win32.SetProcessDpiAwarenessContext(win32.DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2)
   /*
 	win32.CreateTestWindow()
 

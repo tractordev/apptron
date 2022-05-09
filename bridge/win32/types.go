@@ -68,6 +68,9 @@ const (
 	WM_DESTROY = 0x0002
 	WM_CLOSE   = 0x0010
 	WM_USER    = 0x0400
+
+	WM_LBUTTONDOWN = 0x0201
+	WM_RBUTTONDOWN = 0x0204
 )
 
 const (
@@ -128,48 +131,47 @@ const (
 )
 
 // https://docs.microsoft.com/en-us/windows/win32/hidpi/dpi-awareness-context
-type  DPI_AWARENESS_CONTEXT HANDLE
-const DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2 = (DPI_AWARENESS_CONTEXT)(0xffffffff - 4)
+const DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2 = (HANDLE)(0xffffffffffffffff - 4 + 1)
 
 // https://docs.microsoft.com/en-us/windows/win32/api/windef/ns-windef-point
 type POINT struct {
-	x LONG
-	y LONG
+	X LONG
+	Y LONG
 }
 
 // https://docs.microsoft.com/en-us/windows/win32/api/windef/ns-windef-rect
 type RECT struct {
-	left   LONG
-	top    LONG
-	right  LONG
-	bottom LONG
+	Left   LONG
+	Top    LONG
+	Right  LONG
+	Bottom LONG
 }
 
 // https://docs.microsoft.com/en-us/windows/win32/api/winuser/ns-winuser-msg
 type MSG struct {
-	hwnd     HWND
-	message  UINT
-	wParam   WPARAM
-	lParam   LPARAM
-	time     DWORD
-	pt       POINT
-	lPrivate DWORD
+	Hwnd     HWND
+	Message  UINT
+	WParam   WPARAM
+	LParam   LPARAM
+	Time     DWORD
+	Pt       POINT
+	LPrivate DWORD
 }
 
 // https://docs.microsoft.com/en-us/windows/win32/api/winuser/ns-winuser-wndclassexw
 type WNDCLASSEXW struct {
-	cbSize        UINT
-	style         UINT
-	lpfnWndProc   uintptr // OR WNDPROC?
-	cbClsExtra    int32
-	cbWndExtra    int32
-	hInstance     HINSTANCE
-	hIcon         HICON
-	hCursor       HCURSOR
-	hbrBackground HBRUSH
-	lpszMenuName  LPCWSTR
-	lpszClassName LPCWSTR
-	hIconSm       HICON
+	CbSize        UINT
+	Style         UINT
+	LpfnWndProc   uintptr // OR WNDPROC?
+	CbClsExtra    int32
+	CbWndExtra    int32
+	HInstance     HINSTANCE
+	HIcon         HICON
+	HCursor       HCURSOR
+	HbrBackground HBRUSH
+	LpszMenuName  LPCWSTR
+	LpszClassName LPCWSTR
+	LIconSm       HICON
 }
 
 type GUID struct {
@@ -180,39 +182,39 @@ type GUID struct {
 }
 
 type NOTIFYICONDATAW struct {
-	cbSize           DWORD
-	hWnd             HWND
-	uID              UINT
-	uFlags           UINT
-	uCallbackMessage UINT
-	hIcon            HICON
-	szTip            [128]WCHAR
-	dwState          DWORD
-	dwStateMask      DWORD
-	szInfo           [256]WCHAR
-	uTimeout         UINT
-	uVersion         UINT
-	szInfoTitle      [64]WCHAR
-	dwInfoFlags      DWORD
-	guidItem         GUID
-	hBalloonIcon     HICON
+	CbSize           DWORD
+	HWnd             HWND
+	UID              UINT
+	UFlags           UINT
+	UCallbackMessage UINT
+	HIcon            HICON
+	SzTip            [128]WCHAR
+	DwState          DWORD
+	DwStateMask      DWORD
+	SzInfo           [256]WCHAR
+	UTimeout         UINT
+	UVersion         UINT
+	SzInfoTitle      [64]WCHAR
+	DwInfoFlags      DWORD
+	GuidItem         GUID
+	HBalloonIcon     HICON
 }
 
 type NOTIFYICONDATA NOTIFYICONDATAW
 
 type MENUITEMINFOW struct {
-  cbSize        UINT
-  fMask         UINT
-  fType         UINT
-  fState        UINT
-  wID           UINT
-  hSubMenu      HMENU
-  hbmpChecked   HBITMAP
-  hbmpUnchecked HBITMAP
-  dwItemData    ULONG_PTR
-  dwTypeData    LPWSTR
-  cch           UINT
-  hbmpItem      HBITMAP
+  CbSize        UINT
+  FMask         UINT
+  FType         UINT
+  FState        UINT
+  WID           UINT
+  HSubMenu      HMENU
+  HbmpChecked   HBITMAP
+  HbmpUnchecked HBITMAP
+  DwItemData    ULONG_PTR
+  DwTypeData    LPWSTR
+  Cch           UINT
+  HbmpItem      HBITMAP
 }
 
 type MENUITEMINFO MENUITEMINFOW

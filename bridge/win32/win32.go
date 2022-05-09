@@ -6,6 +6,8 @@ import (
 	"unsafe"
 )
 
+import "fmt"
+
 //
 // Imports
 //
@@ -31,6 +33,7 @@ var (
 	pTranslateMessage    = user32.NewProc("TranslateMessage")
 	pGetCursorPos        = user32.NewProc("GetCursorPos")
 	pSetForegroundWindow = user32.NewProc("SetForegroundWindow")
+	pGetActiveWindow     = user32.NewProc("GetActiveWindow")
 
 	pCreateMenu       = user32.NewProc("CreateMenu")
 	pCreatePopupMenu  = user32.NewProc("CreatePopupMenu")
@@ -136,7 +139,7 @@ func RegisterClassEx(wcx *WNDCLASSEXW) (uint16, error) {
 	return uint16(ret), nil
 }
 
-func SetProcessDpiAwarenessContext(context DPI_AWARENESS_CONTEXT) bool {
+func SetProcessDpiAwarenessContext(context HANDLE) bool {
 	ret, _, _ := pSetProcessDpiAwarenessContext.Call(uintptr(context))
 	return ret != 0
 }
@@ -144,6 +147,11 @@ func SetProcessDpiAwarenessContext(context DPI_AWARENESS_CONTEXT) bool {
 func SetForegroundWindow(hwnd HWND) bool {
 	ret, _, _ := pSetForegroundWindow.Call(uintptr(hwnd))
 	return ret != 0
+}
+
+func GetActiveWindow() HWND {
+	ret, _, _ := pGetActiveWindow.Call()
+	return HWND(ret)
 }
 
 func GetCursorPos(pos *POINT) bool {
@@ -226,13 +234,13 @@ func RegisterWindowClass(className string, instance HINSTANCE, callback WNDPROC)
 	}
 
 	wc := WNDCLASSEXW{
-		lpfnWndProc:   syscall.NewCallback(callback),
-		hInstance:     instance,
-		hCursor:       cursor,
-		hbrBackground: COLOR_WINDOW + 1,
-		lpszClassName: syscall.StringToUTF16Ptr(className),
+		LpfnWndProc:   syscall.NewCallback(callback),
+		HInstance:     instance,
+		HCursor:       cursor,
+		HbrBackground: COLOR_WINDOW + 1,
+		LpszClassName: syscall.StringToUTF16Ptr(className),
 	}
-	wc.cbSize = UINT(unsafe.Sizeof(wc))
+	wc.CbSize = UINT(unsafe.Sizeof(wc))
 
 	if _, err = RegisterClassEx(&wc); err != nil {
 		log.Println(err)
@@ -240,52 +248,112 @@ func RegisterWindowClass(className string, instance HINSTANCE, callback WNDPROC)
 	}
 }
 
+func MakeMenuItemSeparator() MENUITEMINFO {
+	result := MENUITEMINFO{}
+	result.CbSize     = UINT(unsafe.Sizeof(result))
+	result.FMask      = MIIM_ID | MIIM_DATA | MIIM_TYPE
+	result.WID        = 0
+	result.DwItemData = 0
+	return result
+}
+
+func MakeMenuItem(id int, label string, disabled bool, checked bool, isRadio bool) MENUITEMINFO {
+	result := MENUITEMINFO{}
+
+	result.CbSize     = UINT(unsafe.Sizeof(result))
+	result.FMask      = MIIM_ID | MIIM_STATE | MIIM_DATA | MIIM_TYPE
+	result.FType      = MFT_STRING
+
+	result.FState     = 0
+	if checked {
+		result.FState |= MFS_CHECKED
+	} else {
+		result.FState |= MFS_UNCHECKED
+	}
+
+	if disabled {
+		result.FState |= MFS_DISABLED
+	} else {
+		result.FState |= MFS_ENABLED
+	}
+
+	result.WID        = UINT(id)
+	result.DwTypeData = syscall.StringToUTF16Ptr(label)
+
+	if isRadio {
+		result.FType |= MFT_RADIOCHECK
+	}
+
+	return result
+}
+
+func AppendSubmenu(submenu HMENU, mii *MENUITEMINFO) {
+	mii.FMask |= MIIM_SUBMENU
+	mii.HSubMenu = submenu
+}
+
+
+var trayIconData NOTIFYICONDATA
+var trayWindow   HWND
+var trayMenu     HMENU
+
+const Win32TrayIconMessage = (WM_USER + 1)
+
 func trayWindowCallback(hwnd HWND, message uint32, wParam WPARAM, lParam LPARAM) LRESULT {
 	switch message {
-		case WM_CLOSE:
-			DestroyWindow(hwnd)
-		case WM_DESTROY:
-			PostQuitMessage(0)
+		case Win32TrayIconMessage:
+			switch lParam {
+				case WM_LBUTTONDOWN, WM_RBUTTONDOWN:
+
+					menu := CreatePopupMenu()
+
+					info := MakeMenuItem(1, "Hello, World!", false, false, false)
+					InsertMenuItemW(menu, UINT(GetMenuItemCount(menu)), 1, &info)
+
+					SetForegroundWindow(hwnd)
+
+					mousePosition := POINT{}
+					GetCursorPos(&mousePosition)
+
+					result := TrackPopupMenu(menu, TPM_LEFTBUTTON | TPM_RIGHTALIGN | TPM_TOPALIGN, int32(mousePosition.X), int32(mousePosition.Y), 0, hwnd, nil)
+
+					fmt.Println("HELLO!", result)
+
+				default: break
+			}
+
 		default:
 			return DefWindowProc(hwnd, message, wParam, lParam)
 	}
 	return 0
 }
 
-var trayIconData NOTIFYICONDATA
+func SetupTray(menu HMENU) {
+  SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2)
 
-const Win32TrayIconMessage = (WM_USER + 1)
-
-func SetupTray() {
   trayClassName := "trayTestClass"
   RegisterWindowClass(trayClassName, GetModuleHandle(), trayWindowCallback)
 
-  trayWindow, err := CreateWindow(trayClassName, "Tray Window", 0, 0, 0, 1, 1, 0, 0, GetModuleHandle());
+  hwnd, err := CreateWindow(trayClassName, "Tray Window", 0, 0, 0, 1, 1, 0, 0, GetModuleHandle());
   if err != nil {
   	log.Println(err)
   	return
   }
 
+  trayWindow = hwnd
+  trayMenu   = menu
+
 	trayIconData = NOTIFYICONDATA{}
-  trayIconData.cbSize = DWORD(unsafe.Sizeof(trayIconData))
-  trayIconData.hWnd = trayWindow
-  trayIconData.uID = 0
-  trayIconData.uFlags = NIF_MESSAGE | NIF_ICON | NIF_TIP
-  trayIconData.uCallbackMessage = Win32TrayIconMessage
-  //trayIconData.hIcon = LoadIcon(GetModuleHandle(0), MAKEINTRESOURCE(101));
-  trayIconData.szTip[0] = 0 // @Incomplete: we should put the app name here
+  trayIconData.CbSize = DWORD(unsafe.Sizeof(trayIconData))
+  trayIconData.HWnd = trayWindow
+  trayIconData.UID = 0
+  trayIconData.UFlags = NIF_MESSAGE | NIF_ICON | NIF_TIP
+  trayIconData.UCallbackMessage = Win32TrayIconMessage
+  // @Incomplete: figure out icons
+  //trayIconData.HIcon = LoadIcon(GetModuleHandle(0), MAKEINTRESOURCE(101));
+  trayIconData.SzTip[0] = 0 // @Incomplete: we should put the app name here
 
   Shell_NotifyIconW(NIM_ADD, &trayIconData)
-
-  msg := MSG{}
-  for {
-  	if (GetMessage(&msg, 0, 0, 0)) {
-  		TranslateMessage(&msg)
-  		DispatchMessage(&msg)
-  	} else {
-  		break
-  	}
-  }
 }
 
 func testWindowCallback(hwnd HWND, message uint32, wParam WPARAM, lParam LPARAM) LRESULT {
@@ -312,13 +380,13 @@ func CreateTestWindow() {
 	}
 
 	wc := WNDCLASSEXW{
-		lpfnWndProc:   syscall.NewCallback(testWindowCallback),
-		hInstance:     instance,
-		hCursor:       cursor,
-		hbrBackground: COLOR_WINDOW + 1,
-		lpszClassName: syscall.StringToUTF16Ptr(className),
+		LpfnWndProc:   syscall.NewCallback(testWindowCallback),
+		HInstance:     instance,
+		HCursor:       cursor,
+		HbrBackground: COLOR_WINDOW + 1,
+		LpszClassName: syscall.StringToUTF16Ptr(className),
 	}
-	wc.cbSize = UINT(unsafe.Sizeof(wc))
+	wc.CbSize = UINT(unsafe.Sizeof(wc))
 
 	if _, err = RegisterClassEx(&wc); err != nil {
 		log.Println(err)
