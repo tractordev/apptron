@@ -52,6 +52,12 @@ var (
 	pShell_NotifyIconW = shell32.NewProc("Shell_NotifyIconW")
 )
 
+var (
+	winmm = syscall.NewLazyDLL("winmm.dll")
+
+	pTimeBeginPeriod = winmm.NewProc("timeBeginPeriod")
+)
+
 func GetModuleHandle() HINSTANCE {
 	ret, _, _ := pGetModuleHandleW.Call(uintptr(0))
 	return HINSTANCE(ret)
@@ -231,6 +237,31 @@ func LookupIconIdFromDirectoryEx(bytes *BYTE, icon BOOL, cxDesired int32, cyDesi
 // Functions
 //
 
+var win32SleepIsGranular = false
+
+func OS_Init() {
+	// NOTE(nick): request high-precision timers
+	result, _, _ := pTimeBeginPeriod.Call(1)
+	win32SleepIsGranular = UINT(result) == 0 /* TIMERR_NOERROR */
+
+	//log.Println("[OS] sleep is granular", win32SleepIsGranular)
+}
+
+/*
+func SleepMS(float64 miliseconds) {
+  // @Incomplete: only do this if sleep is granular!
+  // Otherwise do some sort of busy wait thing
+
+  LARGE_INTEGER ft;
+  ft.QuadPart = -(10 * (__int64)(miliseconds * 1000));
+
+  timer := CreateWaitableTimer(NULL, TRUE, NULL);
+  SetWaitableTimer(timer, &ft, 0, NULL, NULL, 0);
+  WaitForSingleObject(timer, INFINITE);
+  CloseHandle(timer);
+}
+*/
+
 func PollEvents() {
 	for {
 		msg := MSG{}
@@ -340,7 +371,11 @@ func trayWindowCallback(hwnd HWND, message uint32, wParam WPARAM, lParam LPARAM)
 					mousePosition := POINT{}
 					GetCursorPos(&mousePosition)
 
+					log.Println("yo")
+
 					result := TrackPopupMenu(trayMenu, TPM_RIGHTBUTTON | TPM_NONOTIFY | TPM_RETURNCMD, int32(mousePosition.X), int32(mousePosition.Y), 0, hwnd, nil)
+
+					log.Println("HELLO!", result)
 
 					if result > 0 {
 						if trayCallback != nil {
@@ -392,7 +427,6 @@ func SetTrayMenu(menu HMENU, icon []byte, callback func(id int32)) bool {
   trayIconData.UID = 0
   trayIconData.UFlags = NIF_MESSAGE | NIF_ICON | NIF_TIP
   trayIconData.UCallbackMessage = Win32TrayIconMessage
-  // @Incomplete: figure out icons
 
   // @Robustness: convert from PNG to ICO
 
@@ -409,8 +443,8 @@ func SetTrayMenu(menu HMENU, icon []byte, callback func(id int32)) bool {
   }
 
   // @Robustness: provide a default placeholder icon?
-
   //trayIconData.HIcon = LoadIcon(GetModuleHandle(0), MAKEINTRESOURCE(101));
+  
   trayIconData.SzTip[0] = 0 // @Incomplete: we should put the app name here
 
   Shell_NotifyIconW(NIM_ADD, &trayIconData)

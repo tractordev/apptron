@@ -38,24 +38,9 @@ func NewIndicator(icon []byte, items []menu.Item) {
 		})
 	}
 	win32.SetTrayMenu(menu.HMENU, icon, onClick)
-
-	// @Incomplete: how does this fit in with the rest of the application?
-	// Needs to be periodically called from the main thread
-	for {
-		win32.PollEvents()
-	}
 }
 
 func Run(options Options) error {
-
-  /*
-	win32.CreateTestWindow()
-
-	for {
-		win32.PollEvents()
-	}
-	*/
-
 	platform.Start()
 	return nil
 }
