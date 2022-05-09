@@ -11,7 +11,7 @@ func init() {
   strToKeyCode["OPTIONRIGHT"] = AltRight
 }
 
-// @Incomplete: actually fill these in (copy-pasted from MacOS)
+// @Incomplete: actually fill the real values in (copy-pasted from MacOS)
 
 func Scancode(k KeyCode) uint8 {
   return map[KeyCode]uint8{
