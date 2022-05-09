@@ -6,8 +6,6 @@ import (
 	"unsafe"
 )
 
-import "fmt"
-
 //
 // Imports
 //
@@ -226,11 +224,11 @@ func PollEvents() {
 }
 
 
-func RegisterWindowClass(className string, instance HINSTANCE, callback WNDPROC) {
+func RegisterWindowClass(className string, instance HINSTANCE, callback WNDPROC) bool {
 	cursor, err := LoadCursorResource(IDC_ARROW)
 	if err != nil {
 		log.Println(err)
-		return
+		return false
 	}
 
 	wc := WNDCLASSEXW{
@@ -244,8 +242,10 @@ func RegisterWindowClass(className string, instance HINSTANCE, callback WNDPROC)
 
 	if _, err = RegisterClassEx(&wc); err != nil {
 		log.Println(err)
-		return
+		return false
 	}
+
+	return true
 }
 
 func MakeMenuItemSeparator() MENUITEMINFO {
@@ -293,9 +293,12 @@ func AppendSubmenu(submenu HMENU, mii *MENUITEMINFO) {
 }
 
 
+// NOTE(nick): system tray menu
+// @Robustness: add support for multiple tray icons?
 var trayIconData NOTIFYICONDATA
 var trayWindow   HWND
 var trayMenu     HMENU
+var trayCallback func(id int32)
 
 const Win32TrayIconMessage = (WM_USER + 1)
 
@@ -305,19 +308,16 @@ func trayWindowCallback(hwnd HWND, message uint32, wParam WPARAM, lParam LPARAM)
 			switch lParam {
 				case WM_LBUTTONDOWN, WM_RBUTTONDOWN:
 
-					menu := CreatePopupMenu()
-
-					info := MakeMenuItem(1, "Hello, World!", false, false, false)
-					InsertMenuItemW(menu, UINT(GetMenuItemCount(menu)), 1, &info)
-
 					SetForegroundWindow(hwnd)
 
 					mousePosition := POINT{}
 					GetCursorPos(&mousePosition)
 
-					result := TrackPopupMenu(menu, TPM_LEFTBUTTON | TPM_RIGHTALIGN | TPM_TOPALIGN, int32(mousePosition.X), int32(mousePosition.Y), 0, hwnd, nil)
+					result := TrackPopupMenu(trayMenu, TPM_RIGHTBUTTON | TPM_NONOTIFY | TPM_RETURNCMD, int32(mousePosition.X), int32(mousePosition.Y), 0, hwnd, nil)
 
-					fmt.Println("HELLO!", result)
+					if trayCallback != nil {
+						trayCallback(result)
+					}
 
 				default: break
 			}
@@ -328,20 +328,34 @@ func trayWindowCallback(hwnd HWND, message uint32, wParam WPARAM, lParam LPARAM)
 	return 0
 }
 
-func SetupTray(menu HMENU) {
-  SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2)
+func SetTrayMenu(menu HMENU, icon []byte, callback func(id int32)) bool {
+	if trayWindow == NULL {
+	  trayClassName := "APPTRON_TRAY_WINDOW_CLASS"
 
-  trayClassName := "trayTestClass"
-  RegisterWindowClass(trayClassName, GetModuleHandle(), trayWindowCallback)
+	  if (!RegisterWindowClass(trayClassName, GetModuleHandle(), trayWindowCallback)) {
+	  	log.Println("Failed to register tray window class!")
+	  	return false
+	  }
 
-  hwnd, err := CreateWindow(trayClassName, "Tray Window", 0, 0, 0, 1, 1, 0, 0, GetModuleHandle());
-  if err != nil {
-  	log.Println(err)
-  	return
-  }
+	  hwnd, err := CreateWindow(trayClassName, "Tray Window", 0, 0, 0, 1, 1, 0, 0, GetModuleHandle());
+	  if err != nil {
+	  	log.Println("Failed to create tray window:", err)
+	  	return false
+	  }
 
-  trayWindow = hwnd
-  trayMenu   = menu
+	  trayWindow = hwnd
+	}
+
+	if trayIconData.CbSize > 0 {
+		Shell_NotifyIconW(NIM_DELETE, &trayIconData)
+	}
+
+	if trayMenu != 0 {
+		DestroyMenu(trayMenu)
+	}
+
+  trayMenu     = menu
+  trayCallback = callback
 
 	trayIconData = NOTIFYICONDATA{}
   trayIconData.CbSize = DWORD(unsafe.Sizeof(trayIconData))
@@ -354,6 +368,7 @@ func SetupTray(menu HMENU) {
   trayIconData.SzTip[0] = 0 // @Incomplete: we should put the app name here
 
   Shell_NotifyIconW(NIM_ADD, &trayIconData)
+  return true
 }
 
 func testWindowCallback(hwnd HWND, message uint32, wParam WPARAM, lParam LPARAM) LRESULT {

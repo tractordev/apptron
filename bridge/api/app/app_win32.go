@@ -6,6 +6,7 @@ import (
 
 import (
 	"tractor.dev/apptron/bridge/api/menu"
+	"tractor.dev/apptron/bridge/event"
 	"tractor.dev/apptron/bridge/win32"
 	"tractor.dev/apptron/bridge/platform"
 )
@@ -15,6 +16,11 @@ var (
 )
 
 func init() {
+	//
+	// @Robustness: add support for older versions of Windows
+	// @see https://github.com/glfw/glfw/blob/master/src/win32_init.c#L643
+	//
+  win32.SetProcessDpiAwarenessContext(win32.DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2)
 }
 
 func Menu() *menu.Menu {
@@ -30,37 +36,22 @@ func SetMenu(menu *menu.Menu) error {
 func NewIndicator(icon []byte, items []menu.Item) {
 	fmt.Println("NewIndicator", icon)
 
-  win32.SetProcessDpiAwarenessContext(win32.DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2)
-
 	menu := menu.New(items)
-	win32.SetupTray(menu.HMENU)
-
-	/*
-	m.Popup()
-	*/
+	onClick := func(id int32) {
+		event.Emit(event.Event{
+			Type:     event.MenuItem,
+			MenuItem: int(id),
+		})
+	}
+	win32.SetTrayMenu(menu.HMENU, icon, onClick)
 
 	for {
 		win32.PollEvents()
 	}
-
-	/*
-	obj := cocoa.NSStatusBar_System().StatusItemWithLength(cocoa.NSVariableStatusItemLength)
-	obj.Retain()
-	//obj.Button().SetTitle(i.Text)
-	data := mac.NSData_WithBytes(icon, uint64(len(icon)))
-	image := cocoa.NSImage_InitWithData(data)
-	image.SetSize(mac.Size(16.0, 16.0))
-	image.SetTemplate(true)
-	obj.Button().SetImage(image)
-	obj.Button().SetImagePosition(cocoa.NSImageOnly)
-
-	menu := menu.New(items)
-	obj.SetMenu(menu.NSMenu)
-	*/
 }
 
 func Run(options Options) error {
-  //win32.SetProcessDpiAwarenessContext(win32.DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2)
+
   /*
 	win32.CreateTestWindow()
 

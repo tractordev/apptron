@@ -73,6 +73,7 @@ func run() {
 
 	trayTemplate := []menu.Item{
 		{
+			ID: 1,
 			Title: "Click on this here thing",
 		},
 		{
