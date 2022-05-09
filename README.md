@@ -176,6 +176,36 @@ func main() {
 
 For something as simple as using this one native dialog, we don't have to invoke CGO and compile against tons of system headers. apptron makes these APIs much more accessible for simple programs and scripts. 
 
+## Command Line API Usage
+
+Much of the Apptron API can be used from the command-line, letting you use it in shell scripts.
+
+```
+apptron app indicator <menu-file> <icon-file>
+	create an app indicator and menu, printing the title of the menu items when clicked until closed
+
+apptron menu popup <menu-file>
+	popup a context menu at the mouse cursor, returning the title of the menu item clicked
+
+apptron system displays
+	prints display information
+
+apptron shell notification <title> <body>
+	shows a desktop notification
+
+apptron shell message [--buttons=yesno,..] [--level=info,..] <title> <body>
+	shows a message dialog, exiting non-zero unless OK,yes,etc is clicked
+
+apptron shell file-picker <mode> [<title>] [--directory=...] [--filepath=...] [--filters=text:dat,txt;source:go,html]
+	shows a filepicker, printing selected paths on newlines
+
+apptron shell clipboard [write-string]
+	prints the contents of the clipboard, or writes to it if given a string or STDIN
+
+apptron shell shortcuts <accelerator[:program]>...
+	registers global shortcut accelerators, printing the accelerator pressed and optionally spawning a program until closed
+```
+
 ## Getting help
 
 There is a `#apptron` channel in the Progrium Discord. Feel free to ask for help or get involved in development there or file issues or PRs here.
