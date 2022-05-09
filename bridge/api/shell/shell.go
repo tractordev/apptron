@@ -56,7 +56,7 @@ func (m module) RegisterShortcut(accelerator string) {
 	// hotkey does its own dispatch so
 	// this avoids a deadlock assuming
 	// all rpc calls are dispatched
-	go RegisterShortcut(accelerator)
+	//go RegisterShortcut(accelerator)
 }
 
 func (m module) IsShortcutRegistered(accelerator string) bool {
