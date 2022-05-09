@@ -64,6 +64,7 @@ const (
 	WM_QUIT    = 18
 	WM_DESTROY = 0x0002
 	WM_CLOSE   = 0x0010
+	WM_USER    = 0x0400
 )
 
 const (
@@ -73,6 +74,21 @@ const (
 const (
 	IDC_ARROW = 32512
 )
+
+const (
+	NIF_MESSAGE = 0x00000001
+	NIF_ICON    = 0x00000002
+	NIF_TIP     = 0x00000004
+	NIF_STATE   = 0x00000008
+	NIF_INFO    = 0x00000010
+)
+
+const (
+	NIM_ADD    = 0x00000000
+	NIM_MODIFY = 0x00000001
+	NIM_DELETE = 0x00000002
+)
+
 
 // https://docs.microsoft.com/en-us/windows/win32/hidpi/dpi-awareness-context
 type  DPI_AWARENESS_CONTEXT HANDLE

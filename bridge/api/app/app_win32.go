@@ -74,11 +74,14 @@ func NewIndicator(icon []byte, items []menu.Item) {
 func Run(options Options) error {
   win32.SetProcessDpiAwarenessContext(win32.DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2)
 
+	win32.SetupTray()
+  /*
 	win32.Main()
 
 	for {
 		win32.PollEvents()
 	}
+	*/
 
 	platform.Start()
 	return nil

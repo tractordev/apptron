@@ -19,6 +19,7 @@ var (
 	pDefWindowProcW   = user32.NewProc("DefWindowProcW")
 	pDestroyWindow    = user32.NewProc("DestroyWindow")
 	pDispatchMessageW = user32.NewProc("DispatchMessageW")
+	pGetMessageW      = user32.NewProc("GetMessageW")
 	pPeekMessageW     = user32.NewProc("PeekMessageW")
 	pLoadCursorW      = user32.NewProc("LoadCursorW")
 	pPostQuitMessage  = user32.NewProc("PostQuitMessage")
@@ -28,12 +29,20 @@ var (
 	pSetProcessDpiAwarenessContext = user32.NewProc("SetProcessDpiAwarenessContext")
 )
 
-func GetModuleHandle() (HINSTANCE, error) {
-	ret, _, err := pGetModuleHandleW.Call(uintptr(0))
+var (
+	shell32 = syscall.NewLazyDLL("shell32.dll")
+
+	pShell_NotifyIconW = shell32.NewProc("Shell_NotifyIconW")
+)
+
+func GetModuleHandle() HINSTANCE {
+	ret, _, _ := pGetModuleHandleW.Call(uintptr(0))
+	/*
 	if ret == 0 {
 		return 0, err
 	}
-	return HINSTANCE(ret), nil
+	*/
+	return HINSTANCE(ret)
 }
 
 func CreateWindow(className, windowName string, style uint32, x, y, width, height int32, parent, menu, instance HINSTANCE) (HWND, error) {
@@ -68,6 +77,16 @@ func DestroyWindow(hwnd HWND) error {
 		return err
 	}
 	return nil
+}
+
+func GetMessage(msg *MSG, hwnd HWND, msgFilterMin uint32, msgFilterMax uint32) bool {
+	ret, _, _ := pGetMessageW.Call(
+		uintptr(unsafe.Pointer(msg)),
+		uintptr(hwnd),
+		uintptr(msgFilterMin),
+		uintptr(msgFilterMax),
+	)
+	return int32(ret) != 0
 }
 
 func PeekMessageW(msg *MSG, hwnd HWND, msgFilterMin uint32, msgFilterMax uint32, removeMsg uint32) bool {
@@ -109,23 +128,16 @@ func RegisterClassEx(wcx *WNDCLASSEXW) (uint16, error) {
 	return uint16(ret), nil
 }
 
-func SetProcessDpiAwarenessContext(context DPI_AWARENESS_CONTEXT) BOOL {
+func SetProcessDpiAwarenessContext(context DPI_AWARENESS_CONTEXT) bool {
 	ret, _, _ := pSetProcessDpiAwarenessContext.Call(uintptr(context))
-	return BOOL(ret)
+	return ret != 0
 }
 
-func trayWindowCallback(hwnd HWND, msg uint32, wparam WPARAM, lparam LPARAM) LRESULT {
-	switch msg {
-		case WM_CLOSE:
-			DestroyWindow(hwnd)
-		case WM_DESTROY:
-			PostQuitMessage(0)
-		default:
-			ret := DefWindowProc(hwnd, msg, wparam, lparam)
-			return ret
-	}
-	return 0
+func Shell_NotifyIconW(dwMessage DWORD, nid *NOTIFYICONDATA) bool {
+	ret, _, _ := pShell_NotifyIconW.Call(uintptr(dwMessage), uintptr(unsafe.Pointer(nid)))
+	return ret != 0
 }
+
 
 func PollEvents() {
 	for {
@@ -146,15 +158,82 @@ func PollEvents() {
 	}
 }
 
-func Main() {
-	className := "testClass"
 
-	instance, err := GetModuleHandle()
+func RegisterWindowClass(className string, instance HINSTANCE, callback WNDPROC) {
+	cursor, err := LoadCursorResource(IDC_ARROW)
 	if err != nil {
 		log.Println(err)
 		return
 	}
 
+	wc := WNDCLASSEXW{
+		lpfnWndProc:   syscall.NewCallback(callback),
+		hInstance:     instance,
+		hCursor:       cursor,
+		hbrBackground: COLOR_WINDOW + 1,
+		lpszClassName: syscall.StringToUTF16Ptr(className),
+	}
+	wc.cbSize = UINT(unsafe.Sizeof(wc))
+
+	if _, err = RegisterClassEx(&wc); err != nil {
+		log.Println(err)
+		return
+	}
+}
+
+func trayWindowCallback(hwnd HWND, message uint32, wParam WPARAM, lParam LPARAM) LRESULT {
+	switch message {
+		case WM_CLOSE:
+			DestroyWindow(hwnd)
+		case WM_DESTROY:
+			PostQuitMessage(0)
+		default:
+			return DefWindowProc(hwnd, message, wParam, lParam)
+	}
+	return 0
+}
+
+var trayIconData NOTIFYICONDATA
+
+const Win32TrayIconMessage = (WM_USER + 1)
+
+func SetupTray() {
+  trayClassName := "trayTestClass"
+  RegisterWindowClass(trayClassName, GetModuleHandle(), trayWindowCallback)
+
+  trayWindow, err := CreateWindow(trayClassName, "Tray Window", 0, 0, 0, 1, 1, 0, 0, GetModuleHandle());
+  if err != nil {
+  	log.Println(err)
+  	return
+  }
+
+	trayIconData = NOTIFYICONDATA{}
+  trayIconData.cbSize = DWORD(unsafe.Sizeof(trayIconData))
+  trayIconData.hWnd = trayWindow
+  trayIconData.uID = 0
+  trayIconData.uFlags = NIF_MESSAGE | NIF_ICON | NIF_TIP
+  trayIconData.uCallbackMessage = Win32TrayIconMessage
+  //trayIconData.hIcon = LoadIcon(GetModuleHandle(0), MAKEINTRESOURCE(101));
+  trayIconData.szTip[0] = 0
+
+  Shell_NotifyIconW(NIM_ADD, &trayIconData)
+
+  msg := MSG{}
+  for {
+  	if (GetMessage(&msg, 0, 0, 0)) {
+  		TranslateMessage(&msg)
+  		DispatchMessage(&msg)
+  	} else {
+  		break
+  	}
+  }
+}
+
+
+func Main() {
+	className := "testClass"
+
+	instance := GetModuleHandle()
 	cursor, err := LoadCursorResource(IDC_ARROW)
 	if err != nil {
 		log.Println(err)
