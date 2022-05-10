@@ -6,6 +6,9 @@ import (
 	"tractor.dev/apptron/bridge/win32"
 )
 
+var mainfunc = make(chan func())
+var quit = make(chan bool)
+
 func Main() {
 	win32.OS_Init()
 
@@ -29,18 +32,6 @@ loop:
 	}
 }
 
-var mainfunc = make(chan func())
-var quit = make(chan bool)
-
-func Loop() {
-}
-
 func Terminate() {
 	quit <- true
-	/*
-	Dispatch(func() {
-		app := cocoa.NSApp()
-		app.Terminate()
-	})
-	*/
 }

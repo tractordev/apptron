@@ -269,12 +269,10 @@ func PollEvents() {
       break
     }
 
-    /*
-    switch (msg.message) {
+    switch (msg.Message) {
     case WM_QUIT:
     	PostQuitMessage(0)
     }
-    */
 
 		TranslateMessage(&msg)
 		DispatchMessage(&msg)
@@ -371,11 +369,7 @@ func trayWindowCallback(hwnd HWND, message uint32, wParam WPARAM, lParam LPARAM)
 					mousePosition := POINT{}
 					GetCursorPos(&mousePosition)
 
-					log.Println("yo")
-
 					result := TrackPopupMenu(trayMenu, TPM_RIGHTBUTTON | TPM_NONOTIFY | TPM_RETURNCMD, int32(mousePosition.X), int32(mousePosition.Y), 0, hwnd, nil)
-
-					log.Println("HELLO!", result)
 
 					if result > 0 {
 						if trayCallback != nil {
@@ -403,7 +397,7 @@ func SetTrayMenu(menu HMENU, icon []byte, callback func(id int32)) bool {
 
 	  hwnd, err := CreateWindow(trayClassName, "Tray Window", 0, 0, 0, 1, 1, 0, 0, GetModuleHandle());
 	  if err != nil {
-	  	log.Println("Failed to create tray window:", err)
+	  	log.Println("Failed to create tray window!", err)
 	  	return false
 	  }
 
@@ -434,11 +428,11 @@ func SetTrayMenu(menu HMENU, icon []byte, callback func(id int32)) bool {
   if iconSize > 0 {
   	data := (*BYTE)(unsafe.Pointer(&icon[0]))
 
-  	offset := LookupIconIdFromDirectoryEx(data, TRUE, 0, 0, 0x00008000 /*LR_SHARED*/)
+  	offset := LookupIconIdFromDirectoryEx(data, TRUE, 0, 0, 0x00008000/*LR_SHARED*/)
 
   	if offset > 0 {
 	  	data = (*BYTE)(unsafe.Pointer(&icon[offset]))
-		  trayIconData.HIcon = CreateIconFromResourceEx(data, DWORD(iconSize), TRUE, 0x00030000, 32, 32, 0 /* LR_DEFAULTCOLOR */)
+		  trayIconData.HIcon = CreateIconFromResourceEx(data, DWORD(iconSize), TRUE, 0x00030000, 32, 32, 0/*LR_DEFAULTCOLOR*/)
   	}
   }
 

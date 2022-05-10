@@ -77,7 +77,7 @@ func createMenu(items []Item) win32.HMENU {
 				}
 				info = win32.MakeMenuItem(it.ID, title, it.Disabled, it.Selected, it.Selected == true)
 
-				if len(it.SubMenu) > 0 {
+				if !it.Disabled && len(it.SubMenu) > 0 {
 					submenu := createMenu(it.SubMenu)
 					win32.AppendSubmenu(submenu, &info)
 				}

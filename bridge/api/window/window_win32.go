@@ -36,15 +36,12 @@ func (w *Window) IsVisible() bool {
 }
 
 func (w *Window) SetMaximized(maximized bool) {
-	// TODO: if true and is zoomed, return
-	// TODO: https://github.com/tauri-apps/tao/blob/dev/src/platform_impl/macos/util/async.rs#L150
 }
 
 func (w *Window) SetMinimized(minimized bool) {
 }
 
 func (w *Window) SetFullscreen(fullscreen bool) {
-	// TODO: https://github.com/tauri-apps/tao/blob/dev/src/platform_impl/macos/window.rs#L784
 }
 
 func (w *Window) SetSize(size Size) {

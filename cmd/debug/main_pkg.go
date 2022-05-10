@@ -91,6 +91,7 @@ func run() {
 			},
 		},
 		{
+			ID: 2,
 			Title:       "Quit",
 			Accelerator: "Command+T",
 		},
