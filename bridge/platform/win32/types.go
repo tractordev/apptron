@@ -7,8 +7,6 @@ type BYTE uint8
 type UINT_PTR uintptr
 type LONG_PTR uintptr
 type ULONG_PTR uintptr
-
-//type LARGE_INTEGER int64 // @Incomplete: what about 32-bit Windows?
 type LONG int32
 type WORD uint16
 type DWORD uint32
@@ -16,6 +14,11 @@ type LPCWSTR *uint16
 type LPWSTR *uint16
 type CHAR uint8
 type WCHAR uint16
+
+type LARGE_INTEGER struct {
+	LowPart  DWORD
+	HighPart DWORD
+}
 
 type HANDLE uintptr
 type HWND HANDLE
@@ -132,8 +135,10 @@ const (
 	TPM_RIGHTBUTTON = 0x0002
 )
 
+const UINT_MAX = ^uint(0)
+
 // https://docs.microsoft.com/en-us/windows/win32/hidpi/dpi-awareness-context
-const DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2 = (HANDLE)(0xffffffffffffffff - 4 + 1)
+const DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2 = (HANDLE)(UINT_MAX - 4 + 1)
 
 // https://docs.microsoft.com/en-us/windows/win32/api/windef/ns-windef-point
 type POINT struct {

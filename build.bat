@@ -13,6 +13,10 @@ set go_path="C:\Program Files\Go\bin"
 set gcc_path="C:\ProgramData\chocolatey\bin\"
 set PATH=%PATH%;%gcc_path%
 
+:: 32-Bit mode
+::set GOOS=windows
+::set GOARCH=386
+
 pushd %project_root%
   %go_path%\go.exe build -tags pkg -o ./debug-pkg.exe ./cmd/debug
 
