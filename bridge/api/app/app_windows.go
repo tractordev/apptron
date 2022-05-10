@@ -4,7 +4,7 @@ import (
 	"tractor.dev/apptron/bridge/api/menu"
 	"tractor.dev/apptron/bridge/event"
 	"tractor.dev/apptron/bridge/platform"
-	"tractor.dev/apptron/bridge/win32"
+	"tractor.dev/apptron/bridge/platform/win32"
 )
 
 var (

@@ -3,7 +3,7 @@ package platform
 import (
 	"time"
 
-	"tractor.dev/apptron/bridge/win32"
+	"tractor.dev/apptron/bridge/platform/win32"
 )
 
 var mainfunc = make(chan func())

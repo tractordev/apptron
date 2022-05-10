@@ -3,8 +3,8 @@ package menu
 import (
 	"log"
 
+	"tractor.dev/apptron/bridge/platform/win32"
 	"tractor.dev/apptron/bridge/resource"
-	"tractor.dev/apptron/bridge/win32"
 )
 
 type Menu struct {
