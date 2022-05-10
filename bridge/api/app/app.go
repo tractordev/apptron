@@ -19,8 +19,8 @@ func init() {
 
 type Options struct {
 	Identifier string
-	Agent      bool
-	Accessory  bool
+	Agent      bool // app should not terminate when last window closes
+	Accessory  bool // app should not be task switchable
 }
 
 func (m *module) Menu() *menu.Menu {
@@ -41,6 +41,11 @@ func (m *module) NewIndicator(iconSel string, items []menu.Item, call *rpc.Call)
 	if err != nil {
 		return err
 	}
+	NewIndicator(icon, items)
+	return nil
+}
+
+func (m *module) NewIndicator_(icon []byte, items []menu.Item) error {
 	NewIndicator(icon, items)
 	return nil
 }
