@@ -7,7 +7,8 @@ type BYTE uint8
 type UINT_PTR uintptr
 type LONG_PTR uintptr
 type ULONG_PTR uintptr
-type LARGE_INTEGER int64
+
+//type LARGE_INTEGER int64 // @Incomplete: what about 32-bit Windows?
 type LONG int32
 type WORD uint16
 type DWORD uint32
@@ -182,6 +183,7 @@ type GUID struct {
 	Data4 [8]byte
 }
 
+// https://docs.microsoft.com/en-us/windows/win32/api/shellapi/ns-shellapi-notifyicondataa
 type NOTIFYICONDATAW struct {
 	CbSize           DWORD
 	HWnd             HWND
@@ -189,7 +191,7 @@ type NOTIFYICONDATAW struct {
 	UFlags           UINT
 	UCallbackMessage UINT
 	HIcon            HICON
-	SzTip            [128]WCHAR
+	SzTip            [128]WCHAR // @Incomplete: according to the docs, sometimes this is 64 instead?
 	DwState          DWORD
 	DwStateMask      DWORD
 	SzInfo           [256]WCHAR
