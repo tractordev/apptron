@@ -30,6 +30,8 @@ loop:
 		// @Robustness: how accurate is time.Sleep? should we use win32.SleepMS instead?
 		time.Sleep(1 * time.Millisecond)
 	}
+
+	win32.ExitProcess(0)
 }
 
 func Terminate() {

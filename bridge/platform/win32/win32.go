@@ -14,6 +14,7 @@ var (
 	kernel32 = syscall.NewLazyDLL("kernel32.dll")
 
 	pGetModuleHandleW = kernel32.NewProc("GetModuleHandleW")
+	pExitProcess      = kernel32.NewProc("ExitProcess")
 )
 
 var (
@@ -32,6 +33,8 @@ var (
 	pGetCursorPos        = user32.NewProc("GetCursorPos")
 	pSetForegroundWindow = user32.NewProc("SetForegroundWindow")
 	pGetActiveWindow     = user32.NewProc("GetActiveWindow")
+	pSetWindowLongW      = user32.NewProc("SetWindowLongW")
+	pGetWindowLongW      = user32.NewProc("GetWindowLongW")
 
 	pCreateMenu       = user32.NewProc("CreateMenu")
 	pCreatePopupMenu  = user32.NewProc("CreatePopupMenu")
@@ -61,6 +64,10 @@ var (
 func GetModuleHandle() HINSTANCE {
 	ret, _, _ := pGetModuleHandleW.Call(uintptr(0))
 	return HINSTANCE(ret)
+}
+
+func ExitProcess(exitCode UINT) {
+	pExitProcess.Call(uintptr(exitCode))
 }
 
 func CreateWindow(className, windowName string, style uint32, x, y, width, height int32, parent, menu, instance HINSTANCE) (HWND, error) {
@@ -159,6 +166,16 @@ func SetForegroundWindow(hwnd HWND) bool {
 func GetActiveWindow() HWND {
 	ret, _, _ := pGetActiveWindow.Call()
 	return HWND(ret)
+}
+
+func SetWindowLongW(hwnd HWND, index int, long LONG) LONG {
+	ret, _, _ := pSetWindowLongW.Call(uintptr(hwnd), uintptr(index), uintptr(long))
+	return LONG(ret)
+}
+
+func GetWindowLongW(hwnd HWND, index int) LONG {
+	ret, _, _ := pGetWindowLongW.Call(uintptr(hwnd), uintptr(index))
+	return LONG(ret)
 }
 
 func GetCursorPos(pos *POINT) bool {
@@ -349,10 +366,16 @@ func AppendSubmenu(submenu HMENU, mii *MENUITEMINFO) {
 
 // NOTE(nick): system tray menu
 // @Robustness: add support for multiple tray icons?
-var trayIconData NOTIFYICONDATA
-var trayWindow HWND
-var trayMenu HMENU
-var trayCallback func(id int32)
+var didInitTrayWindowClass = false
+
+type Win32_Tray struct {
+	iconData NOTIFYICONDATA
+	window   HWND
+	menu     HMENU
+	callback func(id int32)
+}
+
+var trays = []Win32_Tray{}
 
 const Win32TrayIconMessage = (WM_USER + 1)
 
@@ -364,14 +387,17 @@ func trayWindowCallback(hwnd HWND, message uint32, wParam WPARAM, lParam LPARAM)
 
 			SetForegroundWindow(hwnd)
 
+			index := GetWindowLongW(hwnd, GWL_USERDATA)
+			tray := trays[index]
+
 			mousePosition := POINT{}
 			GetCursorPos(&mousePosition)
 
-			result := TrackPopupMenu(trayMenu, TPM_RIGHTBUTTON|TPM_NONOTIFY|TPM_RETURNCMD, int32(mousePosition.X), int32(mousePosition.Y), 0, hwnd, nil)
+			result := TrackPopupMenu(tray.menu, TPM_RIGHTBUTTON|TPM_NONOTIFY|TPM_RETURNCMD, int32(mousePosition.X), int32(mousePosition.Y), 0, hwnd, nil)
 
 			if result > 0 {
-				if trayCallback != nil {
-					trayCallback(result)
+				if tray.callback != nil {
+					tray.callback(result)
 				}
 			}
 
@@ -386,37 +412,26 @@ func trayWindowCallback(hwnd HWND, message uint32, wParam WPARAM, lParam LPARAM)
 }
 
 func SetTrayMenu(menu HMENU, icon []byte, callback func(id int32)) bool {
-	if trayWindow == NULL {
-		trayClassName := "APPTRON_TRAY_WINDOW_CLASS"
+	trayClassName := "APPTRON_TRAY_WINDOW_CLASS"
 
+	if !didInitTrayWindowClass {
 		if !RegisterWindowClass(trayClassName, GetModuleHandle(), trayWindowCallback) {
 			log.Println("Failed to register tray window class!")
 			return false
 		}
 
-		hwnd, err := CreateWindow(trayClassName, "Tray Window", 0, 0, 0, 1, 1, 0, 0, GetModuleHandle())
-		if err != nil {
-			log.Println("Failed to create tray window!", err)
-			return false
-		}
-
-		trayWindow = hwnd
+		didInitTrayWindowClass = true
 	}
 
-	if trayIconData.CbSize > 0 {
-		Shell_NotifyIconW(NIM_DELETE, &trayIconData)
+	hwnd, err := CreateWindow(trayClassName, "Tray Window", 0, 0, 0, 1, 1, 0, 0, GetModuleHandle())
+	if err != nil {
+		log.Println("Failed to create tray window!", err)
+		return false
 	}
 
-	if trayMenu != 0 {
-		DestroyMenu(trayMenu)
-	}
-
-	trayMenu = menu
-	trayCallback = callback
-
-	trayIconData = NOTIFYICONDATA{}
+	trayIconData := NOTIFYICONDATA{}
 	trayIconData.CbSize = DWORD(unsafe.Sizeof(trayIconData))
-	trayIconData.HWnd = trayWindow
+	trayIconData.HWnd = hwnd
 	trayIconData.UID = 0
 	trayIconData.UFlags = NIF_MESSAGE | NIF_ICON | NIF_TIP
 	trayIconData.UCallbackMessage = Win32TrayIconMessage
@@ -441,6 +456,18 @@ func SetTrayMenu(menu HMENU, icon []byte, callback func(id int32)) bool {
 	trayIconData.SzTip[0] = 0 // @Incomplete: we should put the app name here
 
 	Shell_NotifyIconW(NIM_ADD, &trayIconData)
+
+	tray := Win32_Tray{}
+	tray.menu = menu
+	tray.window = hwnd
+	tray.iconData = trayIconData
+	tray.callback = callback
+
+	index := len(trays)
+	SetWindowLongW(hwnd, GWL_USERDATA, LONG(index))
+
+	trays = append(trays, tray)
+
 	return true
 }
 

@@ -136,9 +136,14 @@ const (
 )
 
 const UINT_MAX = ^uint(0)
+const INT_MAX = ^int(0)
 
 // https://docs.microsoft.com/en-us/windows/win32/hidpi/dpi-awareness-context
 const DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2 = (HANDLE)(UINT_MAX - 4 + 1)
+
+const (
+	GWL_USERDATA = (int)(INT_MAX - 21 + 1)
+)
 
 // https://docs.microsoft.com/en-us/windows/win32/api/windef/ns-windef-point
 type POINT struct {
