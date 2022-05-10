@@ -73,7 +73,7 @@ func run() {
 
 	trayTemplate := []menu.Item{
 		{
-			ID: 1,
+			ID:    1,
 			Title: "Click on this here thing",
 		},
 		{
@@ -91,13 +91,18 @@ func run() {
 			},
 		},
 		{
-			ID: 2,
+			ID:          2,
 			Title:       "Quit",
 			Accelerator: "Command+T",
 		},
 	}
 
-	iconData, err := misc.Assets.ReadFile("icon.ico")
+	iconPath := "icon.png"
+	if runtime.GOOS == "windows" {
+		iconPath = "icon.ico"
+	}
+
+	iconData, err := misc.Assets.ReadFile(iconPath)
 	fatal(err)
 
 	platform.Dispatch(func() {
