@@ -3,8 +3,8 @@ package app
 import (
 	"tractor.dev/apptron/bridge/api/menu"
 	"tractor.dev/apptron/bridge/event"
-	"tractor.dev/apptron/bridge/win32"
 	"tractor.dev/apptron/bridge/platform"
+	"tractor.dev/apptron/bridge/win32"
 )
 
 var (
@@ -16,7 +16,7 @@ func init() {
 	// @Robustness: add support for older versions of Windows
 	// @see https://github.com/glfw/glfw/blob/master/src/win32_init.c#L643
 	//
-  win32.SetProcessDpiAwarenessContext(win32.DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2)
+	win32.SetProcessDpiAwarenessContext(win32.DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2)
 }
 
 func Menu() *menu.Menu {

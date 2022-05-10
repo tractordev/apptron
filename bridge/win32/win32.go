@@ -40,7 +40,7 @@ var (
 	pInsertMenuItemW  = user32.NewProc("InsertMenuItemW")
 	pGetMenuItemCount = user32.NewProc("GetMenuItemCount")
 
-	pCreateIconFromResourceEx = user32.NewProc("CreateIconFromResourceEx")
+	pCreateIconFromResourceEx    = user32.NewProc("CreateIconFromResourceEx")
 	pLookupIconIdFromDirectoryEx = user32.NewProc("LookupIconIdFromDirectoryEx")
 
 	pSetProcessDpiAwarenessContext = user32.NewProc("SetProcessDpiAwarenessContext")
@@ -265,20 +265,19 @@ func SleepMS(float64 miliseconds) {
 func PollEvents() {
 	for {
 		msg := MSG{}
-    if (!PeekMessageW(&msg, NULL, 0, 0, PM_REMOVE)) {
-      break
-    }
+		if !PeekMessageW(&msg, NULL, 0, 0, PM_REMOVE) {
+			break
+		}
 
-    switch (msg.Message) {
-    case WM_QUIT:
-    	PostQuitMessage(0)
-    }
+		switch msg.Message {
+		case WM_QUIT:
+			PostQuitMessage(0)
+		}
 
 		TranslateMessage(&msg)
 		DispatchMessage(&msg)
 	}
 }
-
 
 func RegisterWindowClass(className string, instance HINSTANCE, callback WNDPROC) bool {
 	cursor, err := LoadCursorResource(IDC_ARROW)
@@ -306,9 +305,9 @@ func RegisterWindowClass(className string, instance HINSTANCE, callback WNDPROC)
 
 func MakeMenuItemSeparator() MENUITEMINFO {
 	result := MENUITEMINFO{}
-	result.CbSize     = UINT(unsafe.Sizeof(result))
-	result.FMask      = MIIM_ID | MIIM_DATA | MIIM_TYPE
-	result.WID        = 0
+	result.CbSize = UINT(unsafe.Sizeof(result))
+	result.FMask = MIIM_ID | MIIM_DATA | MIIM_TYPE
+	result.WID = 0
 	result.DwItemData = 0
 	return result
 }
@@ -316,11 +315,11 @@ func MakeMenuItemSeparator() MENUITEMINFO {
 func MakeMenuItem(id int, label string, disabled bool, checked bool, isRadio bool) MENUITEMINFO {
 	result := MENUITEMINFO{}
 
-	result.CbSize     = UINT(unsafe.Sizeof(result))
-	result.FMask      = MIIM_ID | MIIM_STATE | MIIM_DATA | MIIM_TYPE
-	result.FType      = MFT_STRING
+	result.CbSize = UINT(unsafe.Sizeof(result))
+	result.FMask = MIIM_ID | MIIM_STATE | MIIM_DATA | MIIM_TYPE
+	result.FType = MFT_STRING
 
-	result.FState     = 0
+	result.FState = 0
 	if checked {
 		result.FState |= MFS_CHECKED
 	} else {
@@ -333,7 +332,7 @@ func MakeMenuItem(id int, label string, disabled bool, checked bool, isRadio boo
 		result.FState |= MFS_ENABLED
 	}
 
-	result.WID        = UINT(id)
+	result.WID = UINT(id)
 	result.DwTypeData = syscall.StringToUTF16Ptr(label)
 
 	if isRadio {
@@ -348,60 +347,60 @@ func AppendSubmenu(submenu HMENU, mii *MENUITEMINFO) {
 	mii.HSubMenu = submenu
 }
 
-
 // NOTE(nick): system tray menu
 // @Robustness: add support for multiple tray icons?
 var trayIconData NOTIFYICONDATA
-var trayWindow   HWND
-var trayMenu     HMENU
+var trayWindow HWND
+var trayMenu HMENU
 var trayCallback func(id int32)
 
 const Win32TrayIconMessage = (WM_USER + 1)
 
 func trayWindowCallback(hwnd HWND, message uint32, wParam WPARAM, lParam LPARAM) LRESULT {
 	switch message {
-		case Win32TrayIconMessage:
-			switch lParam {
-				case WM_LBUTTONDOWN, WM_RBUTTONDOWN:
+	case Win32TrayIconMessage:
+		switch lParam {
+		case WM_LBUTTONDOWN, WM_RBUTTONDOWN:
 
-					SetForegroundWindow(hwnd)
+			SetForegroundWindow(hwnd)
 
-					mousePosition := POINT{}
-					GetCursorPos(&mousePosition)
+			mousePosition := POINT{}
+			GetCursorPos(&mousePosition)
 
-					result := TrackPopupMenu(trayMenu, TPM_RIGHTBUTTON | TPM_NONOTIFY | TPM_RETURNCMD, int32(mousePosition.X), int32(mousePosition.Y), 0, hwnd, nil)
+			result := TrackPopupMenu(trayMenu, TPM_RIGHTBUTTON|TPM_NONOTIFY|TPM_RETURNCMD, int32(mousePosition.X), int32(mousePosition.Y), 0, hwnd, nil)
 
-					if result > 0 {
-						if trayCallback != nil {
-							trayCallback(result)
-						}
-					}	
-
-				default: break
+			if result > 0 {
+				if trayCallback != nil {
+					trayCallback(result)
+				}
 			}
 
 		default:
-			return DefWindowProc(hwnd, message, wParam, lParam)
+			break
+		}
+
+	default:
+		return DefWindowProc(hwnd, message, wParam, lParam)
 	}
 	return 0
 }
 
 func SetTrayMenu(menu HMENU, icon []byte, callback func(id int32)) bool {
 	if trayWindow == NULL {
-	  trayClassName := "APPTRON_TRAY_WINDOW_CLASS"
+		trayClassName := "APPTRON_TRAY_WINDOW_CLASS"
 
-	  if (!RegisterWindowClass(trayClassName, GetModuleHandle(), trayWindowCallback)) {
-	  	log.Println("Failed to register tray window class!")
-	  	return false
-	  }
+		if !RegisterWindowClass(trayClassName, GetModuleHandle(), trayWindowCallback) {
+			log.Println("Failed to register tray window class!")
+			return false
+		}
 
-	  hwnd, err := CreateWindow(trayClassName, "Tray Window", 0, 0, 0, 1, 1, 0, 0, GetModuleHandle());
-	  if err != nil {
-	  	log.Println("Failed to create tray window!", err)
-	  	return false
-	  }
+		hwnd, err := CreateWindow(trayClassName, "Tray Window", 0, 0, 0, 1, 1, 0, 0, GetModuleHandle())
+		if err != nil {
+			log.Println("Failed to create tray window!", err)
+			return false
+		}
 
-	  trayWindow = hwnd
+		trayWindow = hwnd
 	}
 
 	if trayIconData.CbSize > 0 {
@@ -412,47 +411,47 @@ func SetTrayMenu(menu HMENU, icon []byte, callback func(id int32)) bool {
 		DestroyMenu(trayMenu)
 	}
 
-  trayMenu     = menu
-  trayCallback = callback
+	trayMenu = menu
+	trayCallback = callback
 
 	trayIconData = NOTIFYICONDATA{}
-  trayIconData.CbSize = DWORD(unsafe.Sizeof(trayIconData))
-  trayIconData.HWnd = trayWindow
-  trayIconData.UID = 0
-  trayIconData.UFlags = NIF_MESSAGE | NIF_ICON | NIF_TIP
-  trayIconData.UCallbackMessage = Win32TrayIconMessage
+	trayIconData.CbSize = DWORD(unsafe.Sizeof(trayIconData))
+	trayIconData.HWnd = trayWindow
+	trayIconData.UID = 0
+	trayIconData.UFlags = NIF_MESSAGE | NIF_ICON | NIF_TIP
+	trayIconData.UCallbackMessage = Win32TrayIconMessage
 
-  // @Robustness: convert from PNG to ICO
+	// @Robustness: convert from PNG to ICO
 
-  iconSize := len(icon)
-  if iconSize > 0 {
-  	data := (*BYTE)(unsafe.Pointer(&icon[0]))
+	iconSize := len(icon)
+	if iconSize > 0 {
+		data := (*BYTE)(unsafe.Pointer(&icon[0]))
 
-  	offset := LookupIconIdFromDirectoryEx(data, TRUE, 0, 0, 0x00008000/*LR_SHARED*/)
+		offset := LookupIconIdFromDirectoryEx(data, TRUE, 0, 0, 0x00008000 /*LR_SHARED*/)
 
-  	if offset > 0 {
-	  	data = (*BYTE)(unsafe.Pointer(&icon[offset]))
-		  trayIconData.HIcon = CreateIconFromResourceEx(data, DWORD(iconSize), TRUE, 0x00030000, 32, 32, 0/*LR_DEFAULTCOLOR*/)
-  	}
-  }
+		if offset > 0 {
+			data = (*BYTE)(unsafe.Pointer(&icon[offset]))
+			trayIconData.HIcon = CreateIconFromResourceEx(data, DWORD(iconSize), TRUE, 0x00030000, 32, 32, 0 /*LR_DEFAULTCOLOR*/)
+		}
+	}
 
-  // @Robustness: provide a default placeholder icon?
-  //trayIconData.HIcon = LoadIcon(GetModuleHandle(0), MAKEINTRESOURCE(101));
-  
-  trayIconData.SzTip[0] = 0 // @Incomplete: we should put the app name here
+	// @Robustness: provide a default placeholder icon?
+	//trayIconData.HIcon = LoadIcon(GetModuleHandle(0), MAKEINTRESOURCE(101));
 
-  Shell_NotifyIconW(NIM_ADD, &trayIconData)
-  return true
+	trayIconData.SzTip[0] = 0 // @Incomplete: we should put the app name here
+
+	Shell_NotifyIconW(NIM_ADD, &trayIconData)
+	return true
 }
 
 func testWindowCallback(hwnd HWND, message uint32, wParam WPARAM, lParam LPARAM) LRESULT {
 	switch message {
-		case WM_CLOSE:
-			DestroyWindow(hwnd)
-		case WM_DESTROY:
-			PostQuitMessage(0)
-		default:
-			return DefWindowProc(hwnd, message, wParam, lParam)
+	case WM_CLOSE:
+		DestroyWindow(hwnd)
+	case WM_DESTROY:
+		PostQuitMessage(0)
+	default:
+		return DefWindowProc(hwnd, message, wParam, lParam)
 	}
 	return 0
 }
@@ -485,7 +484,7 @@ func CreateTestWindow() {
 	_, err = CreateWindow(
 		className,
 		"Test Window",
-		WS_VISIBLE | WS_OVERLAPPEDWINDOW,
+		WS_VISIBLE|WS_OVERLAPPEDWINDOW,
 		CW_USEDEFAULT,
 		CW_USEDEFAULT,
 		CW_USEDEFAULT,

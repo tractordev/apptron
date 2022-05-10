@@ -13,7 +13,7 @@ type WORD uint16
 type DWORD uint32
 type LPCWSTR *uint16
 type LPWSTR *uint16
-type CHAR  uint8
+type CHAR uint8
 type WCHAR uint16
 
 type HANDLE uintptr
@@ -34,13 +34,13 @@ type WNDPROC func(hwnd HWND, msg uint32, wparam WPARAM, lparam LPARAM) LRESULT
 // https://github.com/AllenDang/w32/blob/ad0a36d80adcd081d5c0dded8e97a009b486d1db/constants.go
 
 const (
-	NULL = 0
+	NULL  = 0
 	TRUE  = 1
 	FALSE = 0
 )
 
 const (
-	SW_SHOW        = 5
+	SW_SHOW = 5
 )
 
 const (
@@ -52,7 +52,7 @@ const (
 )
 
 const (
-	WS_VISIBLE      = 0x10000000
+	WS_VISIBLE = 0x10000000
 
 	WS_CAPTION     = 0x00C00000
 	WS_MAXIMIZEBOX = 0x00010000
@@ -97,15 +97,15 @@ const (
 )
 
 const (
-	MIIM_BITMAP = 0x00000080
+	MIIM_BITMAP     = 0x00000080
 	MIIM_CHECKMARKS = 0x00000008
-	MIIM_DATA = 0x00000020
-	MIIM_FTYPE = 0x00000100
-	MIIM_ID = 0x00000002
-	MIIM_STATE = 0x00000001
-	MIIM_STRING = 0x00000040
-	MIIM_SUBMENU = 0x00000004
-	MIIM_TYPE = 0x00000010
+	MIIM_DATA       = 0x00000020
+	MIIM_FTYPE      = 0x00000100
+	MIIM_ID         = 0x00000002
+	MIIM_STATE      = 0x00000001
+	MIIM_STRING     = 0x00000040
+	MIIM_SUBMENU    = 0x00000004
+	MIIM_TYPE       = 0x00000010
 
 	MFT_STRING     = 0x00000000
 	MFT_RADIOCHECK = 0x00000200
@@ -117,18 +117,18 @@ const (
 	MFS_UNCHECKED = 0x00000000
 
 	TPM_CENTERALIGN = 0x0004
-  TPM_LEFTALIGN   = 0x0000
-  TPM_RIGHTALIGN  = 0x0008
+	TPM_LEFTALIGN   = 0x0000
+	TPM_RIGHTALIGN  = 0x0008
 
-  TPM_BOTTOMALIGN  = 0x0020
-  TPM_TOPALIGN     = 0x0000
-  TPM_VCENTERALIGN = 0x0010
+	TPM_BOTTOMALIGN  = 0x0020
+	TPM_TOPALIGN     = 0x0000
+	TPM_VCENTERALIGN = 0x0010
 
-  TPM_NONOTIFY    = 0x0080
-  TPM_RETURNCMD   = 0x0100
+	TPM_NONOTIFY  = 0x0080
+	TPM_RETURNCMD = 0x0100
 
 	TPM_LEFTBUTTON  = 0x0000
-  TPM_RIGHTBUTTON = 0x0002
+	TPM_RIGHTBUTTON = 0x0002
 )
 
 // https://docs.microsoft.com/en-us/windows/win32/hidpi/dpi-awareness-context
@@ -204,18 +204,18 @@ type NOTIFYICONDATAW struct {
 type NOTIFYICONDATA NOTIFYICONDATAW
 
 type MENUITEMINFOW struct {
-  CbSize        UINT
-  FMask         UINT
-  FType         UINT
-  FState        UINT
-  WID           UINT
-  HSubMenu      HMENU
-  HbmpChecked   HBITMAP
-  HbmpUnchecked HBITMAP
-  DwItemData    ULONG_PTR
-  DwTypeData    LPWSTR
-  Cch           UINT
-  HbmpItem      HBITMAP
+	CbSize        UINT
+	FMask         UINT
+	FType         UINT
+	FState        UINT
+	WID           UINT
+	HSubMenu      HMENU
+	HbmpChecked   HBITMAP
+	HbmpUnchecked HBITMAP
+	DwItemData    ULONG_PTR
+	DwTypeData    LPWSTR
+	Cch           UINT
+	HbmpItem      HBITMAP
 }
 
 type MENUITEMINFO MENUITEMINFOW
