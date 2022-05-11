@@ -1,5 +1,9 @@
 package shell
 
+import (
+	"tractor.dev/apptron/bridge/platform/win32"
+)
+
 func ShowNotification(n Notification) {
 }
 
@@ -12,7 +16,7 @@ func ShowFilePicker(fd FileDialog) []string {
 }
 
 func ReadClipboard() string {
-	return ""
+	return win32.OS_GetClipboardText()
 }
 
 func WriteClipboard(text string) bool {

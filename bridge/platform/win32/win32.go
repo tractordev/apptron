@@ -2,6 +2,7 @@ package win32
 
 import (
 	"log"
+	"reflect"
 	"syscall"
 	"unsafe"
 )
@@ -15,6 +16,11 @@ var (
 
 	pGetModuleHandleW = kernel32.NewProc("GetModuleHandleW")
 	pExitProcess      = kernel32.NewProc("ExitProcess")
+
+	pGlobalLock   = kernel32.NewProc("GlobalLock")
+	pGlobalUnlock = kernel32.NewProc("GlobalUnlock")
+	pGlobalAlloc  = kernel32.NewProc("GlobalAlloc")
+	pGlobalFree   = kernel32.NewProc("GlobalFree")
 )
 
 func GetModuleHandle() HINSTANCE {
@@ -48,6 +54,12 @@ var (
 	pEnumDisplaySettings = user32.NewProc("EnumDisplaySettingsW")
 	pGetMonitorInfoW     = user32.NewProc("GetMonitorInfoW")
 
+	pOpenClipboard    = user32.NewProc("OpenClipboard")
+	pCloseClipboard   = user32.NewProc("CloseClipboard")
+	pGetClipboardData = user32.NewProc("GetClipboardData")
+	pEmptyClipboard   = user32.NewProc("EmptyClipboard")
+	pSetClipboardData = user32.NewProc("SetClipboardData")
+
 	pCreateMenu       = user32.NewProc("CreateMenu")
 	pCreatePopupMenu  = user32.NewProc("CreatePopupMenu")
 	pDestroyMenu      = user32.NewProc("DestroyMenu")
@@ -60,6 +72,11 @@ var (
 
 	pSetProcessDpiAwarenessContext = user32.NewProc("SetProcessDpiAwarenessContext")
 )
+
+func OpenClipboard(hwnd HWND) bool {
+	ret, _, _ := pOpenClipboard.Call(uintptr(hwnd))
+	return ret != 0
+}
 
 func CreateWindow(className, windowName string, style uint32, x, y, width, height int32, parent, menu, instance HINSTANCE) (HWND, error) {
 	ret, _, err := pCreateWindowExW.Call(
@@ -312,6 +329,54 @@ func SleepMS(float64 miliseconds) {
   CloseHandle(timer);
 }
 */
+
+func Utf16PtrToSlice(p uintptr) []uint16 {
+	n := 0
+	for ptr := unsafe.Pointer(p); *(*uint16)(ptr) != 0; n++ {
+		ptr = unsafe.Pointer(uintptr(ptr) +
+			unsafe.Sizeof(*((*uint16)(unsafe.Pointer(p)))))
+	}
+
+	var s []uint16
+	h := (*reflect.SliceHeader)(unsafe.Pointer(&s))
+	h.Data = p
+	h.Len = n
+	h.Cap = n
+	return s
+}
+
+func OS_GetClipboardText() string {
+	var result string
+
+	ret, _, _ := pOpenClipboard.Call(uintptr(NULL))
+	if ret == 0 {
+		log.Println("[clipboard] Failed to open clipboard.")
+		return result
+	}
+
+	ret, _, _ = pGetClipboardData.Call(uintptr(CF_UNICODETEXT))
+	handle := HANDLE(ret)
+	if handle == 0 {
+		log.Println("[clipboard] Failed to convert clipboard to string.")
+		pCloseClipboard.Call()
+		return result
+	}
+
+	ret, _, _ = pGlobalLock.Call(uintptr(handle))
+	defer pGlobalUnlock.Call(uintptr(handle))
+
+	if ret == 0 {
+		log.Println("[clipboard] Failed to lock global handle.")
+		pCloseClipboard.Call()
+		return result
+	}
+
+	result = string(syscall.UTF16ToString(Utf16PtrToSlice(ret)))
+
+	pCloseClipboard.Call()
+
+	return result
+}
 
 func PollEvents() {
 	for {
