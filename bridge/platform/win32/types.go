@@ -158,6 +158,11 @@ const CCHFORMNAME = 32
 
 const USER_DEFAULT_SCREEN_DPI = 96
 
+const (
+	CF_TEXT        = 1
+	CF_UNICODETEXT = 13
+)
+
 // https://docs.microsoft.com/en-us/windows/win32/api/windef/ns-windef-point
 type POINT struct {
 	X LONG
