@@ -17,6 +17,15 @@ var (
 	pExitProcess      = kernel32.NewProc("ExitProcess")
 )
 
+func GetModuleHandle() HINSTANCE {
+	ret, _, _ := pGetModuleHandleW.Call(uintptr(0))
+	return HINSTANCE(ret)
+}
+
+func ExitProcess(exitCode UINT) {
+	pExitProcess.Call(uintptr(exitCode))
+}
+
 var (
 	user32 = syscall.NewLazyDLL("user32.dll")
 
@@ -35,6 +44,9 @@ var (
 	pGetActiveWindow     = user32.NewProc("GetActiveWindow")
 	pSetWindowLongW      = user32.NewProc("SetWindowLongW")
 	pGetWindowLongW      = user32.NewProc("GetWindowLongW")
+	pEnumDisplayMonitors = user32.NewProc("EnumDisplayMonitors")
+	pEnumDisplaySettings = user32.NewProc("EnumDisplaySettingsW")
+	pGetMonitorInfoW     = user32.NewProc("GetMonitorInfoW")
 
 	pCreateMenu       = user32.NewProc("CreateMenu")
 	pCreatePopupMenu  = user32.NewProc("CreatePopupMenu")
@@ -48,27 +60,6 @@ var (
 
 	pSetProcessDpiAwarenessContext = user32.NewProc("SetProcessDpiAwarenessContext")
 )
-
-var (
-	shell32 = syscall.NewLazyDLL("shell32.dll")
-
-	pShell_NotifyIconW = shell32.NewProc("Shell_NotifyIconW")
-)
-
-var (
-	winmm = syscall.NewLazyDLL("winmm.dll")
-
-	pTimeBeginPeriod = winmm.NewProc("timeBeginPeriod")
-)
-
-func GetModuleHandle() HINSTANCE {
-	ret, _, _ := pGetModuleHandleW.Call(uintptr(0))
-	return HINSTANCE(ret)
-}
-
-func ExitProcess(exitCode UINT) {
-	pExitProcess.Call(uintptr(exitCode))
-}
 
 func CreateWindow(className, windowName string, style uint32, x, y, width, height int32, parent, menu, instance HINSTANCE) (HWND, error) {
 	ret, _, err := pCreateWindowExW.Call(
@@ -178,13 +169,27 @@ func GetWindowLongW(hwnd HWND, index int) LONG {
 	return LONG(ret)
 }
 
-func GetCursorPos(pos *POINT) bool {
-	ret, _, _ := pGetCursorPos.Call(uintptr(unsafe.Pointer(pos)))
+func EnumDisplayMonitors(hdc HDC, clip *RECT, enumProc MONITORENUMPROC, data LPARAM) bool {
+	ret, _, _ := pEnumDisplayMonitors.Call(uintptr(hdc), uintptr(unsafe.Pointer(clip)), syscall.NewCallback(enumProc), uintptr(data))
 	return ret != 0
 }
 
-func Shell_NotifyIconW(dwMessage DWORD, nid *NOTIFYICONDATA) bool {
-	ret, _, _ := pShell_NotifyIconW.Call(uintptr(dwMessage), uintptr(unsafe.Pointer(nid)))
+func EnumDisplaySettings(deviceName *uint16, iModeNum DWORD, lpDevMode *DEVMODE) bool {
+	lpDevMode.DmSize = WORD(unsafe.Sizeof(*lpDevMode))
+
+	ret, _, _ := pEnumDisplaySettings.Call(uintptr(unsafe.Pointer(deviceName)), uintptr(iModeNum), uintptr(unsafe.Pointer(lpDevMode)))
+	return ret != 0
+}
+
+func GetMonitorInfo(monitor HMONITOR, info *MONITORINFOEX) bool {
+	info.CbSize = DWORD(unsafe.Sizeof(*info))
+
+	ret, _, _ := pGetMonitorInfoW.Call(uintptr(monitor), uintptr(unsafe.Pointer(info)))
+	return ret != 0
+}
+
+func GetCursorPos(pos *POINT) bool {
+	ret, _, _ := pGetCursorPos.Call(uintptr(unsafe.Pointer(pos)))
 	return ret != 0
 }
 
@@ -250,6 +255,35 @@ func LookupIconIdFromDirectoryEx(bytes *BYTE, icon BOOL, cxDesired int32, cyDesi
 	return int32(result)
 }
 
+var (
+	shell32 = syscall.NewLazyDLL("shell32.dll")
+
+	pShell_NotifyIconW = shell32.NewProc("Shell_NotifyIconW")
+)
+
+func Shell_NotifyIconW(dwMessage DWORD, nid *NOTIFYICONDATA) bool {
+	ret, _, _ := pShell_NotifyIconW.Call(uintptr(dwMessage), uintptr(unsafe.Pointer(nid)))
+	return ret != 0
+}
+
+var (
+	shcore = syscall.NewLazyDLL("shcore.dll")
+
+	// min support Windows 8.1 [desktop apps only]
+	pGetDpiForMonitor = shcore.NewProc("GetDpiForMonitor")
+)
+
+func GetDpiForMonitor(monitor HMONITOR, dpiType uint32 /*MONITOR_DPI_TYPE*/, dpiX *UINT, dpiY *UINT) bool {
+	ret, _, _ := pGetDpiForMonitor.Call(uintptr(monitor), uintptr(dpiType), uintptr(unsafe.Pointer(dpiX)), uintptr(unsafe.Pointer(dpiY)))
+	return ret == 0 /*S_OK*/
+}
+
+var (
+	winmm = syscall.NewLazyDLL("winmm.dll")
+
+	pTimeBeginPeriod = winmm.NewProc("timeBeginPeriod")
+)
+
 //
 // Functions
 //
@@ -294,6 +328,10 @@ func PollEvents() {
 		TranslateMessage(&msg)
 		DispatchMessage(&msg)
 	}
+}
+
+func (info *MONITORINFOEX) GetDeviceName() string {
+	return syscall.UTF16ToString(info.DeviceName[:])
 }
 
 func RegisterWindowClass(className string, instance HINSTANCE, callback WNDPROC) bool {
