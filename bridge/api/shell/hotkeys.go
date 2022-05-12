@@ -56,22 +56,7 @@ func RegisterShortcut(accelerator string) bool {
 	for _, accel := range strings.Split(strings.ToUpper(accelerator), "+") {
 		code := keycode.FromString(accel)
 		if keycode.IsModifier(code) {
-			mods = append(mods, map[keycode.KeyCode]hotkey.Modifier{
-				//keycode.AltLeft:      hotkey.ModOption, // TODO: make platform agnostic
-				//keycode.AltRight:     hotkey.ModOption,
-				keycode.AltLeft:      hotkey.ModAlt,
-				keycode.AltRight:     hotkey.ModAlt,
-
-				keycode.ControlLeft:  hotkey.ModCtrl,
-				keycode.ControlRight: hotkey.ModCtrl,
-				keycode.ShiftLeft:    hotkey.ModShift,
-				keycode.ShiftRight:   hotkey.ModShift,
-
-				//keycode.SuperLeft:    hotkey.ModCmd, // TODO: make platform agnostic
-				//keycode.SuperRight:   hotkey.ModCmd,
-				keycode.SuperLeft:    hotkey.ModWin,
-				keycode.SuperRight:   hotkey.ModWin,
-			}[code])
+			mods = append(mods, keycode.HotkeyModifier(code))
 			continue
 		}
 		key = hotkey.Key(keycode.Scancode(code))

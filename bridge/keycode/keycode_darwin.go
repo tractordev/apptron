@@ -1,5 +1,7 @@
 package keycode
 
+import "golang.design/x/hotkey"
+
 func init() {
 	strToKeyCode["COMMAND"] = SuperLeft
 	strToKeyCode["CMD"] = SuperLeft
@@ -9,6 +11,19 @@ func init() {
 	strToKeyCode["OPTION"] = AltLeft
 	strToKeyCode["OPTIONLEFT"] = AltLeft
 	strToKeyCode["OPTIONRIGHT"] = AltRight
+}
+
+func HotkeyModifier(code KeyCode) hotkey.Modifier {
+	return map[KeyCode]hotkey.Modifier{
+		AltLeft:      hotkey.ModOption,
+		AltRight:     hotkey.ModOption,
+		ControlLeft:  hotkey.ModCtrl,
+		ControlRight: hotkey.ModCtrl,
+		ShiftLeft:    hotkey.ModShift,
+		ShiftRight:   hotkey.ModShift,
+		SuperLeft:    hotkey.ModCmd,
+		SuperRight:   hotkey.ModCmd,
+	}[code]
 }
 
 func Scancode(k KeyCode) uint8 {

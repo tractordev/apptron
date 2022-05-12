@@ -1,3 +1,5 @@
+//go:build windows
+
 package win32
 
 type ATOM uint16
