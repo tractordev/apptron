@@ -7,7 +7,6 @@ import (
 	"log"
 	"runtime"
 
-	"github.com/progrium/macdriver/core"
 	"tractor.dev/apptron/bridge/api/app"
 	"tractor.dev/apptron/bridge/api/menu"
 	"tractor.dev/apptron/bridge/api/shell"
@@ -34,7 +33,6 @@ func main() {
 }
 
 func run() {
-
 	event.Listen(struct{}{}, func(e event.Event) error {
 		log.Println(e)
 		return nil
@@ -75,6 +73,7 @@ func run() {
 
 	trayTemplate := []menu.Item{
 		{
+			ID:    1,
 			Title: "Click on this here thing",
 		},
 		{
@@ -92,12 +91,18 @@ func run() {
 			},
 		},
 		{
+			ID:          2,
 			Title:       "Quit",
 			Accelerator: "Command+T",
 		},
 	}
 
-	iconData, err := misc.Assets.ReadFile("icon.png")
+	iconPath := "icon.png"
+	if runtime.GOOS == "windows" {
+		iconPath = "icon.ico"
+	}
+
+	iconData, err := misc.Assets.ReadFile(iconPath)
 	fatal(err)
 
 	platform.Dispatch(func() {
@@ -129,7 +134,7 @@ func run() {
 
 	shell.RegisterShortcut("CMD+SHIFT+S")
 
-	core.Dispatch(func() {
+	platform.Dispatch(func() {
 		w1, err := window.New(options)
 		fatal(err)
 
@@ -139,7 +144,7 @@ func run() {
 		fmt.Println("[main] window position", w1.GetOuterPosition())
 	})
 
-	core.Dispatch(func() {
+	platform.Dispatch(func() {
 		shell.ShowNotification(shell.Notification{
 			Title:    "Title: Hello, world",
 			Subtitle: "Subtitle: MacOS only",
@@ -164,12 +169,12 @@ func run() {
 
 	// fmt.Println("ShowFilePicker files", files, len(files))
 
-	core.Dispatch(func() {
+	platform.Dispatch(func() {
 		shell.WriteClipboard("Hello from Go!")
 		fmt.Println("Read written clipboard data:", shell.ReadClipboard())
 	})
 
-	core.Dispatch(func() {
+	platform.Dispatch(func() {
 		displays := system.Displays()
 		fmt.Println("Displays:")
 
@@ -181,7 +186,7 @@ func run() {
 		}
 	})
 
-	core.Dispatch(func() {
+	platform.Dispatch(func() {
 		if shell.ShowMessage(shell.MessageDialog{
 			Title:   "TITLE",
 			Level:   "error",
@@ -195,7 +200,7 @@ func run() {
 		shell.UnregisterShortcut("CMD+SHIFT+S")
 	})
 
-	// core.Dispatch(func() {
+	// platform.Dispatch(func() {
 	// 	ret := shell.ShowFilePicker(shell.FileDialog{
 	// 		Directory: "/Users/progrium/Source/github.com/tractordev/apptron",
 	// 		Filters:   []string{"go,js"},
