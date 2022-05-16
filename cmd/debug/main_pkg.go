@@ -249,8 +249,5 @@ func run() {
 	// didUnregister := shell.UnregisterShortcut("Control+Shift+T")
 	// fmt.Println("didUnregister", didUnregister)
 
-	fmt.Println("at end..")
-
-
 	select {}
 }

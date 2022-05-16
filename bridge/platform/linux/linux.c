@@ -50,13 +50,19 @@ void menu_append_menu_item(GtkMenuShell *menu, GtkWidget *item)
   gtk_menu_shell_append(menu, item);
 }
 
+extern void go_menu_callback(int);
 
 void menu_item_callback(GtkMenuItem *item, gpointer user_data)
 {
   int menu_id = (int)user_data;
 
-  printf("clicked! %d\n", menu_id);
-  fflush(stdout);
+  //printf("clicked! %d\n", menu_id);
+  //fflush(stdout);
+
+  if (go_menu_callback)
+  {
+    go_menu_callback(menu_id);
+  }
 }
 
 GtkWidget *menu_item_new(int id, char *title, bool disabled, bool checked, bool separator)
@@ -81,9 +87,25 @@ GtkWidget *menu_item_new(int id, char *title, bool disabled, bool checked, bool 
     }
 
     gtk_widget_set_sensitive(item, !disabled);
-    gtk_widget_show(item);
+
+    //
+    // NOTE(nick): accelerators seem to require a window and an accel_group
+    // Are they even supported in the AppIndicator?
+    // As far as I can tell they don't ever show up in the AppIndicator menu...
+    //
+    // @see https://github.com/bstpierre/gtk-examples/blob/master/c/accel.c
+    //
+    #if 0
+    GtkWindow *window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+    GtkAccelGroup *accel_group = gtk_accel_group_new();
+    gtk_window_add_accel_group(GTK_WINDOW(window), accel_group);
+
+    gtk_widget_add_accelerator(item, "activate", accel_group, GDK_KEY_F7, 0, GTK_ACCEL_VISIBLE);
+    #endif
 
     g_signal_connect(item, "activate", G_CALLBACK(menu_item_callback), id);
+
+    gtk_widget_show(item);
   }
 
   return item;

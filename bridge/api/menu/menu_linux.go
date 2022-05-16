@@ -31,8 +31,6 @@ func (m *Menu) Popup() int {
 }
 
 func createMenu(items []Item) linux.MenuHandle {
-  //linux.OS_Init()
-
   menu := linux.MenuNew()
 
   if menu != 0 {

@@ -6,7 +6,7 @@ import (
   "log"
 
   "tractor.dev/apptron/bridge/api/menu"
-  //"tractor.dev/apptron/bridge/event"
+  "tractor.dev/apptron/bridge/event"
   "tractor.dev/apptron/bridge/platform"
   "tractor.dev/apptron/bridge/platform/linux"
 )
@@ -51,8 +51,17 @@ func NewIndicator(icon []byte, items []menu.Item) {
   globalTrayId += 1
   trayId := fmt.Sprintf("tray_%d", globalTrayId)
 
+  trayIconPath := f.Name()
+
   menu := menu.New(items)
-  linux.NewIndicator(trayId, f.Name(), menu.MenuHandle)
+  linux.NewIndicator(trayId, trayIconPath, menu.MenuHandle)
+
+  linux.SetGlobalMenuCallback(func(menuId int) {
+    event.Emit(event.Event{
+      Type:     event.MenuItem,
+      MenuItem: menuId,
+    })
+  })
 }
 
 func Run(options Options) error {
