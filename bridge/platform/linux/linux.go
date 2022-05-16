@@ -29,10 +29,6 @@ func PollEvents() {
 	C.tray_poll_events()
 }
 
-type MenuHandle uintptr
-type MenuItemHandle uintptr
-type IndicatorHandle uintptr
-
 func NewIndicator(id string, pngIconPath string, menu MenuHandle) IndicatorHandle {
 	cid := C.CString(id)
 	defer C.free(unsafe.Pointer(cid))

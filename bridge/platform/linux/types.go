@@ -5,3 +5,7 @@ const (
 	TRUE  = 1
 	FALSE = 0
 )
+
+type MenuHandle uintptr
+type MenuItemHandle uintptr
+type IndicatorHandle uintptr
