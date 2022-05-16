@@ -4,6 +4,7 @@ GO_FILES := $(shell find . -name "*.go")
 apptron: clientjs/dist/client.js $(GO_FILES)
 	CGO_CFLAGS="-w" go build -o ./apptron ./cmd/apptron/main.go
 
+.PHONY: debug-pkg
 debug-pkg: $(GO_FILES)
 	CGO_CFLAGS="-w" go build -tags pkg -o ./debug-pkg ./cmd/debug
 

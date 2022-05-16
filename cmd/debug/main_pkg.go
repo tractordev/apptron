@@ -204,7 +204,9 @@ func run() {
 		} else {
 			fmt.Println("No")
 		}
-		shell.UnregisterShortcut("CMD+SHIFT+S")
+
+		// NOTE(nick): this never completes on Linux
+		//shell.UnregisterShortcut("CMD+SHIFT+S")
 	})
 
 	// platform.Dispatch(func() {
@@ -246,6 +248,9 @@ func run() {
 
 	// didUnregister := shell.UnregisterShortcut("Control+Shift+T")
 	// fmt.Println("didUnregister", didUnregister)
+
+	fmt.Println("at end..")
+
 
 	select {}
 }
