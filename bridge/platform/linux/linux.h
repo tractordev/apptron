@@ -14,6 +14,6 @@ GtkMenuShell *menu_new();
 void menu_append_menu_item(GtkMenuShell *menu, GtkWidget *item);
 
 GtkWidget *menu_item_new(int id, char *title, bool disabled, bool checked, bool separator);
-void menu_item_set_submenu(GtkWidget *parent, GtkWidget *child);
+void menu_item_set_submenu(GtkWidget *parent, GtkMenuShell *child);
 
 void tray_test();

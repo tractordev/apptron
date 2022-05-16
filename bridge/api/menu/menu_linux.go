@@ -1,13 +1,13 @@
 package menu
 
 import (
-  //"tractor.dev/apptron/bridge/platform/linux"
   "tractor.dev/apptron/bridge/resource"
+  "tractor.dev/apptron/bridge/platform/linux"
 )
 
 type Menu struct {
   menu
-  //*linux.GtkMenuShell
+  linux.MenuHandle
 }
 
 func New(items []Item) *Menu {
@@ -18,7 +18,7 @@ func New(items []Item) *Menu {
     },
   }
 
-  //menu.GtkMenuShell = createMenu(items)
+  menu.MenuHandle = createMenu(items)
 
   return menu
 }
@@ -30,18 +30,19 @@ func (m *Menu) Popup() int {
   return 0
 }
 
-/*
-func createMenu(items []Item) *linux.GtkMenuShell {
+func createMenu(items []Item) linux.MenuHandle {
+  //linux.OS_Init()
+
   menu := linux.MenuNew()
 
-  if menu != nil {
+  if menu != 0 {
     for _, it := range items {
       // @Incomplete: accelerators
       item := linux.MenuItemNew(it.ID, it.Title, it.Disabled, it.Selected, it.Separator)
 
       if !it.Disabled && len(it.SubMenu) > 0 {
         submenu := createMenu(it.SubMenu)
-        linux.MenuItemAppendSubmenu(submenu, item)
+        linux.MenuItemSetSubmenu(item, submenu)
       }
 
       linux.MenuAppendMenuItem(menu, item)
@@ -50,4 +51,3 @@ func createMenu(items []Item) *linux.GtkMenuShell {
 
   return menu
 }
-*/

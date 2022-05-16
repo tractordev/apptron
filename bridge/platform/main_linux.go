@@ -9,9 +9,11 @@ import (
 var mainfunc = make(chan func())
 var quit = make(chan bool)
 
-func Main() {
+func init() {
 	linux.OS_Init()
+}
 
+func Main() {
 	runReady.Wait()
 
 	// @Robustness: should we add some sort of framerate timing to this?
