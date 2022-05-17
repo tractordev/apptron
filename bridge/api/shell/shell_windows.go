@@ -20,5 +20,5 @@ func ReadClipboard() string {
 }
 
 func WriteClipboard(text string) bool {
-	return false
+	return win32.OS_SetClipboardText(text)
 }

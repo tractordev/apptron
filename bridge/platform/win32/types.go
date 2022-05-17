@@ -163,6 +163,10 @@ const (
 	CF_UNICODETEXT = 13
 )
 
+const (
+	GMEM_MOVEABLE = 0x0002
+)
+
 // https://docs.microsoft.com/en-us/windows/win32/api/windef/ns-windef-point
 type POINT struct {
 	X LONG

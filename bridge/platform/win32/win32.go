@@ -19,10 +19,11 @@ var (
 	pGetModuleHandleW = kernel32.NewProc("GetModuleHandleW")
 	pExitProcess      = kernel32.NewProc("ExitProcess")
 
-	pGlobalLock   = kernel32.NewProc("GlobalLock")
-	pGlobalUnlock = kernel32.NewProc("GlobalUnlock")
-	pGlobalAlloc  = kernel32.NewProc("GlobalAlloc")
-	pGlobalFree   = kernel32.NewProc("GlobalFree")
+	pGlobalLock    = kernel32.NewProc("GlobalLock")
+	pGlobalUnlock  = kernel32.NewProc("GlobalUnlock")
+	pGlobalAlloc   = kernel32.NewProc("GlobalAlloc")
+	pGlobalFree    = kernel32.NewProc("GlobalFree")
+	pRtlMoveMemory = kernel32.NewProc("RtlMoveMemory")
 )
 
 func GetModuleHandle() HINSTANCE {
@@ -74,11 +75,6 @@ var (
 
 	pSetProcessDpiAwarenessContext = user32.NewProc("SetProcessDpiAwarenessContext")
 )
-
-func OpenClipboard(hwnd HWND) bool {
-	ret, _, _ := pOpenClipboard.Call(uintptr(hwnd))
-	return ret != 0
-}
 
 func CreateWindow(className, windowName string, style uint32, x, y, width, height int32, parent, menu, instance HINSTANCE) (HWND, error) {
 	ret, _, err := pCreateWindowExW.Call(
@@ -378,6 +374,51 @@ func OS_GetClipboardText() string {
 	pCloseClipboard.Call()
 
 	return result
+}
+
+func OS_SetClipboardText(text string) bool {
+	s, err := syscall.UTF16FromString(text)
+	if err != nil {
+		log.Println("[clipboard] Failed to convert string to utf16: %w", err)
+		return false
+	}
+
+	hMem, _, err := pGlobalAlloc.Call(GMEM_MOVEABLE, uintptr(len(s)*int(unsafe.Sizeof(s[0]))))
+	if hMem == 0 {
+		log.Println("[clipboard] Failed to alloc global memory: %w", err)
+		return false
+	}
+
+	p, _, err := pGlobalLock.Call(hMem)
+	if p == 0 {
+		log.Println("[clipboard] Failed to lock global memory: %w", err)
+		return false
+	}
+	defer pGlobalUnlock.Call(hMem)
+
+	pRtlMoveMemory.Call(p, uintptr(unsafe.Pointer(&s[0])), uintptr(len(s)*int(unsafe.Sizeof(s[0]))))
+
+	ret, _, _ := pOpenClipboard.Call(uintptr(NULL))
+	if ret == 0 {
+		log.Println("[clipboard] Failed to open clipboard.")
+		return false
+	}
+	defer pCloseClipboard.Call()
+
+	r, _, err := pEmptyClipboard.Call()
+	if r == 0 {
+		log.Println("[clipboard] Failed to clear clipboard: %w", err)
+		return false
+	}
+
+	v, _, err := pSetClipboardData.Call(CF_UNICODETEXT, hMem)
+	if v == 0 {
+		pGlobalFree.Call(hMem)
+		log.Println("[clipboard] Failed to set text to clipboard: %w", err)
+		return false
+	}
+
+	return true
 }
 
 func PollEvents() {
