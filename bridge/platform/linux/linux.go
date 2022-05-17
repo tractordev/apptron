@@ -108,8 +108,6 @@ func MenuItemNew(id int, title string, disabled bool, checked bool, separator bo
 	    C.gtk_widget_show(result)
 	}
 
-	//result := C.menu_item_new(C.int(id), ctitle, toBool(disabled), toBool(checked), toBool(separator))
-	//return toMenuItemHandle(result)
 	return toMenuItemHandle(result)
 }
 
