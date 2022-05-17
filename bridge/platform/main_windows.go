@@ -7,7 +7,7 @@ import (
 )
 
 var mainfunc = make(chan func())
-var quit = make(chan bool)
+var shouldQuit = false
 
 func Main() {
 	win32.OS_Init()
@@ -19,11 +19,13 @@ loop:
 	for {
 		win32.PollEvents()
 
+		if shouldQuit {
+			break loop
+		}
+
 		select {
 		case fn := <-mainfunc:
 			fn()
-		case <-quit:
-			break loop
 		default: // NOTE(nick): keep running at max speed!
 		}
 
@@ -31,9 +33,11 @@ loop:
 		time.Sleep(1 * time.Millisecond)
 	}
 
+	win32.RemoveAllTrayMenus()
+
 	win32.ExitProcess(0)
 }
 
 func Terminate() {
-	quit <- true
+	shouldQuit = true
 }

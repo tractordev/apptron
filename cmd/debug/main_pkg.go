@@ -17,6 +17,8 @@ import (
 	"tractor.dev/apptron/bridge/platform"
 )
 
+const QUIT_ID = 1
+
 func init() {
 	runtime.LockOSThread()
 }
@@ -35,6 +37,11 @@ func main() {
 func run() {
 	event.Listen(struct{}{}, func(e event.Event) error {
 		log.Println(e)
+
+		if e.Type == event.MenuItem && e.MenuItem == QUIT_ID {
+			platform.Terminate()
+		}
+
 		return nil
 	})
 
@@ -91,7 +98,7 @@ func run() {
 			},
 		},
 		{
-			ID:          2,
+			ID:          QUIT_ID,
 			Title:       "Quit",
 			Accelerator: "Command+T",
 		},

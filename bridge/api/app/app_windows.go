@@ -37,7 +37,8 @@ func NewIndicator(icon []byte, items []menu.Item) {
 			MenuItem: int(id),
 		})
 	}
-	win32.SetTrayMenu(menu.HMENU, icon, onClick)
+
+	win32.NewTrayMenu(menu.HMENU, icon, onClick)
 }
 
 func Run(options Options) error {

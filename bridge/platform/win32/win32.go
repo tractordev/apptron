@@ -516,7 +516,7 @@ func trayWindowCallback(hwnd HWND, message uint32, wParam WPARAM, lParam LPARAM)
 	return 0
 }
 
-func SetTrayMenu(menu HMENU, icon []byte, callback func(id int32)) bool {
+func NewTrayMenu(menu HMENU, icon []byte, callback func(id int32)) bool {
 	trayClassName := "APPTRON_TRAY_WINDOW_CLASS"
 
 	if !didInitTrayWindowClass {
@@ -574,6 +574,14 @@ func SetTrayMenu(menu HMENU, icon []byte, callback func(id int32)) bool {
 	trays = append(trays, tray)
 
 	return true
+}
+
+func RemoveAllTrayMenus() {
+	for _, it := range trays {
+		Shell_NotifyIconW(NIM_DELETE, &it.iconData)
+	}
+
+	trays = make([]Win32_Tray, 0)
 }
 
 func testWindowCallback(hwnd HWND, message uint32, wParam WPARAM, lParam LPARAM) LRESULT {
