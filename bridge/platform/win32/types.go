@@ -167,6 +167,18 @@ const (
 	GMEM_MOVEABLE = 0x0002
 )
 
+const (
+	MB_OK       = 0x00000000
+	MB_OKCANCEL = 0x00000001
+	MB_YESNO    = 0x00000004
+
+	MB_ICONWARNING     = 0x00000030
+	MB_ICONINFORMATION = 0x00000040
+	MB_ICONERROR       = 0x00000010
+
+	IDOK = 1
+)
+
 // https://docs.microsoft.com/en-us/windows/win32/api/windef/ns-windef-point
 type POINT struct {
 	X LONG

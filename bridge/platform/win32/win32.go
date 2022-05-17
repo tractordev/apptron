@@ -74,6 +74,8 @@ var (
 	pLookupIconIdFromDirectoryEx = user32.NewProc("LookupIconIdFromDirectoryEx")
 
 	pSetProcessDpiAwarenessContext = user32.NewProc("SetProcessDpiAwarenessContext")
+
+	pMessageBoxW = user32.NewProc("MessageBoxW")
 )
 
 func CreateWindow(className, windowName string, style uint32, x, y, width, height int32, parent, menu, instance HINSTANCE) (HWND, error) {
@@ -265,6 +267,16 @@ func LookupIconIdFromDirectoryEx(bytes *BYTE, icon BOOL, cxDesired int32, cyDesi
 		uintptr(icon),
 		uintptr(cxDesired),
 		uintptr(cyDesired),
+		uintptr(flags),
+	)
+	return int32(result)
+}
+
+func MessageBox(hwnd HWND, text string, caption string, flags UINT) int32 {
+	result, _, _ := pMessageBoxW.Call(
+		uintptr(hwnd),
+		uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(text))),
+		uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(caption))),
 		uintptr(flags),
 	)
 	return int32(result)
