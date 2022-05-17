@@ -4,6 +4,7 @@ package win32
 
 import (
 	"log"
+	"reflect"
 	"syscall"
 	"unsafe"
 )
@@ -17,7 +18,21 @@ var (
 
 	pGetModuleHandleW = kernel32.NewProc("GetModuleHandleW")
 	pExitProcess      = kernel32.NewProc("ExitProcess")
+
+	pGlobalLock   = kernel32.NewProc("GlobalLock")
+	pGlobalUnlock = kernel32.NewProc("GlobalUnlock")
+	pGlobalAlloc  = kernel32.NewProc("GlobalAlloc")
+	pGlobalFree   = kernel32.NewProc("GlobalFree")
 )
+
+func GetModuleHandle() HINSTANCE {
+	ret, _, _ := pGetModuleHandleW.Call(uintptr(0))
+	return HINSTANCE(ret)
+}
+
+func ExitProcess(exitCode UINT) {
+	pExitProcess.Call(uintptr(exitCode))
+}
 
 var (
 	user32 = syscall.NewLazyDLL("user32.dll")
@@ -37,6 +52,15 @@ var (
 	pGetActiveWindow     = user32.NewProc("GetActiveWindow")
 	pSetWindowLongW      = user32.NewProc("SetWindowLongW")
 	pGetWindowLongW      = user32.NewProc("GetWindowLongW")
+	pEnumDisplayMonitors = user32.NewProc("EnumDisplayMonitors")
+	pEnumDisplaySettings = user32.NewProc("EnumDisplaySettingsW")
+	pGetMonitorInfoW     = user32.NewProc("GetMonitorInfoW")
+
+	pOpenClipboard    = user32.NewProc("OpenClipboard")
+	pCloseClipboard   = user32.NewProc("CloseClipboard")
+	pGetClipboardData = user32.NewProc("GetClipboardData")
+	pEmptyClipboard   = user32.NewProc("EmptyClipboard")
+	pSetClipboardData = user32.NewProc("SetClipboardData")
 
 	pCreateMenu       = user32.NewProc("CreateMenu")
 	pCreatePopupMenu  = user32.NewProc("CreatePopupMenu")
@@ -51,25 +75,9 @@ var (
 	pSetProcessDpiAwarenessContext = user32.NewProc("SetProcessDpiAwarenessContext")
 )
 
-var (
-	shell32 = syscall.NewLazyDLL("shell32.dll")
-
-	pShell_NotifyIconW = shell32.NewProc("Shell_NotifyIconW")
-)
-
-var (
-	winmm = syscall.NewLazyDLL("winmm.dll")
-
-	pTimeBeginPeriod = winmm.NewProc("timeBeginPeriod")
-)
-
-func GetModuleHandle() HINSTANCE {
-	ret, _, _ := pGetModuleHandleW.Call(uintptr(0))
-	return HINSTANCE(ret)
-}
-
-func ExitProcess(exitCode UINT) {
-	pExitProcess.Call(uintptr(exitCode))
+func OpenClipboard(hwnd HWND) bool {
+	ret, _, _ := pOpenClipboard.Call(uintptr(hwnd))
+	return ret != 0
 }
 
 func CreateWindow(className, windowName string, style uint32, x, y, width, height int32, parent, menu, instance HINSTANCE) (HWND, error) {
@@ -180,13 +188,27 @@ func GetWindowLongW(hwnd HWND, index int) LONG {
 	return LONG(ret)
 }
 
-func GetCursorPos(pos *POINT) bool {
-	ret, _, _ := pGetCursorPos.Call(uintptr(unsafe.Pointer(pos)))
+func EnumDisplayMonitors(hdc HDC, clip *RECT, enumProc MONITORENUMPROC, data LPARAM) bool {
+	ret, _, _ := pEnumDisplayMonitors.Call(uintptr(hdc), uintptr(unsafe.Pointer(clip)), syscall.NewCallback(enumProc), uintptr(data))
 	return ret != 0
 }
 
-func Shell_NotifyIconW(dwMessage DWORD, nid *NOTIFYICONDATA) bool {
-	ret, _, _ := pShell_NotifyIconW.Call(uintptr(dwMessage), uintptr(unsafe.Pointer(nid)))
+func EnumDisplaySettings(deviceName *uint16, iModeNum DWORD, lpDevMode *DEVMODE) bool {
+	lpDevMode.DmSize = WORD(unsafe.Sizeof(*lpDevMode))
+
+	ret, _, _ := pEnumDisplaySettings.Call(uintptr(unsafe.Pointer(deviceName)), uintptr(iModeNum), uintptr(unsafe.Pointer(lpDevMode)))
+	return ret != 0
+}
+
+func GetMonitorInfo(monitor HMONITOR, info *MONITORINFOEX) bool {
+	info.CbSize = DWORD(unsafe.Sizeof(*info))
+
+	ret, _, _ := pGetMonitorInfoW.Call(uintptr(monitor), uintptr(unsafe.Pointer(info)))
+	return ret != 0
+}
+
+func GetCursorPos(pos *POINT) bool {
+	ret, _, _ := pGetCursorPos.Call(uintptr(unsafe.Pointer(pos)))
 	return ret != 0
 }
 
@@ -252,6 +274,35 @@ func LookupIconIdFromDirectoryEx(bytes *BYTE, icon BOOL, cxDesired int32, cyDesi
 	return int32(result)
 }
 
+var (
+	shell32 = syscall.NewLazyDLL("shell32.dll")
+
+	pShell_NotifyIconW = shell32.NewProc("Shell_NotifyIconW")
+)
+
+func Shell_NotifyIconW(dwMessage DWORD, nid *NOTIFYICONDATA) bool {
+	ret, _, _ := pShell_NotifyIconW.Call(uintptr(dwMessage), uintptr(unsafe.Pointer(nid)))
+	return ret != 0
+}
+
+var (
+	shcore = syscall.NewLazyDLL("shcore.dll")
+
+	// min support Windows 8.1 [desktop apps only]
+	pGetDpiForMonitor = shcore.NewProc("GetDpiForMonitor")
+)
+
+func GetDpiForMonitor(monitor HMONITOR, dpiType uint32 /*MONITOR_DPI_TYPE*/, dpiX *UINT, dpiY *UINT) bool {
+	ret, _, _ := pGetDpiForMonitor.Call(uintptr(monitor), uintptr(dpiType), uintptr(unsafe.Pointer(dpiX)), uintptr(unsafe.Pointer(dpiY)))
+	return ret == 0 /*S_OK*/
+}
+
+var (
+	winmm = syscall.NewLazyDLL("winmm.dll")
+
+	pTimeBeginPeriod = winmm.NewProc("timeBeginPeriod")
+)
+
 //
 // Functions
 //
@@ -281,6 +332,54 @@ func SleepMS(float64 miliseconds) {
 }
 */
 
+func Utf16PtrToSlice(p uintptr) []uint16 {
+	n := 0
+	for ptr := unsafe.Pointer(p); *(*uint16)(ptr) != 0; n++ {
+		ptr = unsafe.Pointer(uintptr(ptr) +
+			unsafe.Sizeof(*((*uint16)(unsafe.Pointer(p)))))
+	}
+
+	var s []uint16
+	h := (*reflect.SliceHeader)(unsafe.Pointer(&s))
+	h.Data = p
+	h.Len = n
+	h.Cap = n
+	return s
+}
+
+func OS_GetClipboardText() string {
+	var result string
+
+	ret, _, _ := pOpenClipboard.Call(uintptr(NULL))
+	if ret == 0 {
+		log.Println("[clipboard] Failed to open clipboard.")
+		return result
+	}
+
+	ret, _, _ = pGetClipboardData.Call(uintptr(CF_UNICODETEXT))
+	handle := HANDLE(ret)
+	if handle == 0 {
+		log.Println("[clipboard] Failed to convert clipboard to string.")
+		pCloseClipboard.Call()
+		return result
+	}
+
+	ret, _, _ = pGlobalLock.Call(uintptr(handle))
+	defer pGlobalUnlock.Call(uintptr(handle))
+
+	if ret == 0 {
+		log.Println("[clipboard] Failed to lock global handle.")
+		pCloseClipboard.Call()
+		return result
+	}
+
+	result = string(syscall.UTF16ToString(Utf16PtrToSlice(ret)))
+
+	pCloseClipboard.Call()
+
+	return result
+}
+
 func PollEvents() {
 	for {
 		msg := MSG{}
@@ -296,6 +395,10 @@ func PollEvents() {
 		TranslateMessage(&msg)
 		DispatchMessage(&msg)
 	}
+}
+
+func (info *MONITORINFOEX) GetDeviceName() string {
+	return syscall.UTF16ToString(info.DeviceName[:])
 }
 
 func RegisterWindowClass(className string, instance HINSTANCE, callback WNDPROC) bool {

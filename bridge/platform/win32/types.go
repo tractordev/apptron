@@ -31,11 +31,15 @@ type HBRUSH HANDLE
 type HINSTANCE HANDLE
 type HMENU HANDLE
 type HBITMAP HANDLE
+type HDC HANDLE
+type HMONITOR HANDLE
 
 type WPARAM UINT_PTR
 type LPARAM LONG_PTR
 type LRESULT LONG_PTR
 type WNDPROC func(hwnd HWND, msg uint32, wparam WPARAM, lparam LPARAM) LRESULT
+
+type MONITORENUMPROC func(unnamedParam1 HMONITOR, unnamedParam2 HDC, unnamedParam3 *RECT, unnamedParam4 LPARAM) uintptr
 
 // https://github.com/AllenDang/w32/blob/ad0a36d80adcd081d5c0dded8e97a009b486d1db/constants.go
 
@@ -147,6 +151,18 @@ const (
 	GWL_USERDATA = (int)(INT_MAX - 21 + 1)
 )
 
+const ENUM_CURRENT_SETTINGS = 0xFFFFFFFF
+
+const CCHDEVICENAME = 32
+const CCHFORMNAME = 32
+
+const USER_DEFAULT_SCREEN_DPI = 96
+
+const (
+	CF_TEXT        = 1
+	CF_UNICODETEXT = 13
+)
+
 // https://docs.microsoft.com/en-us/windows/win32/api/windef/ns-windef-point
 type POINT struct {
 	X LONG
@@ -233,3 +249,61 @@ type MENUITEMINFOW struct {
 }
 
 type MENUITEMINFO MENUITEMINFOW
+
+type MONITORINFO struct {
+	CbSize    DWORD
+	RcMonitor RECT
+	RcWork    RECT
+	DwFlags   DWORD
+}
+
+type MONITORINFOEXW struct {
+	MONITORINFO
+	DeviceName [CCHDEVICENAME]uint16
+}
+
+type MONITORINFOEX MONITORINFOEXW
+
+// http://msdn.microsoft.com/en-us/library/windows/desktop/dd183565.aspx
+type DEVMODE struct {
+	DmDeviceName    [CCHDEVICENAME]uint16
+	DmSpecVersion   WORD
+	DmDriverVersion WORD
+	DmSize          WORD
+	DmDriverExtra   WORD
+	DmFields        DWORD
+
+	// union!
+	DmPosition POINT // 64 bytes
+	/*
+		DmOrientation   int16
+		DmPaperSize     int16
+		DmPaperLength   int16
+		DmPaperWidth    int16
+	*/
+	_DmScale         int16
+	_DmCopies        int16
+	_DmDefaultSource int16
+	_DmPrintQuality  int16
+
+	DmColor            int16
+	DmDuplex           int16
+	DmYResolution      int16
+	DmTTOption         int16
+	DmCollate          int16
+	DmFormName         [CCHFORMNAME]WCHAR
+	DmLogPixels        WORD
+	DmBitsPerPel       DWORD
+	DmPelsWidth        DWORD
+	DmPelsHeight       DWORD
+	DmDisplayFlags     DWORD
+	DmDisplayFrequency DWORD
+	DmICMMethod        DWORD
+	DmICMIntent        DWORD
+	DmMediaType        DWORD
+	DmDitherType       DWORD
+	DmReserved1        DWORD
+	DmReserved2        DWORD
+	DmPanningWidth     DWORD
+	DmPanningHeight    DWORD
+}
