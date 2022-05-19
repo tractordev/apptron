@@ -19,10 +19,11 @@ var (
 	pGetModuleHandleW = kernel32.NewProc("GetModuleHandleW")
 	pExitProcess      = kernel32.NewProc("ExitProcess")
 
-	pGlobalLock   = kernel32.NewProc("GlobalLock")
-	pGlobalUnlock = kernel32.NewProc("GlobalUnlock")
-	pGlobalAlloc  = kernel32.NewProc("GlobalAlloc")
-	pGlobalFree   = kernel32.NewProc("GlobalFree")
+	pGlobalLock    = kernel32.NewProc("GlobalLock")
+	pGlobalUnlock  = kernel32.NewProc("GlobalUnlock")
+	pGlobalAlloc   = kernel32.NewProc("GlobalAlloc")
+	pGlobalFree    = kernel32.NewProc("GlobalFree")
+	pRtlMoveMemory = kernel32.NewProc("RtlMoveMemory")
 )
 
 func GetModuleHandle() HINSTANCE {
@@ -73,12 +74,9 @@ var (
 	pLookupIconIdFromDirectoryEx = user32.NewProc("LookupIconIdFromDirectoryEx")
 
 	pSetProcessDpiAwarenessContext = user32.NewProc("SetProcessDpiAwarenessContext")
-)
 
-func OpenClipboard(hwnd HWND) bool {
-	ret, _, _ := pOpenClipboard.Call(uintptr(hwnd))
-	return ret != 0
-}
+	pMessageBoxW = user32.NewProc("MessageBoxW")
+)
 
 func CreateWindow(className, windowName string, style uint32, x, y, width, height int32, parent, menu, instance HINSTANCE) (HWND, error) {
 	ret, _, err := pCreateWindowExW.Call(
@@ -274,6 +272,16 @@ func LookupIconIdFromDirectoryEx(bytes *BYTE, icon BOOL, cxDesired int32, cyDesi
 	return int32(result)
 }
 
+func MessageBox(hwnd HWND, text string, caption string, flags UINT) int32 {
+	result, _, _ := pMessageBoxW.Call(
+		uintptr(hwnd),
+		uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(text))),
+		uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(caption))),
+		uintptr(flags),
+	)
+	return int32(result)
+}
+
 var (
 	shell32 = syscall.NewLazyDLL("shell32.dll")
 
@@ -378,6 +386,51 @@ func OS_GetClipboardText() string {
 	pCloseClipboard.Call()
 
 	return result
+}
+
+func OS_SetClipboardText(text string) bool {
+	s, err := syscall.UTF16FromString(text)
+	if err != nil {
+		log.Println("[clipboard] Failed to convert string to utf16: %w", err)
+		return false
+	}
+
+	hMem, _, err := pGlobalAlloc.Call(GMEM_MOVEABLE, uintptr(len(s)*int(unsafe.Sizeof(s[0]))))
+	if hMem == 0 {
+		log.Println("[clipboard] Failed to alloc global memory: %w", err)
+		return false
+	}
+
+	p, _, err := pGlobalLock.Call(hMem)
+	if p == 0 {
+		log.Println("[clipboard] Failed to lock global memory: %w", err)
+		return false
+	}
+	defer pGlobalUnlock.Call(hMem)
+
+	pRtlMoveMemory.Call(p, uintptr(unsafe.Pointer(&s[0])), uintptr(len(s)*int(unsafe.Sizeof(s[0]))))
+
+	ret, _, _ := pOpenClipboard.Call(uintptr(NULL))
+	if ret == 0 {
+		log.Println("[clipboard] Failed to open clipboard.")
+		return false
+	}
+	defer pCloseClipboard.Call()
+
+	r, _, err := pEmptyClipboard.Call()
+	if r == 0 {
+		log.Println("[clipboard] Failed to clear clipboard: %w", err)
+		return false
+	}
+
+	v, _, err := pSetClipboardData.Call(CF_UNICODETEXT, hMem)
+	if v == 0 {
+		pGlobalFree.Call(hMem)
+		log.Println("[clipboard] Failed to set text to clipboard: %w", err)
+		return false
+	}
+
+	return true
 }
 
 func PollEvents() {
@@ -516,7 +569,7 @@ func trayWindowCallback(hwnd HWND, message uint32, wParam WPARAM, lParam LPARAM)
 	return 0
 }
 
-func SetTrayMenu(menu HMENU, icon []byte, callback func(id int32)) bool {
+func NewTrayMenu(menu HMENU, icon []byte, callback func(id int32)) bool {
 	trayClassName := "APPTRON_TRAY_WINDOW_CLASS"
 
 	if !didInitTrayWindowClass {
@@ -574,6 +627,14 @@ func SetTrayMenu(menu HMENU, icon []byte, callback func(id int32)) bool {
 	trays = append(trays, tray)
 
 	return true
+}
+
+func RemoveAllTrayMenus() {
+	for _, it := range trays {
+		Shell_NotifyIconW(NIM_DELETE, &it.iconData)
+	}
+
+	trays = make([]Win32_Tray, 0)
 }
 
 func testWindowCallback(hwnd HWND, message uint32, wParam WPARAM, lParam LPARAM) LRESULT {
