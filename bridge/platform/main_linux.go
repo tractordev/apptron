@@ -7,7 +7,7 @@ import (
 )
 
 var mainfunc = make(chan func())
-var quit = make(chan bool)
+var shouldQuit = false
 
 func init() {
 	linux.OS_Init()
@@ -21,11 +21,13 @@ loop:
 	for {
 		linux.PollEvents()
 
+		if shouldQuit {
+			break loop
+		}
+
 		select {
 		case fn := <-mainfunc:
 			fn()
-		case <-quit:
-			break loop
 		default: // NOTE(nick): keep running at max speed!
 		}
 
@@ -36,5 +38,5 @@ loop:
 }
 
 func Terminate() {
-	quit <- true
+	shouldQuit = true
 }
