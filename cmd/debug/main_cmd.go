@@ -8,13 +8,14 @@ import (
 	"log"
 	"os"
 
+	"tractor.dev/apptron"
 	"tractor.dev/apptron/bridge/misc"
 	"tractor.dev/apptron/client"
 )
 
 func main() {
 	os.Setenv("BRIDGECMD", "./apptron")
-	c, err := client.Spawn()
+	c, err := apptron.Spawn()
 	if err != nil {
 		panic(err)
 	}

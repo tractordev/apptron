@@ -18,3 +18,5 @@ type WindowOptions = client.WindowOptions
 type Size = client.Size
 type Position = client.Position
 type Handle = client.Handle
+
+var Spawn = client.Spawn
