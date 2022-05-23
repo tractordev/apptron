@@ -15,7 +15,8 @@ import (
 
 func main() {
 	os.Setenv("BRIDGECMD", "./apptron")
-	c, err := apptron.Spawn()
+	ctx := context.Background()
+	c, err := apptron.Run(ctx, client.AppOptions{})
 	if err != nil {
 		panic(err)
 	}
@@ -23,12 +24,6 @@ func main() {
 
 	c.OnEvent = func(e client.Event) {
 		log.Println(e)
-	}
-
-	ctx := context.Background()
-
-	if err := c.App.Run(ctx, client.AppOptions{}); err != nil {
-		panic(err)
 	}
 
 	if err := c.Shell.RegisterShortcut(ctx, "CMD+S"); err != nil {

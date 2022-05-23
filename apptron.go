@@ -1,6 +1,10 @@
 package apptron
 
-import "tractor.dev/apptron/client"
+import (
+	"context"
+
+	"tractor.dev/apptron/client"
+)
 
 // these aliases are experimental
 // and may disappear
@@ -19,4 +23,10 @@ type Size = client.Size
 type Position = client.Position
 type Handle = client.Handle
 
-var Spawn = client.Spawn
+func Run(ctx context.Context, opts AppOptions) (*Client, error) {
+	client, err := client.Spawn()
+	if err != nil {
+		return nil, err
+	}
+	return client, client.App.Run(ctx, opts)
+}
