@@ -24,8 +24,9 @@ var HelpFuncs = template.FuncMap{
 
 // HelpTemplate is a template used to generate help.
 var HelpTemplate = `Usage:{{if .Runnable}}
-{{.UseLine}}{{end}}{{if .HasSubCommands}}
-{{.CommandPath}} [command]{{end}}{{if gt (len .Aliases) 0}}
+{{.UseLine}}{{end}}{{if .HasDescription}}
+
+{{.Description}}{{end}}{{if gt (len .Aliases) 0}}
 
 Aliases:
 {{.NameAndAliases}}{{end}}{{if .HasExample}}
@@ -34,7 +35,7 @@ Examples:
 {{.Example}}{{end}}{{if .HasSubCommands}}
 
 Available Commands:{{range .Commands}}{{if (or .Available (eq .Name "help"))}}
-{{padRight .Name .NamePadding }} {{.Short}}{{end}}{{end}}{{end}}{{if .HasFlags}}
+  {{padRight .Name .NamePadding }} {{.Short}}{{end}}{{end}}{{end}}{{if .HasFlags}}
 
 Flags:
 {{.FlagUsages | trimRight }}{{end}}{{if .HasSubCommands}}
@@ -56,6 +57,17 @@ func (c *CommandHelp) WriteHelp(w io.Writer) error {
 // Runnable determines if the command is itself runnable.
 func (c *CommandHelp) Runnable() bool {
 	return c.Run != nil
+}
+
+func (c *CommandHelp) HasDescription() bool {
+	return c.Short != "" || c.Long != ""
+}
+
+func (c *CommandHelp) Description() string {
+	if c.Long != "" {
+		return c.Long
+	}
+	return c.Short
 }
 
 // Available determines if a command is available as a non-help command (this includes all non hidden commands).

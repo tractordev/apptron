@@ -86,10 +86,14 @@ func (c *Command) CommandPath() string {
 
 // UseLine puts out the full usage for a given command (including parents).
 func (c *Command) UseLine() string {
+	use := c.Usage
+	if use == c.Name() && len(c.commands) > 0 {
+		use = fmt.Sprintf("%s [command]", c.Name())
+	}
 	if c.parent != nil {
-		return c.parent.CommandPath() + " " + c.Usage
+		return c.parent.CommandPath() + " " + use
 	} else {
-		return c.Usage
+		return use
 	}
 }
 

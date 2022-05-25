@@ -38,6 +38,8 @@ func main() {
 	root := &cli.Command{
 		Version: Version,
 		Usage:   "apptron",
+		Long: `Apptron is a tool for scriptable native app functionality and webview
+windows. Running without a subcommand starts the API service over STDIO.`,
 		Run: func(ctx context.Context, args []string) {
 			sess, err := mux.DialIO(os.Stdout, os.Stdin)
 			if err != nil {
@@ -55,7 +57,16 @@ func main() {
 	root.Flags().BoolVar(&flagDebug, "debug", false, "debug mode")
 
 	root.AddCommand(&cli.Command{
+		Usage: "dev",
+		Short: "launch a webview window from HTML",
+		Run: func(ctx context.Context, args []string) {
+			//build.Build()
+		},
+	})
+
+	root.AddCommand(&cli.Command{
 		Usage: "build",
+		Short: "compile webview app from HTML",
 		Run: func(ctx context.Context, args []string) {
 			build.Build()
 		},
@@ -63,6 +74,7 @@ func main() {
 
 	root.AddCommand(&cli.Command{
 		Usage: "clean",
+		Short: "remove webview app build cache files",
 		Run: func(ctx context.Context, args []string) {
 			build.Clean()
 		},
@@ -70,24 +82,44 @@ func main() {
 
 	root.AddCommand(&cli.Command{
 		Usage: "bundle",
+		Short: "build platform application bundle",
 		Run: func(ctx context.Context, args []string) {
 			bundle.Bundle()
 		},
 	})
 
-	app := &cli.Command{Usage: "app"}
+	app := &cli.Command{
+		Usage: "app",
+		Short: "app related API commands",
+	}
 	app.AddCommand(appIndicator())
 	root.AddCommand(app)
 
-	menu := &cli.Command{Usage: "menu"}
+	win := &cli.Command{
+		Usage: "window",
+		Short: "window related API commands",
+	}
+	win.AddCommand(windowLaunch())
+	root.AddCommand(win)
+
+	menu := &cli.Command{
+		Usage: "menu",
+		Short: "menu related API commands",
+	}
 	menu.AddCommand(menuPopup())
 	root.AddCommand(menu)
 
-	system := &cli.Command{Usage: "system"}
+	system := &cli.Command{
+		Usage: "system",
+		Short: "system related API commands",
+	}
 	system.AddCommand(systemDisplays())
 	root.AddCommand(system)
 
-	shell := &cli.Command{Usage: "shell"}
+	shell := &cli.Command{
+		Usage: "shell",
+		Short: "shell related API commands",
+	}
 	shell.AddCommand(shellNotification())
 	shell.AddCommand(shellMessage())
 	shell.AddCommand(shellFilePicker())
@@ -169,6 +201,15 @@ func parseMenuFile(path string) (items []menu.Item, table map[int]string, err er
 	}
 	items = itemStack[0]
 	return
+}
+
+func windowLaunch() *cli.Command {
+	return &cli.Command{
+		Usage: "launch",
+		Run: func(ctx context.Context, args []string) {
+			// TODO
+		},
+	}
 }
 
 func appIndicator() *cli.Command {
