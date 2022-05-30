@@ -25,38 +25,83 @@ func New(options Options) (*Window, error) {
   }
   resource.Retain(win.Handle, win)
 
+
   window := linux.Window_New()
-  win.Window = window
+  window.SetPosition(int(options.Position.X), int(options.Position.Y))
+  window.SetSize(int(options.Size.Width), int(options.Size.Height))
+
+  if options.MinSize.Width != 0 || options.MinSize.Height != 0 {
+    window.SetMinSize(int(options.MinSize.Width), int(options.MinSize.Height))
+  }
+
+  if options.MaxSize.Width != 0 || options.MaxSize.Height != 0 {
+    window.SetMaxSize(int(options.MaxSize.Width), int(options.MaxSize.Height))
+  }
+
+  if options.Center {
+  }
+
+  if options.Frameless {
+  }
+
+  window.SetResizable(options.Resizable)
+  if options.Title != "" {
+    window.SetTitle(options.Title)
+  }
+
+  if options.AlwaysOnTop {
+  }
+
 
   myCallback := func(result string) {
     log.Println(result)
   }
 
   webview := linux.Webview_New()
-  linux.Webview_RegisterCallback(webview, myCallback)
-  linux.Webview_SetSettings(webview)
-  linux.Window_AddWebview(window, webview)
+  webview.RegisterCallback(myCallback)
+  webview.SetSettings()
+  window.AddWebview(webview)
 
-
-  if options.Center {
-    // @Incomplete
+  if options.Transparent {
+    window.SetTransparent(true)
+    webview.SetTransparent(true)
   }
 
-  linux.Window_Show(window)
+  if options.URL != "" {
+    webview.Navigate(options.URL)
+  }
+
+  if options.HTML != "" {
+    webview.SetHtml(options.HTML)
+  }
+
+  if options.Script != "" {
+    webview.AddScript(options.Script)
+  }
+
+  if options.Visible {
+    window.Show()
+  }
 
   win.Window  = window
-  win.Webview = webview
+  //win.Webview = webview
 
   return win, nil
 }
 
 func (w *Window) Destroy() {
+  w.Window.Destroy()
 }
 
 func (w *Window) Focus() {
 }
 
 func (w *Window) SetVisible(visible bool) {
+  if visible {
+    w.Window.Show()
+  } else {
+    w.Window.Hide()
+  }
 }
 
 func (w *Window) IsVisible() bool {
@@ -73,30 +118,34 @@ func (w *Window) SetFullscreen(fullscreen bool) {
 }
 
 func (w *Window) SetSize(size Size) {
+ w.Window.SetSize(int(size.Width), int(size.Height))
 }
 
 func (w *Window) SetMinSize(size Size) {
+  w.Window.SetMinSize(int(size.Width), int(size.Height))
 }
 
 func (w *Window) SetMaxSize(size Size) {
+  w.Window.SetMaxSize(int(size.Width), int(size.Height))
 }
 
 func (w *Window) SetResizable(resizable bool) {
-  linux.Window_SetResizable(w.Window, resizable)
+  w.Window.SetResizable(resizable)
 }
 
 func (w *Window) SetAlwaysOnTop(always bool) {
 }
 
 func (w *Window) SetPosition(position Position) {
+  w.Window.SetPosition(int(position.X), int(position.Y))
 }
 
 func (w *Window) SetTitle(title string) {
-  linux.Window_SetTitle(w.Window, title)
+  w.Window.SetTitle(title)
 }
 
 func (w *Window) GetOuterPosition() Position {
-  pos := linux.Window_GetPosition(w.Window)
+  pos := w.Window.GetPosition()
   return Position{
     X: float64(pos.X),
     Y: float64(pos.Y),
@@ -104,7 +153,7 @@ func (w *Window) GetOuterPosition() Position {
 }
 
 func (w *Window) GetOuterSize() Size {
-  size := linux.Window_GetSize(w.Window)
+  size := w.Window.GetSize()
   return Size{
     Width:  float64(size.Width),
     Height: float64(size.Height),

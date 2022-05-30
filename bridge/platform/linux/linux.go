@@ -64,30 +64,38 @@ func Webview_New() Webview {
 	return result
 }
 
-func Window_AddWebview(window Window, webview Webview) {
+func (window *Window) AddWebview(webview Webview) {
 	C.gtk_container_add(Window_GTK_CONTAINER(window.Handle), Webview_GTK_WIDGET(webview.Handle))
 	C.gtk_widget_grab_focus(Webview_GTK_WIDGET(webview.Handle))
 }
 
-func Window_Show(window Window) {
+func (window *Window) Show() {
     C.gtk_widget_show_all(Window_GTK_WIDGET(window.Handle))
 }
 
-func Window_Hide(window Window) {
+func (window *Window) Hide() {
 	C.gtk_widget_hide(Window_GTK_WIDGET(window.Handle))
 }
 
-func Window_SetMinimized(window Window, minimized bool) {
-	/*
-	if minimized {
-		C.gtk_window_minimize(window.Handle)
-	} else {
-		C.gtk_window_unminimize(window.Handle)
+func (window *Window) Destroy() {
+	if window.Handle != nil {
+		C.gtk_widget_destroy(Window_GTK_WIDGET(window.Handle))
+		window.Handle = nil
 	}
-	*/
 }
 
-func Window_GetSize(window Window) Size {
+func (window *Window) SetTransparent(transparent bool) {
+	C.gtk_window_set_transparent(window.Handle, toCBool(transparent))
+}
+
+func (window *Window) SetTitle(title string) {
+	ctitle := C.CString(title)
+	defer C.free(unsafe.Pointer(ctitle))
+
+	C.gtk_window_set_title(window.Handle, ctitle)
+}
+
+func (window *Window) GetSize() Size {
 	result := Size{}
 
 	width := C.int(0)
@@ -105,7 +113,7 @@ func Window_GetSize(window Window) Size {
 	return result
 }
 
-func Window_GetPosition(window Window) Position {
+func (window *Window) GetPosition() Position {
 	result := Position{}
 
 	x := C.int(0)
@@ -123,11 +131,33 @@ func Window_GetPosition(window Window) Position {
 	return result
 }
 
-func Window_SetResizable(window Window, resizable bool) {
+func (window *Window) SetResizable(resizable bool) {
 	C.gtk_window_set_resizable(window.Handle, toCBool(resizable))
 }
 
-func Webview_RegisterCallback(webview Webview, callback func(result string)) int {
+func (window *Window) SetSize(width int, height int) {
+	C.gtk_window_resize(window.Handle, C.int(width), C.int(height));	
+}
+
+func (window *Window) SetPosition(x int, y int) {
+	C.gtk_window_move(window.Handle, C.int(x), C.int(y))
+}
+
+func (window *Window) SetMinSize(width int, height int) {
+	g := C.GdkGeometry{}
+	g.min_width = C.int(width)
+	g.min_height = C.int(height)
+	C.gtk_window_set_geometry_hints(window.Handle, nil, &g, C.GDK_HINT_MIN_SIZE)
+}
+
+func (window *Window) SetMaxSize(width int, height int) {
+	g := C.GdkGeometry{}
+	g.max_width = C.int(width)
+	g.max_height = C.int(height)
+	C.gtk_window_set_geometry_hints(window.Handle, nil, &g, C.GDK_HINT_MAX_SIZE)
+}
+
+func (webview *Webview) RegisterCallback(callback func(result string)) int {
 	manager := C.webkit_web_view_get_user_content_manager(webview.Handle)
 
 	cevent := C.CString("script-message-received::apptron")
@@ -143,11 +173,11 @@ func Webview_RegisterCallback(webview Webview, callback func(result string)) int
 	return int(index)
 }
 
-func Webview_UnregisterCallback(webview Webview, callback int) {
+func UnregisterCallback(callback int) {
 	unregister(callback)
 }
 
-func Webview_SetSettings(webview Webview) {
+func (webview *Webview) SetSettings() {
 	settings := C.webkit_web_view_get_settings(webview.Handle)
 
 	C.webkit_settings_set_javascript_can_access_clipboard(settings, toCBool(true))
@@ -155,28 +185,28 @@ func Webview_SetSettings(webview Webview) {
     C.webkit_settings_set_enable_developer_extras(settings, toCBool(true))
 }
 
-func Webview_Eval(webview Webview, js string) {
+func (webview *Webview) Eval(js string) {
 	cjs := C.CString(js)
 	defer C.free(unsafe.Pointer(cjs))
 
 	C.webkit_web_view_run_javascript(webview.Handle, cjs, nil, nil, nil)
 }
 
-func Webview_SetHtml(webview Webview, html string) {
+func (webview *Webview) SetHtml(html string) {
 	chtml := C.CString(html)
 	defer C.free(unsafe.Pointer(chtml))
 
 	C.webkit_web_view_load_html(webview.Handle, chtml, nil)
 }
 
-func Webview_Navigate(webview Webview, url string) {
+func (webview *Webview) Navigate(url string) {
 	curl := C.CString(url)
 	defer C.free(unsafe.Pointer(curl))
 
 	C.webkit_web_view_load_uri(webview.Handle, curl)
 }
 
-func Webview_AddScript(webview Webview, js string) {
+func (webview *Webview) AddScript(js string) {
 	manager := C.webkit_web_view_get_user_content_manager(webview.Handle)
 
 	cjs := C.CString(js)
@@ -193,12 +223,14 @@ func Webview_AddScript(webview Webview, js string) {
     C.webkit_user_content_manager_add_script(manager, script)
 }
 
-func Window_SetTitle(window Window, title string) {
-	ctitle := C.CString(title)
-	defer C.free(unsafe.Pointer(ctitle))
-
-	C.gtk_window_set_title(window.Handle, ctitle)
+func (webview *Webview) SetTransparent(transparent bool) {
+	C.gtk_webview_set_transparent(webview.Handle, toCBool(transparent))
 }
+
+
+//
+// Indicator
+//
 
 func NewIndicator(id string, pngIconPath string, menu MenuHandle) IndicatorHandle {
 	cid := C.CString(id)

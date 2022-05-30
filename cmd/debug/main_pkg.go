@@ -118,8 +118,7 @@ func run() {
 
 	options := window.Options{
 		Title: "Demo window",
-		// NOTE(nick): resizing a transparent window on MacOS seems really slow?
-		Transparent: false,
+		Transparent: true,
 		Frameless:   false,
 		Visible:     true,
 		Resizable:   true,
@@ -149,6 +148,8 @@ func run() {
 
 		w1.SetTitle("Hello, Sailor!")
 		fmt.Println("[main] window position", w1.GetOuterPosition())
+
+		w1.SetMinSize(window.Size{Width: 100, Height: 100})
 	})
 
 	platform.Dispatch(func() {
