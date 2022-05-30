@@ -40,6 +40,12 @@ type Position struct {
 	Y int
 }
 
+type WebviewSettings struct {
+	CanAccessClipboard   bool
+	WriteConsoleToStdout bool
+	DeveloperTools       bool
+}
+
 //
 // Exports
 //
@@ -49,7 +55,7 @@ func OS_Init() {
 }
 
 func PollEvents() {
-	C.gtk_main_iteration_do(0)
+	C.gtk_main_iteration_do(0) // 0 = non-blocking
 }
 
 func Window_New() Window {
@@ -93,6 +99,10 @@ func (window *Window) SetTitle(title string) {
 	defer C.free(unsafe.Pointer(ctitle))
 
 	C.gtk_window_set_title(window.Handle, ctitle)
+}
+
+func (window *Window) SetDecorated(decorated bool) {
+	C.gtk_window_set_decorated(window.Handle, toCBool(decorated))
 }
 
 func (window *Window) GetSize() Size {
@@ -157,6 +167,19 @@ func (window *Window) SetMaxSize(width int, height int) {
 	C.gtk_window_set_geometry_hints(window.Handle, nil, &g, C.GDK_HINT_MAX_SIZE)
 }
 
+func (window *Window) SetAlwaysOnTop(always bool) {
+	C.gtk_window_set_keep_above(window.Handle, toCBool(always))
+}
+
+func (window *Window) Focus() {
+	C.gtk_widget_grab_focus(Window_GTK_WIDGET(window.Handle))
+}
+
+func (window *Window) IsVisible() bool {
+	return fromCBool(C.gtk_widget_is_visible(Window_GTK_WIDGET(window.Handle)))
+}
+
+
 func (webview *Webview) RegisterCallback(callback func(result string)) int {
 	manager := C.webkit_web_view_get_user_content_manager(webview.Handle)
 
@@ -177,12 +200,27 @@ func UnregisterCallback(callback int) {
 	unregister(callback)
 }
 
-func (webview *Webview) SetSettings() {
+func (webview *Webview) Destroy() {
+	if webview.Handle != nil {
+		C.gtk_widget_destroy(Webview_GTK_WIDGET(webview.Handle))
+		webview.Handle = nil
+	}
+}
+
+func DefaultWebviewSettings() WebviewSettings {
+	result := WebviewSettings{}
+	result.CanAccessClipboard = true
+	result.WriteConsoleToStdout = true
+	result.DeveloperTools = true
+	return result
+}
+
+func (webview *Webview) SetSettings(config WebviewSettings) {
 	settings := C.webkit_web_view_get_settings(webview.Handle)
 
-	C.webkit_settings_set_javascript_can_access_clipboard(settings, toCBool(true))
-    C.webkit_settings_set_enable_write_console_messages_to_stdout(settings, toCBool(true))
-    C.webkit_settings_set_enable_developer_extras(settings, toCBool(true))
+	C.webkit_settings_set_javascript_can_access_clipboard(settings, toCBool(config.CanAccessClipboard))
+    C.webkit_settings_set_enable_write_console_messages_to_stdout(settings, toCBool(config.WriteConsoleToStdout))
+    C.webkit_settings_set_enable_developer_extras(settings, toCBool(config.DeveloperTools))
 }
 
 func (webview *Webview) Eval(js string) {
@@ -381,6 +419,14 @@ func toCBool(value bool) C.int {
 		return C.int(1)
 	}
 	return C.int(0)
+}
+
+func fromCBool(value C.int) bool {
+	if int(value) == 0 {
+		return false
+	}
+
+	return true
 }
 
 func toMenuHandle(menu *C.struct__GtkWidget) MenuHandle {

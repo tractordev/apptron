@@ -12,9 +12,12 @@ type Window struct {
 
   Window linux.Window
   Webview linux.Webview
+
+  callbackId int
 }
 
 func init() {
+  linux.OS_Init()
 }
 
 func New(options Options) (*Window, error) {
@@ -39,17 +42,21 @@ func New(options Options) (*Window, error) {
   }
 
   if options.Center {
+    // @Incomplete
   }
 
   if options.Frameless {
+    window.SetDecorated(false)
   }
 
   window.SetResizable(options.Resizable)
+
   if options.Title != "" {
     window.SetTitle(options.Title)
   }
 
   if options.AlwaysOnTop {
+    window.SetAlwaysOnTop(true)
   }
 
 
@@ -58,8 +65,10 @@ func New(options Options) (*Window, error) {
   }
 
   webview := linux.Webview_New()
-  webview.RegisterCallback(myCallback)
-  webview.SetSettings()
+  webview.SetSettings(linux.DefaultWebviewSettings())
+  
+  callbackId := webview.RegisterCallback(myCallback)
+
   window.AddWebview(webview)
 
   if options.Transparent {
@@ -84,16 +93,24 @@ func New(options Options) (*Window, error) {
   }
 
   win.Window  = window
-  //win.Webview = webview
+  win.Webview = webview
+  win.callbackId = callbackId
 
   return win, nil
 }
 
 func (w *Window) Destroy() {
+  if w.callbackId != 0 {
+    linux.UnregisterCallback(w.callbackId)
+    w.callbackId = 0
+  }
+
+  w.Webview.Destroy()
   w.Window.Destroy()
 }
 
 func (w *Window) Focus() {
+  w.Window.Focus()
 }
 
 func (w *Window) SetVisible(visible bool) {
@@ -105,16 +122,19 @@ func (w *Window) SetVisible(visible bool) {
 }
 
 func (w *Window) IsVisible() bool {
-  return false
+  return w.Window.IsVisible()
 }
 
 func (w *Window) SetMaximized(maximized bool) {
+  // @Incomplete
 }
 
 func (w *Window) SetMinimized(minimized bool) {
+  // @Incomplete
 }
 
 func (w *Window) SetFullscreen(fullscreen bool) {
+  // @Incomplete
 }
 
 func (w *Window) SetSize(size Size) {
@@ -134,6 +154,7 @@ func (w *Window) SetResizable(resizable bool) {
 }
 
 func (w *Window) SetAlwaysOnTop(always bool) {
+  w.Window.SetAlwaysOnTop(always)
 }
 
 func (w *Window) SetPosition(position Position) {
