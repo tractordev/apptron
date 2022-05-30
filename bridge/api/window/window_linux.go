@@ -30,6 +30,7 @@ func New(options Options) (*Window, error) {
 
 
   window := linux.Window_New()
+
   window.SetPosition(int(options.Position.X), int(options.Position.Y))
   window.SetSize(int(options.Size.Width), int(options.Size.Height))
 
@@ -49,6 +50,14 @@ func New(options Options) (*Window, error) {
     window.SetDecorated(false)
   }
 
+  if options.Fullscreen {
+    window.SetFullscreen(true)
+  }
+
+  if options.Maximized {
+    window.SetMaximized(true)
+  }
+
   window.SetResizable(options.Resizable)
 
   if options.Title != "" {
@@ -57,6 +66,10 @@ func New(options Options) (*Window, error) {
 
   if options.AlwaysOnTop {
     window.SetAlwaysOnTop(true)
+  }
+
+  if len(options.Icon) > 0 {
+    window.SetIconFromBytes(options.Icon)
   }
 
 

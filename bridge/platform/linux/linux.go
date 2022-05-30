@@ -3,6 +3,8 @@
 package linux
 
 import (
+	"log"
+	"os"
 	"sync"
 	"unsafe"
 )
@@ -220,6 +222,41 @@ func (window *Window) Center() {
     	(int(screenWidth) - size.Width) / 2,
     	(int(screenHeight) - size.Height) / 2,
     )
+}
+
+func (window *Window) SetIconFromBytes(icon []byte) bool {
+	//
+	// @Cleanup: GTK doesn't seem to provide a way to load an icon from raw image bytes,
+	// only from _parsed_ image pixels which is not exactly nice API composition
+	//
+	// https://docs.gtk.org/gdk-pixbuf/class.Pixbuf.html
+	//
+	f, err := os.CreateTemp("", "apptron__window_icon-*.png")
+	if err != nil {
+		log.Println("[SetIconFromBytes] Failed to create temporary icon file!")
+		return false
+	}
+
+	_, err = f.Write(icon)
+	if err != nil {
+		log.Println("[SetIconFromBytes] Failed to create write icon bytes!")
+		return false
+	}
+
+	iconPath := f.Name()
+	cpath := C.CString(iconPath)
+	defer C.free(unsafe.Pointer(cpath))
+
+	buffer := C.gdk_pixbuf_new_from_file(cpath, nil)
+
+	if buffer != nil {
+		C.gtk_window_set_icon(window.Handle, buffer)
+		return true
+	} else {
+		log.Println("[SetIconFromBytes] Failed to load PixBuf from file!")
+	}
+
+	return false
 }
 
 

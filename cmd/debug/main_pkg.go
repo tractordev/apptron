@@ -125,6 +125,7 @@ func run() {
 		Position: window.Position{X: 10, Y: 10},
 		Size:   window.Size{Width: 360, Height: 240},
 		Center: true,
+		Icon: iconData,
 		HTML: `
 			<!doctype html>
 			<html>
