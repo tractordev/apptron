@@ -42,7 +42,7 @@ func New(options Options) (*Window, error) {
   }
 
   if options.Center {
-    // @Incomplete
+    window.Center()
   }
 
   if options.Frameless {
@@ -126,15 +126,15 @@ func (w *Window) IsVisible() bool {
 }
 
 func (w *Window) SetMaximized(maximized bool) {
-  // @Incomplete
+  w.Window.SetMaximized(maximized)
 }
 
 func (w *Window) SetMinimized(minimized bool) {
-  // @Incomplete
+  w.Window.SetMinimized(minimized)
 }
 
 func (w *Window) SetFullscreen(fullscreen bool) {
-  // @Incomplete
+  w.Window.SetFullscreen(fullscreen)
 }
 
 func (w *Window) SetSize(size Size) {

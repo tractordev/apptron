@@ -40,7 +40,12 @@ type Position struct {
 	Y int
 }
 
-type WebviewSettings struct {
+//
+// NOTE(nick): there are quiet a lot of these!
+//
+// @see https://webkitgtk.org/reference/webkit2gtk/stable/WebKitSettings.html
+//
+type WebviewSetings struct {
 	CanAccessClipboard   bool
 	WriteConsoleToStdout bool
 	DeveloperTools       bool
@@ -179,6 +184,45 @@ func (window *Window) IsVisible() bool {
 	return fromCBool(C.gtk_widget_is_visible(Window_GTK_WIDGET(window.Handle)))
 }
 
+func (window *Window) SetMinimized(minimized bool) {
+	if minimized {
+		C.gtk_window_iconify(window.Handle)
+	} else {
+		C.gtk_window_deiconify(window.Handle)
+	}
+}
+
+func (window *Window) SetMaximized(maximized bool) {
+	if maximized {
+		C.gtk_window_maximize(window.Handle)
+	} else {
+		C.gtk_window_unmaximize(window.Handle)
+	}
+}
+
+func (window *Window) SetFullscreen(fullscreen bool) {
+	if fullscreen {
+		C.gtk_window_fullscreen(window.Handle)
+	} else {
+		C.gtk_window_unfullscreen(window.Handle)
+	}
+}
+
+func (window *Window) Center() {
+	size := window.GetSize()
+	root := C.gdk_screen_get_root_window(C.gdk_screen_get_default())
+
+	screenWidth := C.int(0)
+	screenHeight := C.int(0)
+    C.gdk_window_get_geometry(root, nil, nil, &screenWidth, &screenHeight)
+
+    window.SetPosition(
+    	(int(screenWidth) - size.Width) / 2,
+    	(int(screenHeight) - size.Height) / 2,
+    )
+}
+
+
 
 func (webview *Webview) RegisterCallback(callback func(result string)) int {
 	manager := C.webkit_web_view_get_user_content_manager(webview.Handle)
@@ -207,15 +251,15 @@ func (webview *Webview) Destroy() {
 	}
 }
 
-func DefaultWebviewSettings() WebviewSettings {
-	result := WebviewSettings{}
+func DefaultWebviewSettings() WebviewSetings {
+	result := WebviewSetings{}
 	result.CanAccessClipboard = true
 	result.WriteConsoleToStdout = true
 	result.DeveloperTools = true
 	return result
 }
 
-func (webview *Webview) SetSettings(config WebviewSettings) {
+func (webview *Webview) SetSettings(config WebviewSetings) {
 	settings := C.webkit_web_view_get_settings(webview.Handle)
 
 	C.webkit_settings_set_javascript_can_access_clipboard(settings, toCBool(config.CanAccessClipboard))
