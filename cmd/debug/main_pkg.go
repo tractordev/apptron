@@ -132,7 +132,7 @@ func run() {
 				<body style="font-family: -apple-system, BlinkMacSystemFont, avenir next, avenir, segoe ui, helvetica neue, helvetica, Ubuntu, roboto, noto, arial, sans-serif; background-color:rgba(87,87,87,0.8);"></body>
 				<script>
 					window.onload = function() {
-						document.body.innerHTML = '<div style="padding: 30px">Transparency Test!<br><br>${navigator.userAgent}</div>';
+						document.body.innerHTML = '<div style="padding: 30px">Transparency Test!<br><br>' + navigator.userAgent + '</div>';
 					};
 				</script>
 			</html>

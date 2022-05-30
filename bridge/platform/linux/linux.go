@@ -16,10 +16,6 @@ import (
 */
 import "C"
 
-type MenuHandle uintptr
-type MenuItemHandle uintptr
-type IndicatorHandle uintptr
-
 type Menu_Callback func(menuId int)
 
 var globalMenuCallback Menu_Callback
@@ -30,6 +26,18 @@ type Window struct {
 
 type Webview struct {
 	Handle *C.struct__WebKitWebView
+}
+
+type Menu struct {
+	Handle *C.struct__GtkMenu
+}
+
+type MenuItem struct {
+	Handle *C.struct__GtkMenuItem
+}
+
+type Indicator struct {
+	Handle *C.struct__AppIndicator
 }
 
 type Size struct {
@@ -351,12 +359,12 @@ func (webview *Webview) SetTransparent(transparent bool) {
 // Indicator
 //
 
-func NewIndicator(id string, pngIconPath string, menu MenuHandle) IndicatorHandle {
+func Indicator_New(id string, pngIconPath string, menu Menu) Indicator {
 	cid := C.CString(id)
 	defer C.free(unsafe.Pointer(cid))
 
-	result := C.app_indicator_new(cid, C.CString(""), C.APP_INDICATOR_CATEGORY_APPLICATION_STATUS)
-	C.app_indicator_set_status(result, C.APP_INDICATOR_STATUS_ACTIVE)
+	handle := C.app_indicator_new(cid, C.CString(""), C.APP_INDICATOR_CATEGORY_APPLICATION_STATUS)
+	C.app_indicator_set_status(handle, C.APP_INDICATOR_STATUS_ACTIVE)
 
 	//app_indicator_set_title(global_app_indicator, title);
 	//app_indicator_set_label(global_app_indicator, title, "");
@@ -365,46 +373,47 @@ func NewIndicator(id string, pngIconPath string, menu MenuHandle) IndicatorHandl
 		cIconPath := C.CString(pngIconPath)
 		defer C.free(unsafe.Pointer(cIconPath))
 
-		C.app_indicator_set_icon_full(result, cIconPath, C.CString(""))
+		C.app_indicator_set_icon_full(handle, cIconPath, C.CString(""))
 	}
 
-	if menu != 0 {
-		C.app_indicator_set_menu(result, (*C.struct__GtkMenu)(unsafe.Pointer(fromMenuHandle(menu))))
+	if menu.Handle != nil {
+		C.app_indicator_set_menu(handle, menu.Handle)
 	}
 
-	return toIndicatorHandle(result)
+	result := Indicator{}
+	result.Handle = handle
+	return result
 }
 
-func MenuNew() MenuHandle {
-	result := C.gtk_menu_new()
-	return toMenuHandle(result)
+func Menu_New() Menu {
+	result := Menu{}
+	result.Handle = Menu_FromWidget(C.gtk_menu_new())
+	return result
 }
 
-func MenuAppendMenuItem(menu MenuHandle, item MenuItemHandle) {
-	menuShell := (*C.struct__GtkMenuShell)(unsafe.Pointer(fromMenuHandle(menu)))
-	C.gtk_menu_shell_append(menuShell, fromMenuItemHandle(item))
+func MenuAppendMenuItem(menu Menu, item MenuItem) {
+	C.gtk_menu_shell_append(Menu_GTK_MENU_SHELL(menu.Handle), MenuItem_GTK_WIDGET(item.Handle))
 }
 
-func MenuItemNew(id int, title string, disabled bool, checked bool, separator bool) MenuItemHandle {
-	var result *C.struct__GtkWidget = nil
+func MenuItem_New(id int, title string, disabled bool, checked bool, separator bool) MenuItem {
+	var widget *C.struct__GtkWidget = nil
 
 	if separator {
-		result = C.gtk_separator_menu_item_new()
-		C.gtk_widget_show(result)
+		widget = C.gtk_separator_menu_item_new()
+		C.gtk_widget_show(widget)
 	} else {
 		ctitle := C.CString(title)
 		defer C.free(unsafe.Pointer(ctitle))
 
 		if checked {
-			result = C.gtk_check_menu_item_new_with_label(ctitle)
+			widget = C.gtk_check_menu_item_new_with_label(ctitle)
 
-			checkMenuItem := (*C.struct__GtkCheckMenuItem)(unsafe.Pointer(result))
-			C.gtk_check_menu_item_set_active(checkMenuItem, toCBool(checked))
+			C.gtk_check_menu_item_set_active(CheckMenuItem_FromWidget(widget), toCBool(checked))
 		} else {
-			result = C.gtk_menu_item_new_with_label(ctitle)
+			widget = C.gtk_menu_item_new_with_label(ctitle)
 		}
 
-		C.gtk_widget_set_sensitive(result, toCBool(!disabled))
+		C.gtk_widget_set_sensitive(widget, toCBool(!disabled))
 
 	    //
 	    // NOTE(nick): accelerators seem to require a window and an accel_group
@@ -424,17 +433,18 @@ func MenuItemNew(id int, title string, disabled bool, checked bool, separator bo
 	    cactivate := C.CString("activate")
 	    defer C.free(unsafe.Pointer(cactivate))
 
-	    C._g_signal_connect(result, cactivate, C.go_menu_callback, C.int(id))
+	    C._g_signal_connect(widget, cactivate, C.go_menu_callback, C.int(id))
 
-	    C.gtk_widget_show(result)
+	    C.gtk_widget_show(widget)
 	}
 
-	return toMenuItemHandle(result)
+	result := MenuItem{}
+	result.Handle = MenuItem_FromWidget(widget)
+	return result
 }
 
-func MenuItemSetSubmenu(parent MenuItemHandle, child MenuHandle) {
-	menuItem := (*C.struct__GtkMenuItem)(unsafe.Pointer(fromMenuItemHandle(parent)))
-	C.gtk_menu_item_set_submenu(menuItem, fromMenuHandle(child));
+func MenuItemSetSubmenu(parent MenuItem, child Menu) {
+	C.gtk_menu_item_set_submenu(parent.Handle, Menu_GTK_WIDGET(child.Handle));
 }
 
 //export go_menu_callback
@@ -510,28 +520,28 @@ func fromCBool(value C.int) bool {
 	return true
 }
 
-func toMenuHandle(menu *C.struct__GtkWidget) MenuHandle {
-	return (MenuHandle)(unsafe.Pointer(menu))
+func Menu_GTK_WIDGET(it *C.struct__GtkMenu) *C.struct__GtkWidget {
+	return (*C.struct__GtkWidget)(unsafe.Pointer(it))
 }
 
-func fromMenuHandle(menu MenuHandle) *C.struct__GtkWidget {
-	return (*C.struct__GtkWidget)(unsafe.Pointer(menu))
+func Menu_FromWidget(it *C.struct__GtkWidget) *C.struct__GtkMenu {
+	return (*C.struct__GtkMenu)(unsafe.Pointer(it))
 }
 
-func toMenuItemHandle(item *C.struct__GtkWidget) MenuItemHandle {
-	return (MenuItemHandle)(unsafe.Pointer(item))
+func Menu_GTK_MENU_SHELL(it *C.struct__GtkMenu) *C.struct__GtkMenuShell {
+	return (*C.struct__GtkMenuShell)(unsafe.Pointer(it))
 }
 
-func fromMenuItemHandle(item MenuItemHandle) *C.struct__GtkWidget {
-	return (*C.struct__GtkWidget)(unsafe.Pointer(item))
+func MenuItem_GTK_WIDGET(it *C.struct__GtkMenuItem) *C.struct__GtkWidget {
+	return (*C.struct__GtkWidget)(unsafe.Pointer(it))
 }
 
-func toIndicatorHandle(indicator *C.struct__AppIndicator) IndicatorHandle {
-	return (IndicatorHandle)(unsafe.Pointer(indicator))
+func MenuItem_FromWidget(it *C.struct__GtkWidget) *C.struct__GtkMenuItem {
+	return (*C.struct__GtkMenuItem)(unsafe.Pointer(it))
 }
 
-func fromIndicatorHandle(indicator IndicatorHandle) *C.struct__AppIndicator {
-	return (*C.struct__AppIndicator)(unsafe.Pointer(indicator))
+func CheckMenuItem_FromWidget(it *C.struct__GtkWidget) *C.struct__GtkCheckMenuItem {
+	return (*C.struct__GtkCheckMenuItem)(unsafe.Pointer(it))
 }
 
 func Window_FromWidget(it *C.struct__GtkWidget) *C.struct__GtkWindow {

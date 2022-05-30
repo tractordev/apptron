@@ -7,7 +7,7 @@ import (
 
 type Menu struct {
   menu
-  linux.MenuHandle
+  Menu linux.Menu
 }
 
 func New(items []Item) *Menu {
@@ -18,7 +18,7 @@ func New(items []Item) *Menu {
     },
   }
 
-  menu.MenuHandle = createMenu(items)
+  menu.Menu = createMenu(items)
 
   return menu
 }
@@ -30,13 +30,13 @@ func (m *Menu) Popup() int {
   return 0
 }
 
-func createMenu(items []Item) linux.MenuHandle {
-  menu := linux.MenuNew()
+func createMenu(items []Item) linux.Menu {
+  menu := linux.Menu_New()
 
-  if menu != 0 {
+  if menu.Handle != nil {
     for _, it := range items {
       // @Incomplete: accelerators
-      item := linux.MenuItemNew(it.ID, it.Title, it.Disabled, it.Selected, it.Separator)
+      item := linux.MenuItem_New(it.ID, it.Title, it.Disabled, it.Selected, it.Separator)
 
       if !it.Disabled && len(it.SubMenu) > 0 {
         submenu := createMenu(it.SubMenu)
