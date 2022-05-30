@@ -4,6 +4,7 @@ package linux
 
 import (
 	"log"
+	"fmt"
 	"os"
 	"sync"
 	"unsafe"
@@ -269,13 +270,13 @@ func (window *Window) SetIconFromBytes(icon []byte) bool {
 
 
 
-func (webview *Webview) RegisterCallback(callback func(result string)) int {
+func (webview *Webview) RegisterCallback(name string, callback func(result string)) int {
 	manager := C.webkit_web_view_get_user_content_manager(webview.Handle)
 
-	cevent := C.CString("script-message-received::apptron")
+	cevent := C.CString(fmt.Sprintf("script-message-received::%s", name))
 	defer C.free(unsafe.Pointer(cevent))
 
-	cexternal := C.CString("apptron")
+	cexternal := C.CString(name)
 	defer C.free(unsafe.Pointer(cexternal))
 
 	index := register(callback)
@@ -286,6 +287,8 @@ func (webview *Webview) RegisterCallback(callback func(result string)) int {
 }
 
 func UnregisterCallback(callback int) {
+	// @Incomplete: remove script handler
+
 	unregister(callback)
 }
 

@@ -72,15 +72,14 @@ func New(options Options) (*Window, error) {
     window.SetIconFromBytes(options.Icon)
   }
 
-
-  myCallback := func(result string) {
-    log.Println(result)
-  }
-
   webview := linux.Webview_New()
   webview.SetSettings(linux.DefaultWebviewSettings())
-  
-  callbackId := webview.RegisterCallback(myCallback)
+
+  myCallback := func(result string) {
+    log.Println("Callback from JavaScript!!", result)
+  }
+  callbackId := webview.RegisterCallback("apptron", myCallback)
+  webview.Eval("webkit.messageHandlers.apptron.postMessage(JSON.stringify({ hello: 42 }));")
 
   window.AddWebview(webview)
 
