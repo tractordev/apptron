@@ -24,6 +24,7 @@ func New(items []Item) *Menu {
 }
 
 func (m *Menu) Destroy() {
+  m.Menu.Destroy()
 }
 
 func (m *Menu) Popup() int {
@@ -40,10 +41,10 @@ func createMenu(items []Item) linux.Menu {
 
       if !it.Disabled && len(it.SubMenu) > 0 {
         submenu := createMenu(it.SubMenu)
-        linux.MenuItemSetSubmenu(item, submenu)
+        item.SetSubmenu(submenu)
       }
 
-      linux.MenuAppendMenuItem(menu, item)
+      menu.AppendItem(item)
     }
   }
 

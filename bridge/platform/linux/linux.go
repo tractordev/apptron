@@ -391,8 +391,11 @@ func Menu_New() Menu {
 	return result
 }
 
-func MenuAppendMenuItem(menu Menu, item MenuItem) {
-	C.gtk_menu_shell_append(Menu_GTK_MENU_SHELL(menu.Handle), MenuItem_GTK_WIDGET(item.Handle))
+func (menu *Menu) Destroy() {
+	if menu.Handle != nil {
+		C.gtk_widget_destroy(Menu_GTK_WIDGET(menu.Handle))
+		menu.Handle = nil
+	}
 }
 
 func MenuItem_New(id int, title string, disabled bool, checked bool, separator bool) MenuItem {
@@ -443,8 +446,12 @@ func MenuItem_New(id int, title string, disabled bool, checked bool, separator b
 	return result
 }
 
-func MenuItemSetSubmenu(parent MenuItem, child Menu) {
-	C.gtk_menu_item_set_submenu(parent.Handle, Menu_GTK_WIDGET(child.Handle));
+func (menu *Menu) AppendItem(item MenuItem) {
+	C.gtk_menu_shell_append(Menu_GTK_MENU_SHELL(menu.Handle), MenuItem_GTK_WIDGET(item.Handle))
+}
+
+func (item *MenuItem) SetSubmenu(child Menu) {
+	C.gtk_menu_item_set_submenu(item.Handle, Menu_GTK_WIDGET(child.Handle));
 }
 
 //export go_menu_callback
