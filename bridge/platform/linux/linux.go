@@ -37,6 +37,10 @@ type Indicator struct {
 	Handle *C.struct__AppIndicator
 }
 
+type Monitor struct {
+	Handle *C.struct__GdkMonitor
+}
+
 type Size struct {
 	Width  int
 	Height int
@@ -45,6 +49,11 @@ type Size struct {
 type Position struct {
 	X int
 	Y int
+}
+
+type Rectangle struct {
+	Position Position
+	Size     Size
 }
 
 type EventType int
@@ -449,6 +458,64 @@ func (webview *Webview) AddScript(js string) {
 
 func (webview *Webview) SetTransparent(transparent bool) {
 	C.gtk_webview_set_transparent(webview.Handle, toCBool(transparent))
+}
+
+// https://docs.gtk.org/gdk3/class.Monitor.html
+
+func Monitors() []Monitor {
+	// @Incomplete: Should this be gdk_display_manager_list_displays instead?
+	/*
+		displays := C.gdk_display_manager_list_displays(C.gdk_display_manager_get())
+		C.g_slist_free(displays)
+	*/
+
+	display := C.gdk_display_get_default()
+	if display == nil {
+		return make([]Monitor, 0)
+	}
+
+	n := int(C.gdk_display_get_n_monitors(display))
+
+	result := make([]Monitor, n)
+
+	for i := 0; i < n; i++ {
+		monitor := C.gdk_display_get_monitor(display, C.int(i))
+
+		result[i] = Monitor{
+			Handle: monitor,
+		}
+	}
+
+	return result
+}
+
+func (monitor *Monitor) Geometry() Rectangle {
+	rect := C.GdkRectangle{}
+	C.gdk_monitor_get_geometry(monitor.Handle, &rect)
+
+	return Rectangle{
+		Position: Position{X: int(rect.x), Y: int(rect.y)},
+		Size:     Size{Width: int(rect.width), Height: int(rect.height)},
+	}
+}
+
+func (monitor *Monitor) ScaleFactor() int {
+	return int(C.gdk_monitor_get_scale_factor(monitor.Handle))
+}
+
+func (monitor *Monitor) Name() string {
+	manufacturer := C.GoString(C.gdk_monitor_get_manufacturer(monitor.Handle))
+	model := C.GoString(C.gdk_monitor_get_model(monitor.Handle))
+	return manufacturer + " " + model
+}
+
+func (monitor *Monitor) RefreshRate() int {
+	// NOTE(nick): in milli-Hertz (60Hz = 60000)
+	return int(C.gdk_monitor_get_refresh_rate(monitor.Handle)) / 1000
+}
+
+func (monitor *Monitor) IsPrimary() bool {
+	return fromCBool(C.gdk_monitor_is_primary(monitor.Handle))
 }
 
 //
