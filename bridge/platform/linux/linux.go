@@ -604,6 +604,25 @@ func go_webview_callback(manager *C.struct__WebKitUserContentManager, result *C.
 	C.g_free((C.gpointer)(unsafe.Pointer(cstr)))
 }
 
+func OS_GetClipboardText() string {
+	clipboard := C.gtk_clipboard_get(C.GDK_SELECTION_CLIPBOARD)
+	text := C.gtk_clipboard_wait_for_text(clipboard)
+
+	return C.GoString(text)
+}
+
+func OS_SetClipboardText(text string) bool {
+	ctext := C.CString(text)
+	defer C.free(unsafe.Pointer(ctext))
+
+	clipboard := C.gtk_clipboard_get(C.GDK_SELECTION_CLIPBOARD)
+
+	C.gtk_clipboard_set_text(clipboard, ctext, -1)
+
+	// @Incomplete: is there a way to check if set_text succeeded?
+	return true
+}
+
 //
 // Helpers
 //

@@ -1,5 +1,7 @@
 package shell
 
+import "tractor.dev/apptron/bridge/platform/linux"
+
 func ShowNotification(n Notification) {
 }
 
@@ -12,9 +14,9 @@ func ShowFilePicker(fd FileDialog) []string {
 }
 
 func ReadClipboard() string {
-  return ""
+  return linux.OS_GetClipboardText()
 }
 
 func WriteClipboard(text string) bool {
-  return false
+  return linux.OS_SetClipboardText(text)
 }
