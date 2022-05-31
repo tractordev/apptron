@@ -187,6 +187,7 @@ func GetWindowLongW(hwnd HWND, index int) LONG {
 }
 
 func EnumDisplayMonitors(hdc HDC, clip *RECT, enumProc MONITORENUMPROC, data LPARAM) bool {
+	ret, _, _ := pEnumDisplayMonitors.Call(uintptr(hdc), uintptr(unsafe.Pointer(clip)), syscall.NewCallback(enumProc), uintptr(data))
 	return ret != 0
 }
 
