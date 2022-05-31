@@ -37,9 +37,6 @@ type Indicator struct {
 	Handle *C.struct__AppIndicator
 }
 
-// @Cleanup: should we just import the stuff from event & misc or duplicate here?
-// This is kind of a standalone module, so maybe duplicating makes more sense.
-
 type Size struct {
 	Width  int
 	Height int
