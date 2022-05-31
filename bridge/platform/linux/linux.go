@@ -19,7 +19,6 @@ import "C"
 
 type Window struct {
 	Handle *C.struct__GtkWindow
-	ID     int
 }
 
 type Webview struct {
@@ -64,6 +63,8 @@ const (
 type Event struct {
 	Type     EventType
 	Window   Window
+	UserData int
+
 	Position Position
 	Size     Size
 	FocusIn  bool
@@ -72,7 +73,7 @@ type Event struct {
 type Menu_Callback func(menuId int)
 var globalMenuCallback Menu_Callback
 
-type Event_Callback func()
+type Event_Callback func(event Event)
 var globalEventCallback Event_Callback
 
 //
@@ -108,6 +109,10 @@ func Webview_New() Webview {
 	result := Webview{}
 	result.Handle = Webview_FromWidget(C.webkit_web_view_new())
 	return result
+}
+
+func (window *Window) Pointer() uintptr {
+	return (uintptr)(unsafe.Pointer(window.Handle))
 }
 
 func (window *Window) AddWebview(webview Webview) {
@@ -300,6 +305,8 @@ func go_event_callback(window *C.struct__GtkWindow, event *C.union__GdkEvent, ar
     	eventType := *(*C.int)(unsafe.Pointer(event))
 
     	result := Event{}
+    	result.Window.Handle = window
+    	result.UserData = int(arg)
 
     	if eventType == C.GDK_DELETE {
 	    	result.Type = Delete
@@ -326,17 +333,16 @@ func go_event_callback(window *C.struct__GtkWindow, event *C.union__GdkEvent, ar
     	}
 
     	if result.Type != None {
-    		log.Println(result)
-		    //globalEventCallback()
+		    globalEventCallback(result)
     	}
     }
 }
 
-func (window *Window) BindEventCallback() {
+func (window *Window) BindEventCallback(userData int) {
 	cevent := C.CString("event")
 	defer C.free(unsafe.Pointer(cevent))
 
-	C._g_signal_connect(Window_GTK_WIDGET(window.Handle), cevent, C.go_event_callback, C.int(1))
+	C._g_signal_connect(Window_GTK_WIDGET(window.Handle), cevent, C.go_event_callback, C.int(userData))
 }
 
 func SetGlobalEventCallback(callback Event_Callback) {
@@ -360,7 +366,7 @@ func (webview *Webview) RegisterCallback(name string, callback func(result strin
 	return int(index)
 }
 
-func UnregisterCallback(callback int) {
+func (webview *Webview) UnregisterCallback(callback int) {
 	// @Incomplete: remove script handler
 
 	wc_unregister(callback)

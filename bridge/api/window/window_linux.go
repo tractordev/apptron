@@ -2,9 +2,11 @@ package window
 
 import (
   "log"
+  "sync"
 
   "tractor.dev/apptron/bridge/resource"
   "tractor.dev/apptron/bridge/platform/linux"
+  "tractor.dev/apptron/bridge/event"
 )
 
 type Window struct {
@@ -14,13 +16,94 @@ type Window struct {
   Webview linux.Webview
 
   callbackId int
+
+  prevPosition linux.Position
+  prevSize     linux.Size
+}
+
+var ptrLookup sync.Map
+
+
+func findWindow(win linux.Window) *Window {
+  v, ok := ptrLookup.Load(win.Pointer())
+  if ok {
+    return v.(*Window)
+  }
+  var found *Window
+  resource.Range(func(v interface{}) bool {
+    w, ok := v.(*Window)
+    if !ok {
+      return true
+    }
+    if w.Window.Pointer() == win.Pointer() {
+      found = w
+      ptrLookup.Store(win.Pointer(), w)
+      return false
+    }
+    return true
+  })
+  return found
 }
 
 func init() {
   linux.OS_Init()
 
-  linux.SetGlobalEventCallback(func () {
-    log.Println("hellO!")
+  linux.SetGlobalEventCallback(func (it linux.Event) {
+
+    if win := findWindow(it.Window); win != nil {
+      if it.Type == linux.Delete {
+        event.Emit(event.Event{
+          Type:   event.Destroyed,
+          Window: win.Handle,
+        })
+      }
+
+      if it.Type == linux.Destroy {
+        event.Emit(event.Event{
+          Type:   event.Close,
+          Window: win.Handle,
+        })
+      }
+
+      if it.Type == linux.Configure {
+        if it.Position.X != win.prevPosition.X || it.Position.Y != win.prevPosition.Y {
+          event.Emit(event.Event{
+            Type:     event.Moved,
+            Window:   win.Handle,
+            Position: win.GetOuterPosition(),
+          })
+
+          win.prevPosition = it.Position
+        }
+
+        if it.Size.Width != win.prevSize.Width || it.Size.Height != win.prevSize.Height {
+
+          event.Emit(event.Event{
+            Type:   event.Resized,
+            Window: win.Handle,
+            Size:   win.GetOuterSize(),
+          })
+
+          win.prevSize = it.Size
+
+        }
+      }
+
+      if it.Type == linux.FocusChange {
+        if it.FocusIn {
+          event.Emit(event.Event{
+            Type:   event.Focused,
+            Window: win.Handle,
+          })
+        } else {
+          event.Emit(event.Event{
+            Type:   event.Blurred,
+            Window: win.Handle,
+          })
+        }
+      }
+    }
+
   })
 }
 
@@ -104,7 +187,7 @@ func New(options Options) (*Window, error) {
     webview.AddScript(options.Script)
   }
 
-  window.BindEventCallback()
+  window.BindEventCallback(0)
 
   if options.Visible {
     window.Show()
@@ -119,7 +202,7 @@ func New(options Options) (*Window, error) {
 
 func (w *Window) Destroy() {
   if w.callbackId != 0 {
-    linux.UnregisterCallback(w.callbackId)
+    w.Webview.UnregisterCallback(w.callbackId)
     w.callbackId = 0
   }
 
