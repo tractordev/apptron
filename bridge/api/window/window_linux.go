@@ -77,7 +77,6 @@ func init() {
         }
 
         if it.Size.Width != win.prevSize.Width || it.Size.Height != win.prevSize.Height {
-
           event.Emit(event.Event{
             Type:   event.Resized,
             Window: win.Handle,
@@ -85,7 +84,6 @@ func init() {
           })
 
           win.prevSize = it.Size
-
         }
       }
 
@@ -118,7 +116,6 @@ func New(options Options) (*Window, error) {
 
   window := linux.Window_New()
 
-  window.SetPosition(int(options.Position.X), int(options.Position.Y))
   window.SetSize(int(options.Size.Width), int(options.Size.Height))
 
   if options.MinSize.Width != 0 || options.MinSize.Height != 0 {
@@ -131,6 +128,8 @@ func New(options Options) (*Window, error) {
 
   if options.Center {
     window.Center()
+  } else {
+    window.SetPosition(int(options.Position.X), int(options.Position.Y))
   }
 
   if options.Frameless {
@@ -187,11 +186,11 @@ func New(options Options) (*Window, error) {
     webview.AddScript(options.Script)
   }
 
-  window.BindEventCallback(0)
-
   if options.Visible {
     window.Show()
   }
+
+  window.BindEventCallback(0)
 
   win.Window  = window
   win.Webview = webview
@@ -239,7 +238,7 @@ func (w *Window) SetFullscreen(fullscreen bool) {
 }
 
 func (w *Window) SetSize(size Size) {
- w.Window.SetSize(int(size.Width), int(size.Height))
+  w.Window.SetSize(int(size.Width), int(size.Height))
 }
 
 func (w *Window) SetMinSize(size Size) {

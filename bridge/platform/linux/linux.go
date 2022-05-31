@@ -256,10 +256,12 @@ func (window *Window) Center() {
 	screenHeight := C.int(0)
     C.gdk_window_get_geometry(root, nil, nil, &screenWidth, &screenHeight)
 
-    window.SetPosition(
-    	(int(screenWidth) - size.Width) / 2,
-    	(int(screenHeight) - size.Height) / 2,
-    )
+    nextPos := Position{
+    	X: (int(screenWidth) - size.Width) / 2,
+    	Y: (int(screenHeight) - size.Height) / 2,
+    }
+
+    window.SetPosition(nextPos.X, nextPos.Y)
 }
 
 func (window *Window) SetIconFromBytes(icon []byte) bool {
@@ -298,6 +300,7 @@ func (window *Window) SetIconFromBytes(icon []byte) bool {
 }
 
 // https://docs.gtk.org/gdk3/union.Event.html
+// https://api.gtkd.org/gdk.c.types.GdkEventType.html
 
 //export go_event_callback
 func go_event_callback(window *C.struct__GtkWindow, event *C.union__GdkEvent, arg C.int) {
@@ -325,11 +328,31 @@ func go_event_callback(window *C.struct__GtkWindow, event *C.union__GdkEvent, ar
     		result.Size = Size{Width: int(configure.width), Height: int(configure.height)}
     	}
 
+    	/*
     	if eventType == C.GDK_FOCUS_CHANGE {
     		focusChange := (*C.struct__GdkEventFocus)(unsafe.Pointer(event))
 
     		result.Type = FocusChange
     		result.FocusIn = fromCBool(C.int(focusChange.in))
+    	}
+    	*/
+
+    	//
+    	// NOTE(nick): window state change is similar to focus change,
+    	// but happens less frequently. for example, focus change is triggered
+    	// when dragging the window and when pressing super+tab (even if you navigate back)
+    	// to the same window
+    	//
+    	if eventType == C.GDK_WINDOW_STATE {
+    		windowState := (*C.struct__GdkEventWindowState)(unsafe.Pointer(event))
+
+    		// https://docs.gtk.org/gdk3/flags.WindowState.html
+    		if windowState.changed_mask & C.GDK_WINDOW_STATE_FOCUSED > 0 {
+    			focused := windowState.new_window_state & C.GDK_WINDOW_STATE_FOCUSED > 0
+
+	    		result.Type = FocusChange
+	    		result.FocusIn = focused
+    		}
     	}
 
     	if result.Type != None {
