@@ -4,15 +4,15 @@ import (
   "log"
   "sync"
 
-  "tractor.dev/apptron/bridge/resource"
-  "tractor.dev/apptron/bridge/platform/linux"
   "tractor.dev/apptron/bridge/event"
+  "tractor.dev/apptron/bridge/platform/linux"
+  "tractor.dev/apptron/bridge/resource"
 )
 
 type Window struct {
   window
 
-  Window linux.Window
+  Window  linux.Window
   Webview linux.Webview
 
   callbackId int
@@ -22,7 +22,6 @@ type Window struct {
 }
 
 var ptrLookup sync.Map
-
 
 func findWindow(win linux.Window) *Window {
   v, ok := ptrLookup.Load(win.Pointer())
@@ -48,7 +47,7 @@ func findWindow(win linux.Window) *Window {
 func init() {
   linux.OS_Init()
 
-  linux.SetGlobalEventCallback(func (it linux.Event) {
+  linux.SetGlobalEventCallback(func(it linux.Event) {
 
     if win := findWindow(it.Window); win != nil {
       if it.Type == linux.Delete {
@@ -112,7 +111,6 @@ func New(options Options) (*Window, error) {
     },
   }
   resource.Retain(win.Handle, win)
-
 
   window := linux.Window_New()
 
@@ -192,7 +190,7 @@ func New(options Options) (*Window, error) {
 
   window.BindEventCallback(0)
 
-  win.Window  = window
+  win.Window = window
   win.Webview = webview
   win.callbackId = callbackId
 

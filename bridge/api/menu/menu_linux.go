@@ -1,8 +1,8 @@
 package menu
 
 import (
-  "tractor.dev/apptron/bridge/resource"
   "tractor.dev/apptron/bridge/platform/linux"
+  "tractor.dev/apptron/bridge/resource"
 )
 
 type Menu struct {

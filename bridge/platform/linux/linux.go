@@ -3,8 +3,8 @@
 package linux
 
 import (
-	"log"
 	"fmt"
+	"log"
 	"os"
 	"sync"
 	"unsafe"
@@ -71,9 +71,11 @@ type Event struct {
 }
 
 type Menu_Callback func(menuId int)
+
 var globalMenuCallback Menu_Callback
 
 type Event_Callback func(event Event)
+
 var globalEventCallback Event_Callback
 
 //
@@ -121,7 +123,7 @@ func (window *Window) AddWebview(webview Webview) {
 }
 
 func (window *Window) Show() {
-    C.gtk_widget_show_all(Window_GTK_WIDGET(window.Handle))
+	C.gtk_widget_show_all(Window_GTK_WIDGET(window.Handle))
 }
 
 func (window *Window) Hide() {
@@ -155,12 +157,7 @@ func (window *Window) GetSize() Size {
 
 	width := C.int(0)
 	height := C.int(0)
-
-	C.gtk_window_get_size(
-		window.Handle,
-		(*C.int)(unsafe.Pointer(&width)),
-		(*C.int)(unsafe.Pointer(&height)),
-	)
+	C.gtk_window_get_size(window.Handle, &width, &height)
 
 	result.Width = int(width)
 	result.Height = int(height)
@@ -173,12 +170,7 @@ func (window *Window) GetPosition() Position {
 
 	x := C.int(0)
 	y := C.int(0)
-
-	C.gtk_window_get_position(
-		window.Handle,
-		(*C.int)(unsafe.Pointer(&x)),
-		(*C.int)(unsafe.Pointer(&y)),
-	)
+	C.gtk_window_get_position(window.Handle, &x, &y)
 
 	result.X = int(x)
 	result.Y = int(y)
@@ -191,7 +183,7 @@ func (window *Window) SetResizable(resizable bool) {
 }
 
 func (window *Window) SetSize(width int, height int) {
-	C.gtk_window_resize(window.Handle, C.int(width), C.int(height));	
+	C.gtk_window_resize(window.Handle, C.int(width), C.int(height))
 }
 
 func (window *Window) SetPosition(x int, y int) {
@@ -254,14 +246,14 @@ func (window *Window) Center() {
 
 	screenWidth := C.int(0)
 	screenHeight := C.int(0)
-    C.gdk_window_get_geometry(root, nil, nil, &screenWidth, &screenHeight)
+	C.gdk_window_get_geometry(root, nil, nil, &screenWidth, &screenHeight)
 
-    nextPos := Position{
-    	X: (int(screenWidth) - size.Width) / 2,
-    	Y: (int(screenHeight) - size.Height) / 2,
-    }
+	nextPos := Position{
+		X: (int(screenWidth) - size.Width) / 2,
+		Y: (int(screenHeight) - size.Height) / 2,
+	}
 
-    window.SetPosition(nextPos.X, nextPos.Y)
+	window.SetPosition(nextPos.X, nextPos.Y)
 }
 
 func (window *Window) SetIconFromBytes(icon []byte) bool {
@@ -304,61 +296,61 @@ func (window *Window) SetIconFromBytes(icon []byte) bool {
 
 //export go_event_callback
 func go_event_callback(window *C.struct__GtkWindow, event *C.union__GdkEvent, arg C.int) {
-    if globalEventCallback != nil {
-    	eventType := *(*C.int)(unsafe.Pointer(event))
+	if globalEventCallback != nil {
+		eventType := *(*C.int)(unsafe.Pointer(event))
 
-    	result := Event{}
-    	result.Window.Handle = window
-    	result.UserData = int(arg)
+		result := Event{}
+		result.Window.Handle = window
+		result.UserData = int(arg)
 
-    	if eventType == C.GDK_DELETE {
-	    	result.Type = Delete
-    	}
+		if eventType == C.GDK_DELETE {
+			result.Type = Delete
+		}
 
-    	if eventType == C.GDK_DESTROY {
-    		result.Type = Destroy
-    	}
+		if eventType == C.GDK_DESTROY {
+			result.Type = Destroy
+		}
 
-    	if eventType == C.GDK_CONFIGURE {
-    		// NOTE(nick): Resize and move event
-    		configure := (*C.struct__GdkEventConfigure)(unsafe.Pointer(event))
+		if eventType == C.GDK_CONFIGURE {
+			// NOTE(nick): Resize and move event
+			configure := (*C.struct__GdkEventConfigure)(unsafe.Pointer(event))
 
-    		result.Type = Configure
-    		result.Position = Position{X: int(configure.x), Y: int(configure.y)}
-    		result.Size = Size{Width: int(configure.width), Height: int(configure.height)}
-    	}
+			result.Type = Configure
+			result.Position = Position{X: int(configure.x), Y: int(configure.y)}
+			result.Size = Size{Width: int(configure.width), Height: int(configure.height)}
+		}
 
-    	/*
-    	if eventType == C.GDK_FOCUS_CHANGE {
-    		focusChange := (*C.struct__GdkEventFocus)(unsafe.Pointer(event))
+		/*
+			if eventType == C.GDK_FOCUS_CHANGE {
+				focusChange := (*C.struct__GdkEventFocus)(unsafe.Pointer(event))
 
-    		result.Type = FocusChange
-    		result.FocusIn = fromCBool(C.int(focusChange.in))
-    	}
-    	*/
+				result.Type = FocusChange
+				result.FocusIn = fromCBool(C.int(focusChange.in))
+			}
+		*/
 
-    	//
-    	// NOTE(nick): window state change is similar to focus change,
-    	// but happens less frequently. for example, focus change is triggered
-    	// when dragging the window and when pressing super+tab (even if you navigate back)
-    	// to the same window
-    	//
-    	if eventType == C.GDK_WINDOW_STATE {
-    		windowState := (*C.struct__GdkEventWindowState)(unsafe.Pointer(event))
+		//
+		// NOTE(nick): window state change is similar to focus change,
+		// but happens less frequently. for example, focus change is triggered
+		// when dragging the window and when pressing super+tab (even if you navigate back)
+		// to the same window
+		//
+		if eventType == C.GDK_WINDOW_STATE {
+			windowState := (*C.struct__GdkEventWindowState)(unsafe.Pointer(event))
 
-    		// https://docs.gtk.org/gdk3/flags.WindowState.html
-    		if windowState.changed_mask & C.GDK_WINDOW_STATE_FOCUSED > 0 {
-    			focused := windowState.new_window_state & C.GDK_WINDOW_STATE_FOCUSED > 0
+			// https://docs.gtk.org/gdk3/flags.WindowState.html
+			if windowState.changed_mask&C.GDK_WINDOW_STATE_FOCUSED > 0 {
+				focused := windowState.new_window_state&C.GDK_WINDOW_STATE_FOCUSED > 0
 
-	    		result.Type = FocusChange
-	    		result.FocusIn = focused
-    		}
-    	}
+				result.Type = FocusChange
+				result.FocusIn = focused
+			}
+		}
 
-    	if result.Type != None {
-		    globalEventCallback(result)
-    	}
-    }
+		if result.Type != None {
+			globalEventCallback(result)
+		}
+	}
 }
 
 func (window *Window) BindEventCallback(userData int) {
@@ -371,7 +363,6 @@ func (window *Window) BindEventCallback(userData int) {
 func SetGlobalEventCallback(callback Event_Callback) {
 	globalEventCallback = callback
 }
-
 
 func (webview *Webview) RegisterCallback(name string, callback func(result string)) int {
 	manager := C.webkit_web_view_get_user_content_manager(webview.Handle)
@@ -414,8 +405,8 @@ func (webview *Webview) SetSettings(config WebviewSetings) {
 	settings := C.webkit_web_view_get_settings(webview.Handle)
 
 	C.webkit_settings_set_javascript_can_access_clipboard(settings, toCBool(config.CanAccessClipboard))
-    C.webkit_settings_set_enable_write_console_messages_to_stdout(settings, toCBool(config.WriteConsoleToStdout))
-    C.webkit_settings_set_enable_developer_extras(settings, toCBool(config.DeveloperTools))
+	C.webkit_settings_set_enable_write_console_messages_to_stdout(settings, toCBool(config.WriteConsoleToStdout))
+	C.webkit_settings_set_enable_developer_extras(settings, toCBool(config.DeveloperTools))
 }
 
 func (webview *Webview) Eval(js string) {
@@ -456,13 +447,12 @@ func (webview *Webview) AddScript(js string) {
 		nil,
 	)
 
-    C.webkit_user_content_manager_add_script(manager, script)
+	C.webkit_user_content_manager_add_script(manager, script)
 }
 
 func (webview *Webview) SetTransparent(transparent bool) {
 	C.gtk_webview_set_transparent(webview.Handle, toCBool(transparent))
 }
-
 
 //
 // Indicator
@@ -527,27 +517,27 @@ func MenuItem_New(id int, title string, disabled bool, checked bool, separator b
 
 		C.gtk_widget_set_sensitive(widget, toCBool(!disabled))
 
-	    //
-	    // NOTE(nick): accelerators seem to require a window and an accel_group
-	    // Are they even supported in the AppIndicator?
-	    // As far as I can tell they don't ever show up in the AppIndicator menu...
-	    //
-	    // @see https://github.com/bstpierre/gtk-examples/blob/master/c/accel.c
-	    //
-	    /*
-	    GtkWindow *window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-	    GtkAccelGroup *accel_group = gtk_accel_group_new();
-	    gtk_window_add_accel_group(GTK_WINDOW(window), accel_group);
+		//
+		// NOTE(nick): accelerators seem to require a window and an accel_group
+		// Are they even supported in the AppIndicator?
+		// As far as I can tell they don't ever show up in the AppIndicator menu...
+		//
+		// @see https://github.com/bstpierre/gtk-examples/blob/master/c/accel.c
+		//
+		/*
+		   GtkWindow *window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+		   GtkAccelGroup *accel_group = gtk_accel_group_new();
+		   gtk_window_add_accel_group(GTK_WINDOW(window), accel_group);
 
-	    gtk_widget_add_accelerator(item, "activate", accel_group, GDK_KEY_F7, 0, GTK_ACCEL_VISIBLE);
-	    */
+		   gtk_widget_add_accelerator(item, "activate", accel_group, GDK_KEY_F7, 0, GTK_ACCEL_VISIBLE);
+		*/
 
-	    cactivate := C.CString("activate")
-	    defer C.free(unsafe.Pointer(cactivate))
+		cactivate := C.CString("activate")
+		defer C.free(unsafe.Pointer(cactivate))
 
-	    C._g_signal_connect(widget, cactivate, C.go_menu_callback, C.int(id))
+		C._g_signal_connect(widget, cactivate, C.go_menu_callback, C.int(id))
 
-	    C.gtk_widget_show(widget)
+		C.gtk_widget_show(widget)
 	}
 
 	result := MenuItem{}
@@ -560,14 +550,14 @@ func (menu *Menu) AppendItem(item MenuItem) {
 }
 
 func (item *MenuItem) SetSubmenu(child Menu) {
-	C.gtk_menu_item_set_submenu(item.Handle, Menu_GTK_WIDGET(child.Handle));
+	C.gtk_menu_item_set_submenu(item.Handle, Menu_GTK_WIDGET(child.Handle))
 }
 
 //export go_menu_callback
 func go_menu_callback(item *C.struct__GtkMenuItem, menuId C.int) {
-    if globalMenuCallback != nil {
-    	globalMenuCallback(int(menuId))
-    }
+	if globalMenuCallback != nil {
+		globalMenuCallback(int(menuId))
+	}
 }
 
 func SetGlobalMenuCallback(callback Menu_Callback) {
@@ -585,36 +575,36 @@ var wc_index int
 var wc_fns = make(map[int]Webview_Callback)
 
 func wc_register(fn Webview_Callback) int {
-    wc_mu.Lock()
-    defer wc_mu.Unlock()
-    wc_index++
-    for wc_fns[wc_index] != nil {
-        wc_index++
-    }
-    wc_fns[wc_index] = fn
-    return wc_index
+	wc_mu.Lock()
+	defer wc_mu.Unlock()
+	wc_index++
+	for wc_fns[wc_index] != nil {
+		wc_index++
+	}
+	wc_fns[wc_index] = fn
+	return wc_index
 }
 
 func wc_lookup(i int) Webview_Callback {
-    wc_mu.Lock()
-    defer wc_mu.Unlock()
-    return wc_fns[i]
+	wc_mu.Lock()
+	defer wc_mu.Unlock()
+	return wc_fns[i]
 }
 
 func wc_unregister(i int) {
-    wc_mu.Lock()
-    defer wc_mu.Unlock()
-    delete(wc_fns, i)
+	wc_mu.Lock()
+	defer wc_mu.Unlock()
+	delete(wc_fns, i)
 }
 
 //export go_webview_callback
 func go_webview_callback(manager *C.struct__WebKitUserContentManager, result *C.struct__WebKitJavascriptResult, arg C.int) {
-    fn := wc_lookup(int(arg))
-    cstr := C.string_from_js_result(result)
-    if fn != nil {
-	    fn(C.GoString(cstr))
-    }
-    C.g_free((C.gpointer)(unsafe.Pointer(cstr)))
+	fn := wc_lookup(int(arg))
+	cstr := C.string_from_js_result(result)
+	if fn != nil {
+		fn(C.GoString(cstr))
+	}
+	C.g_free((C.gpointer)(unsafe.Pointer(cstr)))
 }
 
 //
@@ -622,7 +612,7 @@ func go_webview_callback(manager *C.struct__WebKitUserContentManager, result *C.
 //
 
 func toCBool(value bool) C.int {
-	if (value) {
+	if value {
 		return C.int(1)
 	}
 	return C.int(0)
