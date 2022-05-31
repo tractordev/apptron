@@ -17,12 +17,9 @@ import (
 */
 import "C"
 
-type Menu_Callback func(menuId int)
-
-var globalMenuCallback Menu_Callback
-
 type Window struct {
 	Handle *C.struct__GtkWindow
+	ID     int
 }
 
 type Webview struct {
@@ -41,6 +38,9 @@ type Indicator struct {
 	Handle *C.struct__AppIndicator
 }
 
+// @Cleanup: should we just import the stuff from event & misc or duplicate here?
+// This is kind of a standalone module, so maybe duplicating makes more sense.
+
 type Size struct {
 	Width  int
 	Height int
@@ -50,6 +50,30 @@ type Position struct {
 	X int
 	Y int
 }
+
+type EventType int
+
+const (
+	None EventType = iota
+	Delete
+	Destroy
+	Configure
+	FocusChange
+)
+
+type Event struct {
+	Type     EventType
+	Window   Window
+	Position Position
+	Size     Size
+	FocusIn  bool
+}
+
+type Menu_Callback func(menuId int)
+var globalMenuCallback Menu_Callback
+
+type Event_Callback func()
+var globalEventCallback Event_Callback
 
 //
 // NOTE(nick): there are quiet a lot of these!
@@ -268,6 +292,56 @@ func (window *Window) SetIconFromBytes(icon []byte) bool {
 	return false
 }
 
+// https://docs.gtk.org/gdk3/union.Event.html
+
+//export go_event_callback
+func go_event_callback(window *C.struct__GtkWindow, event *C.union__GdkEvent, arg C.int) {
+    if globalEventCallback != nil {
+    	eventType := *(*C.int)(unsafe.Pointer(event))
+
+    	result := Event{}
+
+    	if eventType == C.GDK_DELETE {
+	    	result.Type = Delete
+    	}
+
+    	if eventType == C.GDK_DESTROY {
+    		result.Type = Destroy
+    	}
+
+    	if eventType == C.GDK_CONFIGURE {
+    		// NOTE(nick): Resize and move event
+    		configure := (*C.struct__GdkEventConfigure)(unsafe.Pointer(event))
+
+    		result.Type = Configure
+    		result.Position = Position{X: int(configure.x), Y: int(configure.y)}
+    		result.Size = Size{Width: int(configure.width), Height: int(configure.height)}
+    	}
+
+    	if eventType == C.GDK_FOCUS_CHANGE {
+    		focusChange := (*C.struct__GdkEventFocus)(unsafe.Pointer(event))
+
+    		result.Type = FocusChange
+    		result.FocusIn = fromCBool(C.int(focusChange.in))
+    	}
+
+    	if result.Type != None {
+    		log.Println(result)
+		    //globalEventCallback()
+    	}
+    }
+}
+
+func (window *Window) BindEventCallback() {
+	cevent := C.CString("event")
+	defer C.free(unsafe.Pointer(cevent))
+
+	C._g_signal_connect(Window_GTK_WIDGET(window.Handle), cevent, C.go_event_callback, C.int(1))
+}
+
+func SetGlobalEventCallback(callback Event_Callback) {
+	globalEventCallback = callback
+}
 
 
 func (webview *Webview) RegisterCallback(name string, callback func(result string)) int {
@@ -279,7 +353,7 @@ func (webview *Webview) RegisterCallback(name string, callback func(result strin
 	cexternal := C.CString(name)
 	defer C.free(unsafe.Pointer(cexternal))
 
-	index := register(callback)
+	index := wc_register(callback)
 	C._g_signal_connect(WebKitUserContentManager_GTK_WIDGET(manager), cevent, C.go_webview_callback, C.int(index))
 	C.webkit_user_content_manager_register_script_message_handler(manager, cexternal)
 
@@ -289,7 +363,7 @@ func (webview *Webview) RegisterCallback(name string, callback func(result strin
 func UnregisterCallback(callback int) {
 	// @Incomplete: remove script handler
 
-	unregister(callback)
+	wc_unregister(callback)
 }
 
 func (webview *Webview) Destroy() {
@@ -322,11 +396,14 @@ func (webview *Webview) Eval(js string) {
 	C.webkit_web_view_run_javascript(webview.Handle, cjs, nil, nil, nil)
 }
 
-func (webview *Webview) SetHtml(html string) {
+func (webview *Webview) SetHtml(html string, baseUri string) {
 	chtml := C.CString(html)
 	defer C.free(unsafe.Pointer(chtml))
 
-	C.webkit_web_view_load_html(webview.Handle, chtml, nil)
+	cbaseUri := C.CString(baseUri)
+	defer C.free(unsafe.Pointer(cbaseUri))
+
+	C.webkit_web_view_load_html(webview.Handle, chtml, cbaseUri)
 }
 
 func (webview *Webview) Navigate(url string) {
@@ -472,43 +549,43 @@ func SetGlobalMenuCallback(callback Menu_Callback) {
 // Callbacks
 //
 
+type Webview_Callback func(str string)
+
+var wc_mu sync.Mutex
+var wc_index int
+var wc_fns = make(map[int]Webview_Callback)
+
+func wc_register(fn Webview_Callback) int {
+    wc_mu.Lock()
+    defer wc_mu.Unlock()
+    wc_index++
+    for wc_fns[wc_index] != nil {
+        wc_index++
+    }
+    wc_fns[wc_index] = fn
+    return wc_index
+}
+
+func wc_lookup(i int) Webview_Callback {
+    wc_mu.Lock()
+    defer wc_mu.Unlock()
+    return wc_fns[i]
+}
+
+func wc_unregister(i int) {
+    wc_mu.Lock()
+    defer wc_mu.Unlock()
+    delete(wc_fns, i)
+}
+
 //export go_webview_callback
 func go_webview_callback(manager *C.struct__WebKitUserContentManager, result *C.struct__WebKitJavascriptResult, arg C.int) {
-    fn := lookup(int(arg))
+    fn := wc_lookup(int(arg))
     cstr := C.string_from_js_result(result)
     if fn != nil {
 	    fn(C.GoString(cstr))
     }
     C.g_free((C.gpointer)(unsafe.Pointer(cstr)))
-}
-
-type Webview_Callback func(str string)
-
-var mu sync.Mutex
-var index int
-var fns = make(map[int]Webview_Callback)
-
-func register(fn Webview_Callback) int {
-    mu.Lock()
-    defer mu.Unlock()
-    index++
-    for fns[index] != nil {
-        index++
-    }
-    fns[index] = fn
-    return index
-}
-
-func lookup(i int) Webview_Callback {
-    mu.Lock()
-    defer mu.Unlock()
-    return fns[i]
-}
-
-func unregister(i int) {
-    mu.Lock()
-    defer mu.Unlock()
-    delete(fns, i)
 }
 
 //

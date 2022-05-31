@@ -18,6 +18,10 @@ type Window struct {
 
 func init() {
   linux.OS_Init()
+
+  linux.SetGlobalEventCallback(func () {
+    log.Println("hellO!")
+  })
 }
 
 func New(options Options) (*Window, error) {
@@ -93,12 +97,14 @@ func New(options Options) (*Window, error) {
   }
 
   if options.HTML != "" {
-    webview.SetHtml(options.HTML)
+    webview.SetHtml(options.HTML, "")
   }
 
   if options.Script != "" {
     webview.AddScript(options.Script)
   }
+
+  window.BindEventCallback()
 
   if options.Visible {
     window.Show()
