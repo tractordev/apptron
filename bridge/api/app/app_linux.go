@@ -2,8 +2,8 @@ package app
 
 import (
   "fmt"
-  "os"
   "log"
+  "os"
 
   "tractor.dev/apptron/bridge/api/menu"
   "tractor.dev/apptron/bridge/event"
@@ -54,7 +54,7 @@ func NewIndicator(icon []byte, items []menu.Item) {
   trayIconPath := f.Name()
 
   menu := menu.New(items)
-  linux.NewIndicator(trayId, trayIconPath, menu.MenuHandle)
+  linux.Indicator_New(trayId, trayIconPath, menu.Menu)
 
   linux.SetGlobalMenuCallback(func(menuId int) {
     event.Emit(event.Event{

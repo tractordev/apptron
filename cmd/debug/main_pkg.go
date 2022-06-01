@@ -117,22 +117,22 @@ func run() {
 	})
 
 	options := window.Options{
-		Title: "Demo window",
-		// NOTE(nick): resizing a transparent window on MacOS seems really slow?
-		Transparent: false,
+		Title:       "Demo window",
+		Transparent: true,
 		Frameless:   false,
 		Visible:     true,
 		Resizable:   true,
-		//Position: window.Position{X: 10, Y: 10},
-		Size:   window.Size{Width: 360, Height: 240},
-		Center: true,
+		Position:    window.Position{X: 10, Y: 10},
+		Size:        window.Size{Width: 360, Height: 240},
+		Center:      true,
+		Icon:        iconData,
 		HTML: `
 			<!doctype html>
 			<html>
 				<body style="font-family: -apple-system, BlinkMacSystemFont, avenir next, avenir, segoe ui, helvetica neue, helvetica, Ubuntu, roboto, noto, arial, sans-serif; background-color:rgba(87,87,87,0.8);"></body>
 				<script>
 					window.onload = function() {
-						document.body.innerHTML = '<div style="padding: 30px">Transparency Test!<br><br>${navigator.userAgent}</div>';
+						document.body.innerHTML = '<div style="padding: 30px">Transparency Test!<br><br>' + navigator.userAgent + '</div>';
 					};
 				</script>
 			</html>
@@ -149,6 +149,8 @@ func run() {
 
 		w1.SetTitle("Hello, Sailor!")
 		fmt.Println("[main] window position", w1.GetOuterPosition())
+
+		w1.SetMinSize(window.Size{Width: 100, Height: 100})
 	})
 
 	platform.Dispatch(func() {
