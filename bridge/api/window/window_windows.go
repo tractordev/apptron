@@ -5,8 +5,8 @@ import (
 	"log"
 	"unsafe"
 
-	//"tractor.dev/apptron/bridge/event"
 	"github.com/jchv/go-webview2/pkg/edge"
+	"tractor.dev/apptron/bridge/event"
 	. "tractor.dev/apptron/bridge/platform/win32"
 	"tractor.dev/apptron/bridge/resource"
 )
@@ -26,7 +26,6 @@ func init() {
 }
 
 func windowCallback(hwnd HWND, message uint32, wParam WPARAM, lParam LPARAM) LRESULT {
-	// @Incomplete: emit events
 	// @Incomplete: proper window scaling
 
 	w := (*Window)(unsafe.Pointer(GetWindowLongPtrW(hwnd, GWLP_USERDATA)))
@@ -36,11 +35,44 @@ func windowCallback(hwnd HWND, message uint32, wParam WPARAM, lParam LPARAM) LRE
 	}
 
 	switch message {
+	case WM_CLOSE:
+		event.Emit(event.Event{
+			Type:   event.Close,
+			Window: w.Handle,
+		})
+
+		// NOTE(nick): should this still close the window or should that be up to the user?
+		// Return 0 to "consume" the close event and prevent the window from closing.
+		//return 0
+
+	case WM_DESTROY:
+		event.Emit(event.Event{
+			Type:   event.Destroyed,
+			Window: w.Handle,
+		})
+
+	case WM_SETFOCUS:
+		event.Emit(event.Event{
+			Type:   event.Focused,
+			Window: w.Handle,
+		})
+
+	case WM_KILLFOCUS:
+		event.Emit(event.Event{
+			Type:   event.Blurred,
+			Window: w.Handle,
+		})
 
 	case WM_SIZE:
 		if w.Webview != nil {
 			w.Webview.Resize()
 		}
+
+		event.Emit(event.Event{
+			Type:   event.Resized,
+			Window: w.Handle,
+			Size:   w.GetOuterSize(),
+		})
 
 	case WM_ACTIVATE:
 		if w.Webview != nil {
@@ -49,6 +81,12 @@ func windowCallback(hwnd HWND, message uint32, wParam WPARAM, lParam LPARAM) LRE
 
 	case WM_MOVE, WM_MOVING:
 		w.Webview.NotifyParentWindowPositionChanged()
+
+		event.Emit(event.Event{
+			Type:     event.Moved,
+			Window:   w.Handle,
+			Position: w.GetOuterPosition(),
+		})
 
 	case WM_GETMINMAXINFO:
 		info := (*MINMAXINFO)(unsafe.Pointer(lParam))
@@ -97,7 +135,7 @@ var (
 )
 
 func (w *Window) messageCallback(msg string) {
-	log.Println("Callback!!!", msg)
+	log.Println("Callback from JavaScript!!", msg)
 }
 
 func New(options Options) (*Window, error) {
@@ -180,6 +218,7 @@ func New(options Options) (*Window, error) {
 	win.MaxSize = POINT{X: LONG(options.MaxSize.Width), Y: LONG(options.MaxSize.Height)}
 
 	chromium.MessageCallback = win.messageCallback
+	chromium.Eval("window.chrome.webview.postMessage('Hello, sir!');")
 
 	SetWindowLongPtrW(hwnd, GWLP_USERDATA, unsafe.Pointer(win))
 

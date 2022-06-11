@@ -132,6 +132,8 @@ const (
 	WM_MOVE             = 0x0003
 	WM_SIZE             = 0x0005
 	WM_ACTIVATE         = 0x0006
+	WM_SETFOCUS         = 0x0007
+	WM_KILLFOCUS        = 0x0008
 	WM_CLOSE            = 0x0010
 	WM_QUIT             = 0x0012
 	WM_GETMINMAXINFO    = 0x0024
