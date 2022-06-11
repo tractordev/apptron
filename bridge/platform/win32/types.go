@@ -215,6 +215,8 @@ const (
 // https://docs.microsoft.com/en-us/windows/win32/hidpi/dpi-awareness-context
 const DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2 = (HANDLE)(UINT_MAX - 4 + 1)
 
+const PROCESS_PER_MONITOR_DPI_AWARE = 2
+
 const (
 	GWL_STYLE     = (int)(INT_MAX - 16 + 1)
 	GWL_USERDATA  = (int)(INT_MAX - 21 + 1)

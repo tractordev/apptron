@@ -94,6 +94,7 @@ var (
 	pLookupIconIdFromDirectoryEx = user32.NewProc("LookupIconIdFromDirectoryEx")
 
 	pSetProcessDpiAwarenessContext = user32.NewProc("SetProcessDpiAwarenessContext")
+	pSetProcessDPIAware            = user32.NewProc("SetProcessDPIAware")
 
 	pMessageBoxW = user32.NewProc("MessageBoxW")
 )
@@ -246,7 +247,20 @@ func RegisterClassExW(wcx *WNDCLASSEXW) (uint16, error) {
 }
 
 func SetProcessDpiAwarenessContext(context HANDLE) bool {
+	if pSetProcessDpiAwarenessContext == nil {
+		return false
+	}
+
 	ret, _, _ := pSetProcessDpiAwarenessContext.Call(uintptr(context))
+	return ret != 0
+}
+
+func SetProcessDPIAware() bool {
+	if pSetProcessDPIAware == nil {
+		return false
+	}
+
+	ret, _, _ := pSetProcessDPIAware.Call()
 	return ret != 0
 }
 
@@ -392,11 +406,26 @@ var (
 
 	// min support Windows 8.1 [desktop apps only]
 	pGetDpiForMonitor = shcore.NewProc("GetDpiForMonitor")
+
+	pSetProcessDpiAwareness = shcore.NewProc("pSetProcessDpiAwareness")
 )
 
 func GetDpiForMonitor(monitor HMONITOR, dpiType uint32 /*MONITOR_DPI_TYPE*/, dpiX *UINT, dpiY *UINT) bool {
+	if pGetDpiForMonitor == nil {
+		return false
+	}
+
 	ret, _, _ := pGetDpiForMonitor.Call(uintptr(monitor), uintptr(dpiType), uintptr(unsafe.Pointer(dpiX)), uintptr(unsafe.Pointer(dpiY)))
 	return ret == 0 /*S_OK*/
+}
+
+func SetProcessDpiAwareness(awareness int32) bool {
+	if pSetProcessDpiAwareness == nil {
+		return false
+	}
+
+	ret, _, _ := pSetProcessDpiAwareness.Call(uintptr(awareness))
+	return ret != 0
 }
 
 var (
