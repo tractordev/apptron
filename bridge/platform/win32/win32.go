@@ -52,6 +52,8 @@ var (
 	pGetActiveWindow     = user32.NewProc("GetActiveWindow")
 	pSetWindowLongW      = user32.NewProc("SetWindowLongW")
 	pGetWindowLongW      = user32.NewProc("GetWindowLongW")
+	pGetWindowLongPtrW   = user32.NewProc("GetWindowLongPtrW")
+	pSetWindowLongPtrW   = user32.NewProc("SetWindowLongPtrW")
 	pValidateRect        = user32.NewProc("ValidateRect")
 	pGetClientRect       = user32.NewProc("GetClientRect")
 	pGetForegroundWindow = user32.NewProc("GetForegroundWindow")
@@ -59,6 +61,7 @@ var (
 	pIsWindowVisible     = user32.NewProc("IsWindowVisible")
 	pIsIconic            = user32.NewProc("IsIconic")
 	pGetWindowRect       = user32.NewProc("GetWindowRect")
+	pAdjustWindowRect    = user32.NewProc("AdjustWindowRect")
 
 	pDispatchMessageW    = user32.NewProc("DispatchMessageW")
 	pGetMessageW         = user32.NewProc("GetMessageW")
@@ -92,8 +95,8 @@ var (
 	pMessageBoxW = user32.NewProc("MessageBoxW")
 )
 
-func CreateWindowExW(dwExStyle DWORD, className string, windowName string, style uint32, x, y, width, height int32, parent, menu, instance HINSTANCE, lpParam uintptr) (HWND, error) {
-	ret, _, err := pCreateWindowExW.Call(
+func CreateWindowExW(dwExStyle DWORD, className string, windowName string, style uint32, x, y, width, height int32, parent, menu, instance HINSTANCE, lpParam uintptr) HWND {
+	ret, _, _ := pCreateWindowExW.Call(
 		uintptr(dwExStyle),
 		uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(className))),
 		uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(windowName))),
@@ -107,10 +110,7 @@ func CreateWindowExW(dwExStyle DWORD, className string, windowName string, style
 		uintptr(instance),
 		uintptr(lpParam),
 	)
-	if ret == 0 {
-		return 0, err
-	}
-	return HWND(ret), nil
+	return HWND(ret)
 }
 
 func DefWindowProc(hwnd HWND, msg uint32, wparam WPARAM, lparam LPARAM) LRESULT {
@@ -135,6 +135,16 @@ func MonitorFromWindow(hwnd HWND, dwFlags DWORD) HMONITOR {
 
 func ShowWindow(hwnd HWND, nCmdShow int) bool {
 	ret, _, _ := pShowWindow.Call(uintptr(hwnd), uintptr(nCmdShow))
+	return int32(ret) != 0
+}
+
+func GetWindowPlacement(hwnd HWND, lpwndpl *WINDOWPLACEMENT) bool {
+	ret, _, _ := pGetWindowPlacement.Call(uintptr(hwnd), uintptr(unsafe.Pointer(lpwndpl)))
+	return int32(ret) != 0
+}
+
+func SetWindowPlacement(hwnd HWND, lpwndpl *WINDOWPLACEMENT) bool {
+	ret, _, _ := pSetWindowPlacement.Call(uintptr(hwnd), uintptr(unsafe.Pointer(lpwndpl)))
 	return int32(ret) != 0
 }
 
@@ -170,6 +180,11 @@ func IsIconic(hwnd HWND) bool {
 
 func GetWindowRect(hwnd HWND, lpRect *RECT) bool {
 	ret, _, _ := pGetWindowRect.Call(uintptr(hwnd), uintptr(unsafe.Pointer(lpRect)))
+	return int32(ret) != 0
+}
+
+func AdjustWindowRect(rect *RECT, style UINT, bMenu BOOL) bool {
+	ret, _, _ := pAdjustWindowRect.Call(uintptr(unsafe.Pointer(rect)), uintptr(style), uintptr(bMenu))
 	return int32(ret) != 0
 }
 
@@ -252,6 +267,16 @@ func GetWindowLongW(hwnd HWND, index int) LONG {
 	return LONG(ret)
 }
 
+func GetWindowLongPtrW(hwnd HWND, index int) uintptr {
+	ret, _, _ := pGetWindowLongPtrW.Call(uintptr(hwnd), uintptr(index))
+	return uintptr(ret)
+}
+
+func SetWindowLongPtrW(hwnd HWND, index int, dwNewLong unsafe.Pointer) uintptr {
+	ret, _, _ := pSetWindowLongPtrW.Call(uintptr(hwnd), uintptr(index), uintptr(dwNewLong))
+	return uintptr(ret)
+}
+
 func EnumDisplayMonitors(hdc HDC, clip *RECT, enumProc MONITORENUMPROC, data LPARAM) bool {
 	ret, _, _ := pEnumDisplayMonitors.Call(uintptr(hdc), uintptr(unsafe.Pointer(clip)), syscall.NewCallback(enumProc), uintptr(data))
 	return ret != 0
@@ -264,7 +289,7 @@ func EnumDisplaySettings(deviceName *uint16, iModeNum DWORD, lpDevMode *DEVMODE)
 	return ret != 0
 }
 
-func GetMonitorInfo(monitor HMONITOR, info *MONITORINFOEX) bool {
+func GetMonitorInfoW(monitor HMONITOR, info *MONITORINFOEX) bool {
 	info.CbSize = DWORD(unsafe.Sizeof(*info))
 
 	ret, _, _ := pGetMonitorInfoW.Call(uintptr(monitor), uintptr(unsafe.Pointer(info)))
@@ -679,9 +704,9 @@ func NewTrayMenu(menu HMENU, icon []byte, callback func(id int32)) bool {
 		didInitTrayWindowClass = true
 	}
 
-	hwnd, err := CreateWindowExW(0, trayClassName, "Tray Window", 0, 0, 0, 1, 1, 0, 0, GetModuleHandle(), 0)
-	if err != nil {
-		log.Println("Failed to create tray window!", err)
+	hwnd := CreateWindowExW(0, trayClassName, "Tray Window", 0, 0, 0, 1, 1, 0, 0, GetModuleHandle(), 0)
+	if hwnd == 0 {
+		log.Println("Failed to create tray window!")
 		return false
 	}
 

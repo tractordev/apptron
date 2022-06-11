@@ -3,7 +3,9 @@ package window
 import (
 	"errors"
 	"log"
+	"unsafe"
 
+	//"tractor.dev/apptron/bridge/event"
 	"github.com/jchv/go-webview2/pkg/edge"
 	. "tractor.dev/apptron/bridge/platform/win32"
 	"tractor.dev/apptron/bridge/resource"
@@ -15,19 +17,61 @@ type Window struct {
 	Window  HWND
 	Webview *edge.Chromium
 
-	MinSize Size
-	MaxSize Size
+	MinSize   POINT
+	MaxSize   POINT
+	Placement WINDOWPLACEMENT
 }
 
 func init() {
 }
 
 func windowCallback(hwnd HWND, message uint32, wParam WPARAM, lParam LPARAM) LRESULT {
-	// windowID := GetWindowLongW(hwnd, GWL_USERDATA)
+	// @Incomplete: emit events
+	// @Incomplete: proper window scaling and WM_DPICHANGED handling
+
+	w := (*Window)(unsafe.Pointer(GetWindowLongPtrW(hwnd, GWLP_USERDATA)))
+
+	if w == nil {
+		return DefWindowProc(hwnd, message, wParam, lParam)
+	}
 
 	switch message {
+
 	case WM_SIZE:
-		// chromium.Resize()
+		if w.Webview != nil {
+			w.Webview.Resize()
+		}
+
+		/*
+			case WM_ACTIVATE:
+				if w.Webview != nil {
+					w.Webview.Focus()
+				}
+		*/
+
+		/*
+			case WM_MOVE, WM_MOVING:
+				w.Webview.NotifyParentWindowPositionChanged()
+		*/
+
+		/*
+			case WM_GETMINMAXINFO:
+				info := (*MINMAXINFO)(unsafe.Pointer(lParam))
+
+				// NOTE(nick): we assume "0" max size means the window can be as big as possible
+				if w.MaxSize.X == 0 {
+					w.MaxSize.X = LONG_MAX
+				}
+				if w.MaxSize.Y == 0 {
+					w.MaxSize.Y = LONG_MAX
+				}
+
+				info.PtMinTrackSize = w.MinSize
+				info.PtMaxTrackSize = w.MaxSize
+
+				return 0
+		*/
+
 	default:
 		return DefWindowProc(hwnd, message, wParam, lParam)
 	}
@@ -38,14 +82,16 @@ func windowCallback(hwnd HWND, message uint32, wParam WPARAM, lParam LPARAM) LRE
 var didInitWindowClass = false
 
 var (
-	ErrRegisterWindowClass = errors.New("Failed to register tray window class!")
-	ErrEmbed               = errors.New("Failed to embed chromium browser!")
+	ErrRegisterWindowClass = errors.New("Failed to register tray window class")
+	ErrCreateWindow        = errors.New("Failed to create window")
+	ErrEmbed               = errors.New("Failed to embed chromium browser")
 )
 
 func (w *Window) messageCallback(msg string) {
 	log.Println("Callback!!!", msg)
 }
 
+/*
 func New(options Options) (*Window, error) {
 	win := &Window{
 		window: window{
@@ -64,13 +110,12 @@ func New(options Options) (*Window, error) {
 		didInitWindowClass = true
 	}
 
-	hwnd, err := CreateWindowExW(0, apptronClassName, "Hello Window", WS_OVERLAPPEDWINDOW, 0, 0, 320, 240, 0, 0, GetModuleHandle(), 0)
-	if err != nil {
-		log.Println("Failed to create window!", err)
-		return nil, err
+	hwnd := CreateWindowExW(0, apptronClassName, options.Title, WS_OVERLAPPEDWINDOW, 0, 0, 320, 240, 0, 0, GetModuleHandle(), 0)
+	if hwnd == 0 {
+		return nil, ErrCreateWindow
 	}
 
-	SetWindowLongW(hwnd, GWL_USERDATA, 1)
+	//SetWindowLongW(hwnd, GWL_USERDATA, 1)
 
 	ShowWindow(hwnd, SW_SHOW)
 
@@ -98,6 +143,102 @@ func New(options Options) (*Window, error) {
 
 	return win, nil
 }
+*/
+
+func New(options Options) (*Window, error) {
+	win := &Window{
+		window: window{
+			Handle: resource.NewHandle(),
+		},
+	}
+	resource.Retain(win.Handle, win)
+
+	apptronClassName := "APPTRON_WINDOW_CLASS"
+
+	if !didInitWindowClass {
+		if !RegisterWindowClass(apptronClassName, GetModuleHandle(), windowCallback, CS_HREDRAW|CS_VREDRAW|CS_OWNDC) {
+			return nil, ErrRegisterWindowClass
+		}
+
+		didInitWindowClass = true
+	}
+
+	// @Incomplete: size is in pixels
+	// On MacOS, size is in pixels * window scale
+
+	x := int32(options.Position.X)
+	y := int32(options.Position.Y)
+	w := int32(options.Size.Width)
+	h := int32(options.Size.Height)
+
+	x = 0
+	y = 0
+	w = 640
+	h = 480
+
+	hwnd := CreateWindowExW(0, apptronClassName, options.Title, WS_OVERLAPPEDWINDOW, x, y, w, h, 0, 0, GetModuleHandle(), 0)
+	if hwnd == 0 {
+		return nil, ErrCreateWindow
+	}
+
+	chromium := edge.NewChromium()
+	chromium.MessageCallback = win.messageCallback
+	//chromium.DataPath = options.DataPath
+	chromium.SetPermission(edge.CoreWebView2PermissionKindClipboardRead, edge.CoreWebView2PermissionStateAllow)
+
+	if !chromium.Embed(uintptr(hwnd)) {
+		return nil, ErrEmbed
+	}
+
+	settings, err := chromium.GetSettings()
+	if err == nil {
+		settings.PutAreDefaultContextMenusEnabled(true)
+		settings.PutAreDevToolsEnabled(true)
+	}
+
+	if options.URL != "" {
+		chromium.Navigate(options.URL)
+	}
+
+	if options.HTML != "" {
+		chromium.Navigate("data:text/html, " + options.HTML)
+	}
+
+	if options.Script != "" {
+		chromium.Eval(options.Script)
+	}
+
+	chromium.Resize()
+
+	win.Window = hwnd
+	win.Webview = chromium
+	win.MinSize = POINT{X: LONG(options.MinSize.Width), Y: LONG(options.MinSize.Height)}
+	win.MaxSize = POINT{X: LONG(options.MaxSize.Width), Y: LONG(options.MaxSize.Height)}
+
+	SetWindowLongPtrW(hwnd, GWLP_USERDATA, unsafe.Pointer(win))
+
+	// @Incomplete:
+	if options.Transparent {
+	}
+
+	if options.Fullscreen {
+		win.SetFullscreen(true)
+	}
+
+	if options.Maximized {
+		win.SetMaximized(true)
+	}
+
+	if options.Visible {
+		win.SetVisible(true)
+	}
+
+	if options.AlwaysOnTop {
+		win.SetAlwaysOnTop(true)
+	}
+
+	return win, nil
+}
 
 func (w *Window) Destroy() {
 	w.Webview.Release()
@@ -113,14 +254,15 @@ func (w *Window) Focus() {
 func (w *Window) SetVisible(visible bool) {
 	if visible {
 		ShowWindow(w.Window, SW_SHOW)
+		w.Webview.Show()
 	} else {
 		ShowWindow(w.Window, SW_HIDE)
+		w.Webview.Hide()
 	}
 }
 
 func (w *Window) IsVisible() bool {
 	// @Incomplete: is this the same as NSWindow visible?
-	// Should this also check IsWindowCloaked?
 
 	// NOTE(nick): from the Apple docs for NSWindow visible:
 	// A Boolean value that indicates whether the window is visible onscreen
@@ -145,60 +287,59 @@ func (w *Window) SetMinimized(minimized bool) {
 }
 
 func (w *Window) SetFullscreen(fullscreen bool) {
-	/*
-	  HWND hwnd = window->handle;
+	hwnd := w.Window
 
-	  DWORD style = GetWindowLong(hwnd, GWL_STYLE);
+	style := GetWindowLongW(hwnd, GWL_STYLE)
 
-	  if (fullscreen) {
-	    MONITORINFO monitor_info = {sizeof(monitor_info)};
+	if fullscreen {
+		monitorInfo := MONITORINFOEX{}
+		hmon := MonitorFromWindow(hwnd, MONITOR_DEFAULTTOPRIMARY)
 
-	    if (
-	      GetWindowPlacement(hwnd, &window->placement) &&
-	      GetMonitorInfo(MonitorFromWindow(hwnd, MONITOR_DEFAULTTOPRIMARY), &monitor_info)
-	    ) {
-	      // If the user already had maximized the window, then fullscreening won't work.
-	      // So, force the window to be in restored mode before doing the fullscreen
-	      //SendMessage(hwnd, WM_SYSCOMMAND, SC_RESTORE, 0);
-	      //ShowWindow(hwnd, SW_RESTORE);
+		if GetWindowPlacement(hwnd, &w.Placement) && GetMonitorInfoW(hmon, &monitorInfo) {
 
-	      SetWindowLong(hwnd, GWL_STYLE, style & ~WS_OVERLAPPEDWINDOW);
+			SetWindowLongW(hwnd, GWL_STYLE, style&(^WS_OVERLAPPEDWINDOW))
 
-	      SetWindowPos(
-	        hwnd,
-	        HWND_TOP,
-	        monitor_info.rcMonitor.left,
-	        monitor_info.rcMonitor.top,
-	        monitor_info.rcMonitor.right  - monitor_info.rcMonitor.left,
-	        monitor_info.rcMonitor.bottom - monitor_info.rcMonitor.top,
-	        SWP_NOOWNERZORDER | SWP_FRAMECHANGED
-	      );
-	    }
-	  } else {
-	    SetWindowLong(hwnd, GWL_STYLE, style | WS_OVERLAPPEDWINDOW);
-	    SetWindowPlacement(hwnd, &window->placement);
-	    DWORD flags = SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_FRAMECHANGED;
-	    SetWindowPos(hwnd, 0, 0, 0, 0, 0, flags);
-	  }
-	*/
+			SetWindowPos(
+				hwnd,
+				HWND_TOP,
+				int(monitorInfo.RcMonitor.Left),
+				int(monitorInfo.RcMonitor.Top),
+				int(monitorInfo.RcMonitor.Right-monitorInfo.RcMonitor.Left),
+				int(monitorInfo.RcMonitor.Bottom-monitorInfo.RcMonitor.Top),
+				SWP_NOOWNERZORDER|SWP_FRAMECHANGED,
+			)
+		}
+
+	} else {
+		SetWindowLongW(hwnd, GWL_STYLE, style|WS_OVERLAPPEDWINDOW)
+		SetWindowPlacement(hwnd, &w.Placement)
+
+		// @Robustness: do we need this?
+		var flags UINT = SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_FRAMECHANGED
+		SetWindowPos(hwnd, 0, 0, 0, 0, 0, flags)
+	}
 }
 
 func (w *Window) SetSize(size Size) {
-	SetWindowPos(w.Window, HWND_TOP, int(size.Width), int(size.Height), 0, 0, SWP_NOMOVE)
+	wr := RECT{0, 0, LONG(size.Width), LONG(size.Height)}
+	style := UINT(GetWindowLongW(w.Window, GWL_STYLE))
+	AdjustWindowRect(&wr, style, FALSE)
+
+	SetWindowPos(w.Window, HWND_TOP, int(wr.Right-wr.Left), int(wr.Bottom-wr.Top), 0, 0, SWP_NOMOVE)
 }
 
 func (w *Window) SetMinSize(size Size) {
-	w.MinSize = size
+	w.MinSize = POINT{X: LONG(size.Width), Y: LONG(size.Height)}
 
-	// @Incomplete: is this enough?
+	// @Incomplete: will this trigger a WM_GETMINMAXINFO event?
 	var flags UINT = SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_FRAMECHANGED
 	SetWindowPos(w.Window, 0, 0, 0, 0, 0, flags)
 }
 
 func (w *Window) SetMaxSize(size Size) {
-	w.MaxSize = size
+	w.MaxSize = POINT{X: LONG(size.Width), Y: LONG(size.Height)}
 
-	// @Incomplete: is this enough?
+	// @Incomplete: will this trigger a WM_GETMINMAXINFO event?
 	var flags UINT = SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_FRAMECHANGED
 	SetWindowPos(w.Window, 0, 0, 0, 0, 0, flags)
 }

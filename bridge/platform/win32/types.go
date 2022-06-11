@@ -46,6 +46,8 @@ type MONITORENUMPROC func(unnamedParam1 HMONITOR, unnamedParam2 HDC, unnamedPara
 const UINT_MAX = ^uint(0)
 const INT_MAX = ^int(0)
 
+const LONG_MAX = 2147483647
+
 const (
 	NULL  = 0
 	TRUE  = 1
@@ -125,7 +127,9 @@ const (
 
 const (
 	WM_DESTROY          = 0x0002
+	WM_MOVE             = 0x0003
 	WM_SIZE             = 0x0005
+	WM_ACTIVATE         = 0x0006
 	WM_CLOSE            = 0x0010
 	WM_QUIT             = 0x0012
 	WM_GETMINMAXINFO    = 0x0024
@@ -136,6 +140,7 @@ const (
 	WM_SYSCOMMAND       = 0x0112
 	WM_LBUTTONDOWN      = 0x0201
 	WM_RBUTTONDOWN      = 0x0204
+	WM_MOVING           = 0x0216
 	WM_DPICHANGED       = 0x02E0
 	WM_USER             = 0x0400
 )
@@ -207,8 +212,9 @@ const (
 const DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2 = (HANDLE)(UINT_MAX - 4 + 1)
 
 const (
-	GWL_STYLE    = (int)(INT_MAX - 16 + 1)
-	GWL_USERDATA = (int)(INT_MAX - 21 + 1)
+	GWL_STYLE     = (int)(INT_MAX - 16 + 1)
+	GWL_USERDATA  = (int)(INT_MAX - 21 + 1)
+	GWLP_USERDATA = (int)(INT_MAX - 21 + 1)
 )
 
 const ENUM_CURRENT_SETTINGS = 0xFFFFFFFF
@@ -386,4 +392,22 @@ type DEVMODE struct {
 	DmReserved2        DWORD
 	DmPanningWidth     DWORD
 	DmPanningHeight    DWORD
+}
+
+type WINDOWPLACEMENT struct {
+	Length           UINT
+	Flags            UINT
+	ShowCmd          UINT
+	PtMinPosition    POINT
+	PtMaxPosition    POINT
+	RcNormalPosition RECT
+	RcDevice         RECT
+}
+
+type MINMAXINFO struct {
+	PtReserved     POINT
+	PtMaxSize      POINT
+	PtMaxPosition  POINT
+	PtMinTrackSize POINT
+	PtMaxTrackSize POINT
 }
