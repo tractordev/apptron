@@ -63,6 +63,9 @@ var (
 	pGetWindowRect       = user32.NewProc("GetWindowRect")
 	pAdjustWindowRect    = user32.NewProc("AdjustWindowRect")
 
+	pGetDC     = user32.NewProc("GetDC")
+	pReleaseDC = user32.NewProc("ReleaseDC")
+
 	pDispatchMessageW    = user32.NewProc("DispatchMessageW")
 	pGetMessageW         = user32.NewProc("GetMessageW")
 	pPeekMessageW        = user32.NewProc("PeekMessageW")
@@ -418,6 +421,12 @@ func DwmGetWindowAttribute(hwnd HWND, dwAttribute DWORD, pvAttribute unsafe.Poin
 	return int32(result) == 0 /* S_OK */
 }
 
+var (
+	gdi = syscall.NewLazyDLL("gdi.dll")
+
+	pGetDeviceCaps = dwmapi.NewProc("GetDeviceCaps")
+)
+
 //
 // Helpers
 //
@@ -667,7 +676,7 @@ func trayWindowCallback(hwnd HWND, message uint32, wParam WPARAM, lParam LPARAM)
 	return 0
 }
 
-func RegisterWindowClass(className string, instance HINSTANCE, callback WNDPROC, style UINT) bool {
+func RegisterWindowClass(className string, instance HINSTANCE, callback WNDPROC, style UINT, icon HICON) bool {
 	cursor, err := LoadCursorResource(IDC_ARROW)
 	if err != nil {
 		log.Println(err)
@@ -678,6 +687,7 @@ func RegisterWindowClass(className string, instance HINSTANCE, callback WNDPROC,
 		LpfnWndProc:   syscall.NewCallback(callback),
 		HInstance:     instance,
 		HCursor:       cursor,
+		HIcon:         icon,
 		Style:         style,
 		HbrBackground: COLOR_WINDOW + 1,
 		LpszClassName: syscall.StringToUTF16Ptr(className),
@@ -692,11 +702,27 @@ func RegisterWindowClass(className string, instance HINSTANCE, callback WNDPROC,
 	return true
 }
 
+func CreateIconFromBytes(icon []byte) HICON {
+	iconSize := len(icon)
+	if iconSize > 0 {
+		data := (*BYTE)(unsafe.Pointer(&icon[0]))
+
+		offset := LookupIconIdFromDirectoryEx(data, TRUE, 0, 0, 0x00008000 /*LR_SHARED*/)
+
+		if offset > 0 {
+			data = (*BYTE)(unsafe.Pointer(&icon[offset]))
+			return CreateIconFromResourceEx(data, DWORD(iconSize), TRUE, 0x00030000, 32, 32, 0 /*LR_DEFAULTCOLOR*/)
+		}
+	}
+
+	return HICON(0)
+}
+
 func NewTrayMenu(menu HMENU, icon []byte, callback func(id int32)) bool {
 	trayClassName := "APPTRON_TRAY_WINDOW_CLASS"
 
 	if !didInitTrayWindowClass {
-		if !RegisterWindowClass(trayClassName, GetModuleHandle(), trayWindowCallback, 0) {
+		if !RegisterWindowClass(trayClassName, GetModuleHandle(), trayWindowCallback, 0, 0) {
 			log.Println("Failed to register tray window class!")
 			return false
 		}
@@ -718,18 +744,7 @@ func NewTrayMenu(menu HMENU, icon []byte, callback func(id int32)) bool {
 	trayIconData.UCallbackMessage = Win32TrayIconMessage
 
 	// @Robustness: convert from PNG to ICO
-
-	iconSize := len(icon)
-	if iconSize > 0 {
-		data := (*BYTE)(unsafe.Pointer(&icon[0]))
-
-		offset := LookupIconIdFromDirectoryEx(data, TRUE, 0, 0, 0x00008000 /*LR_SHARED*/)
-
-		if offset > 0 {
-			data = (*BYTE)(unsafe.Pointer(&icon[offset]))
-			trayIconData.HIcon = CreateIconFromResourceEx(data, DWORD(iconSize), TRUE, 0x00030000, 32, 32, 0 /*LR_DEFAULTCOLOR*/)
-		}
-	}
+	trayIconData.HIcon = CreateIconFromBytes(icon)
 
 	// @Robustness: provide a default placeholder icon?
 	//trayIconData.HIcon = LoadIcon(GetModuleHandle(0), MAKEINTRESOURCE(101));

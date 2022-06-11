@@ -27,7 +27,7 @@ func init() {
 
 func windowCallback(hwnd HWND, message uint32, wParam WPARAM, lParam LPARAM) LRESULT {
 	// @Incomplete: emit events
-	// @Incomplete: proper window scaling and WM_DPICHANGED handling
+	// @Incomplete: proper window scaling
 
 	w := (*Window)(unsafe.Pointer(GetWindowLongPtrW(hwnd, GWLP_USERDATA)))
 
@@ -66,6 +66,21 @@ func windowCallback(hwnd HWND, message uint32, wParam WPARAM, lParam LPARAM) LRE
 
 		return 0
 
+	case WM_DPICHANGED:
+		//scalex := HIWORD(wParam) / (float64)(USER_DEFAULT_SCREEN_DPI)
+		//scaley := LOWORD(wParam) / (float64)(USER_DEFAULT_SCREEN_DPI)
+		//window->scale = v2(scalex, scaley);
+
+		// NOTE(nick): adjust the window rect when the DPI scale changes
+		// For example, if you go into the "Make everything bigger" section and change the global pixel scale
+		suggested := (*RECT)(unsafe.Pointer(lParam))
+		SetWindowPos(w.Window, HWND_TOP,
+			int(suggested.Left),
+			int(suggested.Top),
+			int(suggested.Right-suggested.Left),
+			int(suggested.Bottom-suggested.Top),
+			SWP_NOACTIVATE|SWP_NOZORDER)
+
 	default:
 		return DefWindowProc(hwnd, message, wParam, lParam)
 	}
@@ -88,8 +103,14 @@ func (w *Window) messageCallback(msg string) {
 func New(options Options) (*Window, error) {
 	apptronClassName := "APPTRON_WINDOW_CLASS"
 
+	icon := HICON(0)
+	if len(options.Icon) > 0 {
+		icon = CreateIconFromBytes(options.Icon)
+	}
+
 	if !didInitWindowClass {
-		if !RegisterWindowClass(apptronClassName, GetModuleHandle(), windowCallback, CS_HREDRAW|CS_VREDRAW|CS_OWNDC) {
+		// NOTE(nick): setting the icon here sets it for the whole application
+		if !RegisterWindowClass(apptronClassName, GetModuleHandle(), windowCallback, CS_HREDRAW|CS_VREDRAW|CS_OWNDC, icon) {
 			return nil, ErrRegisterWindowClass
 		}
 
@@ -162,10 +183,6 @@ func New(options Options) (*Window, error) {
 
 	SetWindowLongPtrW(hwnd, GWLP_USERDATA, unsafe.Pointer(win))
 
-	// @Incomplete:
-	if len(options.Icon) > 0 {
-	}
-
 	if options.Center {
 		var rect RECT
 		if GetWindowRect(hwnd, &rect) {
@@ -197,12 +214,21 @@ func New(options Options) (*Window, error) {
 		win.SetMaximized(true)
 	}
 
-	if options.Visible {
-		win.SetVisible(true)
-	}
+	/*
+		if icon != 0 {
+			// NOTE(nick): setting the icon here sets it for the specific window
+			//SendMessage(hwnd, WM_SETICON, ICON_SMALL, icon)
+			//SendMessage(hwnd, WM_SETICON, ICON_BIG, icon)
+		}
+	*/
 
 	if options.AlwaysOnTop {
 		win.SetAlwaysOnTop(true)
+	}
+
+	// Finally, present the window and webview.
+	if options.Visible {
+		win.SetVisible(true)
 	}
 
 	return win, nil
@@ -287,13 +313,6 @@ func (w *Window) SetFullscreen(fullscreen bool) {
 	}
 }
 
-func windowSizeForClientSize(style DWORD, size Size) POINT {
-	wr := RECT{0, 0, LONG(size.Width), LONG(size.Height)}
-	AdjustWindowRect(&wr, style, FALSE)
-
-	return POINT{X: (wr.Right - wr.Left), Y: (wr.Bottom - wr.Top)}
-}
-
 func (w *Window) SetSize(size Size) {
 	style := DWORD(GetWindowLongW(w.Window, GWL_STYLE))
 	s := windowSizeForClientSize(style, size)
@@ -367,3 +386,29 @@ func (w *Window) GetOuterSize() Size {
 
 	return result
 }
+
+//
+// Helpers
+//
+
+func windowSizeForClientSize(style DWORD, size Size) POINT {
+	wr := RECT{0, 0, LONG(size.Width), LONG(size.Height)}
+	AdjustWindowRect(&wr, style, FALSE)
+
+	return POINT{X: (wr.Right - wr.Left), Y: (wr.Bottom - wr.Top)}
+}
+
+/*
+func windowGetPixelScale() Size {
+  HDC dc = GetDC(hwnd);
+  int scalex = GetDeviceCaps(dc, LOGPIXELSX);
+  int scaley = GetDeviceCaps(dc, LOGPIXELSY);
+  ReleaseDC(hwnd, dc);
+
+  auto result = Vector2{
+    scalex / (f32)USER_DEFAULT_SCREEN_DPI,
+    scaley / (f32)USER_DEFAULT_SCREEN_DPI,
+  };
+  return result;
+}
+*/
