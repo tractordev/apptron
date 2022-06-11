@@ -42,35 +42,29 @@ func windowCallback(hwnd HWND, message uint32, wParam WPARAM, lParam LPARAM) LRE
 			w.Webview.Resize()
 		}
 
-		/*
-			case WM_ACTIVATE:
-				if w.Webview != nil {
-					w.Webview.Focus()
-				}
-		*/
+	case WM_ACTIVATE:
+		if w.Webview != nil {
+			w.Webview.Focus()
+		}
 
-		/*
-			case WM_MOVE, WM_MOVING:
-				w.Webview.NotifyParentWindowPositionChanged()
-		*/
+	case WM_MOVE, WM_MOVING:
+		w.Webview.NotifyParentWindowPositionChanged()
 
-		/*
-			case WM_GETMINMAXINFO:
-				info := (*MINMAXINFO)(unsafe.Pointer(lParam))
+	case WM_GETMINMAXINFO:
+		info := (*MINMAXINFO)(unsafe.Pointer(lParam))
 
-				// NOTE(nick): we assume "0" max size means the window can be as big as possible
-				if w.MaxSize.X == 0 {
-					w.MaxSize.X = LONG_MAX
-				}
-				if w.MaxSize.Y == 0 {
-					w.MaxSize.Y = LONG_MAX
-				}
+		// NOTE(nick): we assume "0" max size means the window can be as big as possible
+		if w.MaxSize.X == 0 {
+			w.MaxSize.X = LONG_MAX
+		}
+		if w.MaxSize.Y == 0 {
+			w.MaxSize.Y = LONG_MAX
+		}
 
-				info.PtMinTrackSize = w.MinSize
-				info.PtMaxTrackSize = w.MaxSize
+		info.PtMinTrackSize = w.MinSize
+		info.PtMaxTrackSize = w.MaxSize
 
-				return 0
-		*/
+		return 0
 
 	default:
 		return DefWindowProc(hwnd, message, wParam, lParam)
@@ -91,68 +85,7 @@ func (w *Window) messageCallback(msg string) {
 	log.Println("Callback!!!", msg)
 }
 
-/*
 func New(options Options) (*Window, error) {
-	win := &Window{
-		window: window{
-			Handle: resource.NewHandle(),
-		},
-	}
-	resource.Retain(win.Handle, win)
-
-	apptronClassName := "APPTRON_WINDOW_CLASS"
-
-	if !didInitWindowClass {
-		if !RegisterWindowClass(apptronClassName, GetModuleHandle(), windowCallback, CS_HREDRAW|CS_VREDRAW|CS_OWNDC) {
-			return nil, ErrRegisterWindowClass
-		}
-
-		didInitWindowClass = true
-	}
-
-	hwnd := CreateWindowExW(0, apptronClassName, options.Title, WS_OVERLAPPEDWINDOW, 0, 0, 320, 240, 0, 0, GetModuleHandle(), 0)
-	if hwnd == 0 {
-		return nil, ErrCreateWindow
-	}
-
-	//SetWindowLongW(hwnd, GWL_USERDATA, 1)
-
-	ShowWindow(hwnd, SW_SHOW)
-
-	chromium := edge.NewChromium()
-	chromium.MessageCallback = win.messageCallback
-	//chromium.DataPath = options.DataPath
-	chromium.SetPermission(edge.CoreWebView2PermissionKindClipboardRead, edge.CoreWebView2PermissionStateAllow)
-
-	if !chromium.Embed(uintptr(hwnd)) {
-		return nil, ErrEmbed
-	}
-
-	settings, err := chromium.GetSettings()
-	if err == nil {
-		settings.PutAreDefaultContextMenusEnabled(true)
-		settings.PutAreDevToolsEnabled(true)
-	}
-
-	chromium.Navigate("data:text/html, <!doctype html><html><body>Hello, Sailor!</body></html>")
-
-	chromium.Resize()
-
-	win.Window = hwnd
-	win.Webview = chromium
-
-	return win, nil
-}
-*/
-
-func New(options Options) (*Window, error) {
-	win := &Window{
-		window: window{
-			Handle: resource.NewHandle(),
-		},
-	}
-	resource.Retain(win.Handle, win)
-
 	apptronClassName := "APPTRON_WINDOW_CLASS"
 
 	if !didInitWindowClass {
@@ -171,18 +104,18 @@ func New(options Options) (*Window, error) {
 	w := int32(options.Size.Width)
 	h := int32(options.Size.Height)
 
-	x = 0
-	y = 0
-	w = 640
-	h = 480
+	style := uint32(WS_OVERLAPPEDWINDOW)
 
-	hwnd := CreateWindowExW(0, apptronClassName, options.Title, WS_OVERLAPPEDWINDOW, x, y, w, h, 0, 0, GetModuleHandle(), 0)
+	if options.Frameless {
+		style = WS_POPUP
+	}
+
+	hwnd := CreateWindowExW(0, apptronClassName, options.Title, style, x, y, w, h, 0, 0, GetModuleHandle(), 0)
 	if hwnd == 0 {
 		return nil, ErrCreateWindow
 	}
 
 	chromium := edge.NewChromium()
-	chromium.MessageCallback = win.messageCallback
 	//chromium.DataPath = options.DataPath
 	chromium.SetPermission(edge.CoreWebView2PermissionKindClipboardRead, edge.CoreWebView2PermissionStateAllow)
 
@@ -210,12 +143,29 @@ func New(options Options) (*Window, error) {
 
 	chromium.Resize()
 
+	win := &Window{
+		window: window{
+			Handle: resource.NewHandle(),
+		},
+	}
+	resource.Retain(win.Handle, win)
+
 	win.Window = hwnd
 	win.Webview = chromium
 	win.MinSize = POINT{X: LONG(options.MinSize.Width), Y: LONG(options.MinSize.Height)}
 	win.MaxSize = POINT{X: LONG(options.MaxSize.Width), Y: LONG(options.MaxSize.Height)}
 
+	chromium.MessageCallback = win.messageCallback
+
 	SetWindowLongPtrW(hwnd, GWLP_USERDATA, unsafe.Pointer(win))
+
+	// @Incomplete:
+	if len(options.Icon) > 0 {
+	}
+
+	// @Incomplete:
+	if options.Center {
+	}
 
 	// @Incomplete:
 	if options.Transparent {
