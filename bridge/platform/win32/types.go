@@ -43,6 +43,9 @@ type MONITORENUMPROC func(unnamedParam1 HMONITOR, unnamedParam2 HDC, unnamedPara
 
 // https://github.com/AllenDang/w32/blob/ad0a36d80adcd081d5c0dded8e97a009b486d1db/constants.go
 
+const UINT_MAX = ^uint(0)
+const INT_MAX = ^int(0)
+
 const (
 	NULL  = 0
 	TRUE  = 1
@@ -50,7 +53,50 @@ const (
 )
 
 const (
-	SW_SHOW = 5
+	SW_HIDE            = 0
+	SW_NORMAL          = 1
+	SW_SHOWMINIMIZED   = 2
+	SW_SHOWMAXIMIZED   = 3
+	SW_MAXIMIZE        = 3
+	SW_SHOW            = 5
+	SW_MINIMIZE        = 6
+	SW_SHOWMINNOACTIVE = 7
+	SW_RESTORE         = 9
+)
+
+const (
+	CS_VREDRAW         = 0x00000001
+	CS_HREDRAW         = 0x00000002
+	CS_KEYCVTWINDOW    = 0x00000004
+	CS_DBLCLKS         = 0x00000008
+	CS_OWNDC           = 0x00000020
+	CS_CLASSDC         = 0x00000040
+	CS_PARENTDC        = 0x00000080
+	CS_NOKEYCVT        = 0x00000100
+	CS_NOCLOSE         = 0x00000200
+	CS_SAVEBITS        = 0x00000800
+	CS_BYTEALIGNCLIENT = 0x00001000
+	CS_BYTEALIGNWINDOW = 0x00002000
+	CS_GLOBALCLASS     = 0x00004000
+	CS_IME             = 0x00010000
+	CS_DROPSHADOW      = 0x00020000
+)
+
+const (
+	HWND_TOP = 0
+)
+
+const (
+	MONITOR_DEFAULTTOPRIMARY = 0x00000001
+	MONITOR_DEFAULTTONEAREST = 0x00000002
+)
+
+const (
+	SWP_NOMOVE        = 0x0002
+	SWP_NOSIZE        = 0x0001
+	SWP_NOZORDER      = 0x0004
+	SWP_FRAMECHANGED  = 0x0020
+	SWP_NOOWNERZORDER = 0x0200
 )
 
 const (
@@ -75,13 +121,26 @@ const (
 )
 
 const (
-	WM_QUIT    = 18
-	WM_DESTROY = 0x0002
-	WM_CLOSE   = 0x0010
-	WM_USER    = 0x0400
+	WM_DESTROY          = 0x0002
+	WM_SIZE             = 0x0005
+	WM_CLOSE            = 0x0010
+	WM_QUIT             = 0x0012
+	WM_GETMINMAXINFO    = 0x0024
+	WM_WINDOWPOSCHANGED = 0x0047
+	WM_CHAR             = 0x0102
+	WM_SYSCHAR          = 0x0106
+	WM_UNICHAR          = 0x0109
+	WM_SYSCOMMAND       = 0x0112
+	WM_LBUTTONDOWN      = 0x0201
+	WM_RBUTTONDOWN      = 0x0204
+	WM_DPICHANGED       = 0x02E0
+	WM_USER             = 0x0400
+)
 
-	WM_LBUTTONDOWN = 0x0201
-	WM_RBUTTONDOWN = 0x0204
+const (
+	SC_KEYMENU      = 0xF100
+	SC_SCREENSAVE   = 0xF140
+	SC_MONITORPOWER = 0xF170
 )
 
 const (
@@ -140,9 +199,6 @@ const (
 	TPM_LEFTBUTTON  = 0x0000
 	TPM_RIGHTBUTTON = 0x0002
 )
-
-const UINT_MAX = ^uint(0)
-const INT_MAX = ^int(0)
 
 // https://docs.microsoft.com/en-us/windows/win32/hidpi/dpi-awareness-context
 const DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2 = (HANDLE)(UINT_MAX - 4 + 1)

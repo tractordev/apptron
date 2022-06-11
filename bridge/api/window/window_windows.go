@@ -1,6 +1,10 @@
 package window
 
 import (
+	"errors"
+	"log"
+
+	. "tractor.dev/apptron/bridge/platform/win32"
 	"tractor.dev/apptron/bridge/resource"
 )
 
@@ -11,6 +15,21 @@ type Window struct {
 func init() {
 }
 
+func windowCallback(hwnd HWND, message uint32, wParam WPARAM, lParam LPARAM) LRESULT {
+	// windowID := GetWindowLongW(hwnd, GWL_USERDATA)
+
+	switch message {
+	default:
+		return DefWindowProc(hwnd, message, wParam, lParam)
+	}
+}
+
+var didInitWindowClass = false
+
+var (
+	ErrRegisterWindowClass = errors.New("Failed to register tray window class!")
+)
+
 func New(options Options) (*Window, error) {
 	win := &Window{
 		window: window{
@@ -18,6 +37,26 @@ func New(options Options) (*Window, error) {
 		},
 	}
 	resource.Retain(win.Handle, win)
+
+	apptronClassName := "APPTRON_WINDOW_CLASS"
+
+	if !didInitWindowClass {
+		if !RegisterWindowClass(apptronClassName, GetModuleHandle(), windowCallback, CS_HREDRAW|CS_VREDRAW|CS_OWNDC) {
+			return nil, ErrRegisterWindowClass
+		}
+
+		didInitWindowClass = true
+	}
+
+	hwnd, err := CreateWindowExW(0, apptronClassName, "Hello Window", WS_OVERLAPPEDWINDOW, 0, 0, 320, 240, 0, 0, GetModuleHandle(), 0)
+	if err != nil {
+		log.Println("Failed to create window!", err)
+		return nil, err
+	}
+
+	SetWindowLongW(hwnd, GWL_USERDATA, 1)
+
+	ShowWindow(hwnd, SW_SHOW)
 
 	return win, nil
 }
