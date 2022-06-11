@@ -146,6 +146,7 @@ func run() {
 		fatal(err)
 
 		fmt.Println("[main] window", w1)
+		fmt.Println("[main] visible?", w1.IsVisible())
 
 		w1.SetTitle("Hello, Sailor!")
 		fmt.Println("[main] window position", w1.GetOuterPosition())

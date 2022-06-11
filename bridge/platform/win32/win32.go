@@ -53,8 +53,12 @@ var (
 	pSetWindowLongW      = user32.NewProc("SetWindowLongW")
 	pGetWindowLongW      = user32.NewProc("GetWindowLongW")
 	pValidateRect        = user32.NewProc("ValidateRect")
+	pGetClientRect       = user32.NewProc("GetClientRect")
 	pGetForegroundWindow = user32.NewProc("GetForegroundWindow")
 	pSetFocus            = user32.NewProc("SetFocus")
+	pIsWindowVisible     = user32.NewProc("IsWindowVisible")
+	pIsIconic            = user32.NewProc("IsIconic")
+	pGetWindowRect       = user32.NewProc("GetWindowRect")
 
 	pDispatchMessageW    = user32.NewProc("DispatchMessageW")
 	pGetMessageW         = user32.NewProc("GetMessageW")
@@ -140,7 +144,7 @@ func SetWindowTextW(hwnd HWND, title string) bool {
 }
 
 func GetClientRect(hwnd HWND, lpRect *RECT) bool {
-	ret, _, _ := pShowWindow.Call(uintptr(hwnd), uintptr(unsafe.Pointer(lpRect)))
+	ret, _, _ := pGetClientRect.Call(uintptr(hwnd), uintptr(unsafe.Pointer(lpRect)))
 	return int32(ret) != 0
 }
 
@@ -152,6 +156,21 @@ func GetForegroundWindow() HWND {
 func SetFocus(hwnd HWND) HWND {
 	ret, _, _ := pSetFocus.Call(uintptr(hwnd))
 	return HWND(ret)
+}
+
+func IsWindowVisible(hwnd HWND) bool {
+	ret, _, _ := pIsWindowVisible.Call(uintptr(hwnd))
+	return int32(ret) != 0
+}
+
+func IsIconic(hwnd HWND) bool {
+	ret, _, _ := pIsIconic.Call(uintptr(hwnd))
+	return int32(ret) != 0
+}
+
+func GetWindowRect(hwnd HWND, lpRect *RECT) bool {
+	ret, _, _ := pGetWindowRect.Call(uintptr(hwnd), uintptr(unsafe.Pointer(lpRect)))
+	return int32(ret) != 0
 }
 
 func ValidateRect(hwnd HWND, lpRect *RECT) bool {
@@ -358,6 +377,22 @@ var (
 	pTimeBeginPeriod = winmm.NewProc("timeBeginPeriod")
 )
 
+func TimeBeginPeriod(uPeriod UINT) UINT {
+	result, _, _ := pTimeBeginPeriod.Call(uintptr(uPeriod))
+	return UINT(result)
+}
+
+var (
+	dwmapi = syscall.NewLazyDLL("dwmapi.dll")
+
+	pDwmGetWindowAttribute = dwmapi.NewProc("DwmGetWindowAttribute")
+)
+
+func DwmGetWindowAttribute(hwnd HWND, dwAttribute DWORD, pvAttribute unsafe.Pointer, cbAttribute DWORD) bool {
+	result, _, _ := pDwmGetWindowAttribute.Call(uintptr(hwnd), uintptr(dwAttribute), uintptr(pvAttribute), uintptr(cbAttribute))
+	return int32(result) == 0 /* S_OK */
+}
+
 //
 // Helpers
 //
@@ -397,8 +432,7 @@ var win32SleepIsGranular = false
 
 func OS_Init() {
 	// NOTE(nick): request high-precision timers
-	result, _, _ := pTimeBeginPeriod.Call(1)
-	win32SleepIsGranular = UINT(result) == 0 /* TIMERR_NOERROR */
+	win32SleepIsGranular = TimeBeginPeriod(1) == 0 /* TIMERR_NOERROR */
 
 	//log.Println("[OS] sleep is granular", win32SleepIsGranular)
 }
@@ -701,59 +735,7 @@ func RemoveAllTrayMenus() {
 	trays = make([]Win32_Tray, 0)
 }
 
-func testWindowCallback(hwnd HWND, message uint32, wParam WPARAM, lParam LPARAM) LRESULT {
-	switch message {
-	case WM_CLOSE:
-		DestroyWindow(hwnd)
-	case WM_DESTROY:
-		PostQuitMessage(0)
-	default:
-		return DefWindowProc(hwnd, message, wParam, lParam)
-	}
-	return 0
-}
-
-func CreateTestWindow() {
-	className := "testClass"
-
-	instance := GetModuleHandle()
-
-	cursor, err := LoadCursorResource(IDC_ARROW)
-	if err != nil {
-		log.Println(err)
-		return
-	}
-
-	wc := WNDCLASSEXW{
-		LpfnWndProc:   syscall.NewCallback(testWindowCallback),
-		HInstance:     instance,
-		HCursor:       cursor,
-		HbrBackground: COLOR_WINDOW + 1,
-		LpszClassName: syscall.StringToUTF16Ptr(className),
-	}
-	wc.CbSize = UINT(unsafe.Sizeof(wc))
-
-	if _, err = RegisterClassExW(&wc); err != nil {
-		log.Println(err)
-		return
-	}
-
-	_, err = CreateWindowExW(
-		0,
-		className,
-		"Test Window",
-		WS_VISIBLE|WS_OVERLAPPEDWINDOW,
-		CW_USEDEFAULT,
-		CW_USEDEFAULT,
-		CW_USEDEFAULT,
-		CW_USEDEFAULT,
-		0,
-		0,
-		instance,
-		0,
-	)
-	if err != nil {
-		log.Println(err)
-		return
-	}
+func IsWindowCloaked(hwnd HWND) bool {
+	var isCloaked BOOL = FALSE
+	return DwmGetWindowAttribute(hwnd, DWMWA_CLOAKED, unsafe.Pointer(&isCloaked), 4 /* sizeof(isCloaked) */) && isCloaked == TRUE
 }

@@ -83,7 +83,10 @@ const (
 )
 
 const (
-	HWND_TOP = 0
+	HWND_TOP       = (HWND)(0)
+	HWND_BOTTOM    = (HWND)(1)
+	HWND_TOPMOST   = (HWND)(UINT_MAX - 1 + 1)
+	HWND_NOTOPMOST = (HWND)(UINT_MAX - 2 + 1)
 )
 
 const (
@@ -92,8 +95,8 @@ const (
 )
 
 const (
-	SWP_NOMOVE        = 0x0002
 	SWP_NOSIZE        = 0x0001
+	SWP_NOMOVE        = 0x0002
 	SWP_NOZORDER      = 0x0004
 	SWP_FRAMECHANGED  = 0x0020
 	SWP_NOOWNERZORDER = 0x0200
@@ -204,6 +207,7 @@ const (
 const DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2 = (HANDLE)(UINT_MAX - 4 + 1)
 
 const (
+	GWL_STYLE    = (int)(INT_MAX - 16 + 1)
 	GWL_USERDATA = (int)(INT_MAX - 21 + 1)
 )
 
@@ -233,6 +237,10 @@ const (
 	MB_ICONERROR       = 0x00000010
 
 	IDOK = 1
+)
+
+const (
+	DWMWA_CLOAKED = 14
 )
 
 // https://docs.microsoft.com/en-us/windows/win32/api/windef/ns-windef-point
