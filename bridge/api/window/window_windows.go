@@ -99,16 +99,19 @@ func New(options Options) (*Window, error) {
 	// @Incomplete: size is in pixels
 	// On MacOS, size is in pixels * window scale
 
-	x := int32(options.Position.X)
-	y := int32(options.Position.Y)
-	w := int32(options.Size.Width)
-	h := int32(options.Size.Height)
-
-	style := uint32(WS_OVERLAPPEDWINDOW)
+	style := DWORD(WS_OVERLAPPEDWINDOW)
 
 	if options.Frameless {
 		style = WS_POPUP
 	}
+
+	x := int32(options.Position.X)
+	y := int32(options.Position.Y)
+	//s := windowSizeForClientSize(style, options.Size)
+	//w := int32(s.X)
+	//h := int32(s.Y)
+	w := int32(options.Size.Width)
+	h := int32(options.Size.Height)
 
 	hwnd := CreateWindowExW(0, apptronClassName, options.Title, style, x, y, w, h, 0, 0, GetModuleHandle(), 0)
 	if hwnd == 0 {
@@ -163,8 +166,23 @@ func New(options Options) (*Window, error) {
 	if len(options.Icon) > 0 {
 	}
 
-	// @Incomplete:
 	if options.Center {
+		var rect RECT
+		if GetWindowRect(hwnd, &rect) {
+			windowWidth := LONG(rect.Right - rect.Left)
+			windowHeight := LONG(rect.Bottom - rect.Top)
+
+			info := MONITORINFOEX{}
+			if GetMonitorInfoW(MonitorFromWindow(hwnd, MONITOR_DEFAULTTOPRIMARY), &info) {
+				monitorWidth := info.RcMonitor.Right - info.RcMonitor.Left
+				monitorHeight := info.RcMonitor.Bottom - info.RcMonitor.Top
+
+				cx := int(float64(monitorWidth-windowWidth) * 0.5)
+				cy := int(float64(monitorHeight-windowHeight) * 0.5)
+
+				SetWindowPos(hwnd, HWND_TOP, cx, cy, 0, 0, SWP_NOSIZE|SWP_NOOWNERZORDER)
+			}
+		}
 	}
 
 	// @Incomplete:
@@ -242,20 +260,19 @@ func (w *Window) SetFullscreen(fullscreen bool) {
 	style := GetWindowLongW(hwnd, GWL_STYLE)
 
 	if fullscreen {
-		monitorInfo := MONITORINFOEX{}
-		hmon := MonitorFromWindow(hwnd, MONITOR_DEFAULTTOPRIMARY)
-
-		if GetWindowPlacement(hwnd, &w.Placement) && GetMonitorInfoW(hmon, &monitorInfo) {
+		info := MONITORINFOEX{}
+		if GetWindowPlacement(hwnd, &w.Placement) &&
+			GetMonitorInfoW(MonitorFromWindow(hwnd, MONITOR_DEFAULTTOPRIMARY), &info) {
 
 			SetWindowLongW(hwnd, GWL_STYLE, style&(^WS_OVERLAPPEDWINDOW))
 
 			SetWindowPos(
 				hwnd,
 				HWND_TOP,
-				int(monitorInfo.RcMonitor.Left),
-				int(monitorInfo.RcMonitor.Top),
-				int(monitorInfo.RcMonitor.Right-monitorInfo.RcMonitor.Left),
-				int(monitorInfo.RcMonitor.Bottom-monitorInfo.RcMonitor.Top),
+				int(info.RcMonitor.Left),
+				int(info.RcMonitor.Top),
+				int(info.RcMonitor.Right-info.RcMonitor.Left),
+				int(info.RcMonitor.Bottom-info.RcMonitor.Top),
 				SWP_NOOWNERZORDER|SWP_FRAMECHANGED,
 			)
 		}
@@ -270,12 +287,18 @@ func (w *Window) SetFullscreen(fullscreen bool) {
 	}
 }
 
-func (w *Window) SetSize(size Size) {
+func windowSizeForClientSize(style DWORD, size Size) POINT {
 	wr := RECT{0, 0, LONG(size.Width), LONG(size.Height)}
-	style := UINT(GetWindowLongW(w.Window, GWL_STYLE))
 	AdjustWindowRect(&wr, style, FALSE)
 
-	SetWindowPos(w.Window, HWND_TOP, int(wr.Right-wr.Left), int(wr.Bottom-wr.Top), 0, 0, SWP_NOMOVE)
+	return POINT{X: (wr.Right - wr.Left), Y: (wr.Bottom - wr.Top)}
+}
+
+func (w *Window) SetSize(size Size) {
+	style := DWORD(GetWindowLongW(w.Window, GWL_STYLE))
+	s := windowSizeForClientSize(style, size)
+
+	SetWindowPos(w.Window, HWND_TOP, int(s.X), int(s.Y), 0, 0, SWP_NOMOVE)
 }
 
 func (w *Window) SetMinSize(size Size) {

@@ -95,7 +95,7 @@ var (
 	pMessageBoxW = user32.NewProc("MessageBoxW")
 )
 
-func CreateWindowExW(dwExStyle DWORD, className string, windowName string, style uint32, x, y, width, height int32, parent, menu, instance HINSTANCE, lpParam uintptr) HWND {
+func CreateWindowExW(dwExStyle DWORD, className string, windowName string, style DWORD, x, y, width, height int32, parent, menu, instance HINSTANCE, lpParam uintptr) HWND {
 	ret, _, _ := pCreateWindowExW.Call(
 		uintptr(dwExStyle),
 		uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(className))),
@@ -183,7 +183,7 @@ func GetWindowRect(hwnd HWND, lpRect *RECT) bool {
 	return int32(ret) != 0
 }
 
-func AdjustWindowRect(rect *RECT, style UINT, bMenu BOOL) bool {
+func AdjustWindowRect(rect *RECT, style DWORD, bMenu BOOL) bool {
 	ret, _, _ := pAdjustWindowRect.Call(uintptr(unsafe.Pointer(rect)), uintptr(style), uintptr(bMenu))
 	return int32(ret) != 0
 }

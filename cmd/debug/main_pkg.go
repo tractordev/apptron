@@ -123,7 +123,7 @@ func run() {
 		Visible:     true,
 		Resizable:   true,
 		Position:    window.Position{X: 10, Y: 10},
-		Size:        window.Size{Width: 360, Height: 240},
+		Size:        window.Size{Width: 640, Height: 480},
 		Center:      true,
 		Icon:        iconData,
 		HTML: `
@@ -151,7 +151,7 @@ func run() {
 		w1.SetTitle("Hello, Sailor!")
 		fmt.Println("[main] window position", w1.GetOuterPosition())
 
-		w1.SetMinSize(window.Size{Width: 100, Height: 100})
+		//w1.SetMinSize(window.Size{Width: 100, Height: 100})
 	})
 
 	platform.Dispatch(func() {
