@@ -42,7 +42,6 @@ func Menu() *menu.Menu {
 }
 
 func SetMenu(menu *menu.Menu) error {
-	//app.SetMainMenu(menu.NSMenu)
 	mainMenu = menu
 	return nil
 }
@@ -56,7 +55,7 @@ func NewIndicator(icon []byte, items []menu.Item) {
 		})
 	}
 
-	win32.NewTrayMenu(menu.HMENU, icon, onClick)
+	win32.NewTrayMenu(menu.PopupMenu, icon, onClick)
 }
 
 func Run(options Options) error {

@@ -18,6 +18,7 @@ var (
 
 	pGetModuleHandleW = kernel32.NewProc("GetModuleHandleW")
 	pExitProcess      = kernel32.NewProc("ExitProcess")
+	pGetLastError     = kernel32.NewProc("GetLastError")
 
 	pGlobalLock    = kernel32.NewProc("GlobalLock")
 	pGlobalUnlock  = kernel32.NewProc("GlobalUnlock")
@@ -33,6 +34,11 @@ func GetModuleHandle() HINSTANCE {
 
 func ExitProcess(exitCode UINT) {
 	pExitProcess.Call(uintptr(exitCode))
+}
+
+func GetLastError() DWORD {
+	ret, _, _ := pGetLastError.Call()
+	return DWORD(ret)
 }
 
 var (
@@ -62,6 +68,7 @@ var (
 	pIsIconic            = user32.NewProc("IsIconic")
 	pGetWindowRect       = user32.NewProc("GetWindowRect")
 	pAdjustWindowRect    = user32.NewProc("AdjustWindowRect")
+	pSetMenu             = user32.NewProc("SetMenu")
 
 	pGetDC     = user32.NewProc("GetDC")
 	pReleaseDC = user32.NewProc("ReleaseDC")
@@ -192,6 +199,11 @@ func AdjustWindowRect(rect *RECT, style DWORD, bMenu BOOL) bool {
 	return int32(ret) != 0
 }
 
+func SetMenu(hwnd HWND, hmenu HMENU) bool {
+	ret, _, _ := pSetMenu.Call(uintptr(hwnd), uintptr(hmenu))
+	return int32(ret) != 0
+}
+
 func ValidateRect(hwnd HWND, lpRect *RECT) bool {
 	ret, _, _ := pValidateRect.Call(uintptr(hwnd), uintptr(unsafe.Pointer(lpRect)))
 	return int32(ret) != 0
@@ -316,6 +328,11 @@ func GetMonitorInfoW(monitor HMONITOR, info *MONITORINFOEX) bool {
 func GetCursorPos(pos *POINT) bool {
 	ret, _, _ := pGetCursorPos.Call(uintptr(unsafe.Pointer(pos)))
 	return ret != 0
+}
+
+func CreateMenu() HMENU {
+	ret, _, _ := pCreateMenu.Call()
+	return HMENU(ret)
 }
 
 func CreatePopupMenu() HMENU {
@@ -718,7 +735,7 @@ func RegisterWindowClass(className string, instance HINSTANCE, callback WNDPROC,
 		HCursor:       cursor,
 		HIcon:         icon,
 		Style:         style,
-		HbrBackground: COLOR_WINDOW + 1,
+		HbrBackground: HBRUSH(COLOR_WINDOW + 1),
 		LpszClassName: syscall.StringToUTF16Ptr(className),
 	}
 	wc.CbSize = UINT(unsafe.Sizeof(wc))

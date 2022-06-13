@@ -6,6 +6,8 @@ import (
 	"unsafe"
 
 	"github.com/jchv/go-webview2/pkg/edge"
+
+	"tractor.dev/apptron/bridge/api/app"
 	"tractor.dev/apptron/bridge/event"
 	. "tractor.dev/apptron/bridge/platform/win32"
 	"tractor.dev/apptron/bridge/resource"
@@ -27,6 +29,14 @@ func init() {
 
 func windowCallback(hwnd HWND, message uint32, wParam WPARAM, lParam LPARAM) LRESULT {
 	// @Incomplete: proper window scaling
+
+	switch message {
+	case WM_CREATE:
+		menu := app.Menu()
+		if menu != nil {
+			SetMenu(hwnd, menu.Menu)
+		}
+	}
 
 	w := (*Window)(unsafe.Pointer(GetWindowLongPtrW(hwnd, GWLP_USERDATA)))
 

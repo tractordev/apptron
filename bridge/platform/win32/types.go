@@ -128,6 +128,7 @@ const (
 )
 
 const (
+	WM_CREATE           = 0x0001
 	WM_DESTROY          = 0x0002
 	WM_MOVE             = 0x0003
 	WM_SIZE             = 0x0005
