@@ -33,6 +33,7 @@ type HMENU HANDLE
 type HBITMAP HANDLE
 type HDC HANDLE
 type HMONITOR HANDLE
+type HRGN HANDLE
 
 type WPARAM UINT_PTR
 type LPARAM LONG_PTR
@@ -40,6 +41,8 @@ type LRESULT LONG_PTR
 type WNDPROC func(hwnd HWND, msg uint32, wparam WPARAM, lparam LPARAM) LRESULT
 
 type MONITORENUMPROC func(unnamedParam1 HMONITOR, unnamedParam2 HDC, unnamedParam3 *RECT, unnamedParam4 LPARAM) uintptr
+
+type COLORREF DWORD
 
 // https://github.com/AllenDang/w32/blob/ad0a36d80adcd081d5c0dded8e97a009b486d1db/constants.go
 
@@ -114,17 +117,17 @@ const (
 )
 
 const (
-	WS_VISIBLE = 0x10000000
+	WS_VISIBLE          = 0x10000000
+	WS_CAPTION          = 0x00C00000
+	WS_MAXIMIZEBOX      = 0x00010000
+	WS_MINIMIZEBOX      = 0x00020000
+	WS_OVERLAPPED       = 0x00000000
+	WS_SYSMENU          = 0x00080000
+	WS_THICKFRAME       = 0x00040000
+	WS_POPUP            = 0x80000000
+	WS_OVERLAPPEDWINDOW = (WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX)
 
-	WS_CAPTION     = 0x00C00000
-	WS_MAXIMIZEBOX = 0x00010000
-	WS_MINIMIZEBOX = 0x00020000
-	WS_OVERLAPPED  = 0x00000000
-	WS_SYSMENU     = 0x00080000
-	WS_THICKFRAME  = 0x00040000
-	WS_POPUP       = 0x80000000
-
-	WS_OVERLAPPEDWINDOW = WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX
+	WS_EX_LAYERED = 0x00080000
 )
 
 const (
@@ -220,9 +223,10 @@ const DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2 = (HANDLE)(UINT_MAX - 4 + 1)
 const PROCESS_PER_MONITOR_DPI_AWARE = 2
 
 const (
-	GWL_STYLE     = (int)(INT_MAX - 16 + 1)
-	GWL_USERDATA  = (int)(INT_MAX - 21 + 1)
-	GWLP_USERDATA = (int)(INT_MAX - 21 + 1)
+	GWL_STYLE     = -16
+	GWL_EXSTYLE   = -20
+	GWL_USERDATA  = -21
+	GWLP_USERDATA = -21
 )
 
 const ENUM_CURRENT_SETTINGS = 0xFFFFFFFF
@@ -260,6 +264,16 @@ const (
 const (
 	LOGPIXELSX = 88
 	LOGPIXELSY = 90
+)
+
+const (
+	LWA_COLORKEY = 0x00000001
+	LWA_ALPHA    = 0x00000002
+)
+
+const (
+	DWM_BB_ENABLE     = 0x00000001
+	DWM_BB_BLURREGION = 0x00000002
 )
 
 // https://docs.microsoft.com/en-us/windows/win32/api/windef/ns-windef-point
@@ -423,4 +437,11 @@ type MINMAXINFO struct {
 	PtMaxPosition  POINT
 	PtMinTrackSize POINT
 	PtMaxTrackSize POINT
+}
+
+type DWM_BLURBEHIND struct {
+	DwFlags                DWORD
+	FEnable                BOOL
+	HRgnBlur               HRGN
+	FTransitionOnMaximized BOOL
 }

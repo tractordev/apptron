@@ -56,8 +56,8 @@ var (
 	pGetCursorPos        = user32.NewProc("GetCursorPos")
 	pSetForegroundWindow = user32.NewProc("SetForegroundWindow")
 	pGetActiveWindow     = user32.NewProc("GetActiveWindow")
-	pSetWindowLongW      = user32.NewProc("SetWindowLongW")
 	pGetWindowLongW      = user32.NewProc("GetWindowLongW")
+	pSetWindowLongW      = user32.NewProc("SetWindowLongW")
 	pGetWindowLongPtrW   = user32.NewProc("GetWindowLongPtrW")
 	pSetWindowLongPtrW   = user32.NewProc("SetWindowLongPtrW")
 	pValidateRect        = user32.NewProc("ValidateRect")
@@ -72,6 +72,8 @@ var (
 
 	pGetDC     = user32.NewProc("GetDC")
 	pReleaseDC = user32.NewProc("ReleaseDC")
+
+	pSetLayeredWindowAttributes = user32.NewProc("SetLayeredWindowAttributes")
 
 	pDispatchMessageW    = user32.NewProc("DispatchMessageW")
 	pGetMessageW         = user32.NewProc("GetMessageW")
@@ -214,6 +216,11 @@ func ReleaseDC(hwnd HWND, hdc HDC) int32 {
 	return int32(ret)
 }
 
+func SetLayeredWindowAttributes(hwnd HWND, crKey uint, bAlpha uint, dwFlags DWORD) bool {
+	ret, _, _ := pReleaseDC.Call(uintptr(hwnd), uintptr(crKey), uintptr(bAlpha), uintptr(dwFlags))
+	return int32(ret) != 0
+}
+
 func ValidateRect(hwnd HWND, lpRect *RECT) bool {
 	ret, _, _ := pValidateRect.Call(uintptr(hwnd), uintptr(unsafe.Pointer(lpRect)))
 	return int32(ret) != 0
@@ -296,13 +303,13 @@ func GetActiveWindow() HWND {
 	return HWND(ret)
 }
 
-func SetWindowLongW(hwnd HWND, index int, long LONG) LONG {
-	ret, _, _ := pSetWindowLongW.Call(uintptr(hwnd), uintptr(index), uintptr(long))
+func GetWindowLongW(hwnd HWND, index int) LONG {
+	ret, _, _ := pGetWindowLongW.Call(uintptr(hwnd), uintptr(index))
 	return LONG(ret)
 }
 
-func GetWindowLongW(hwnd HWND, index int) LONG {
-	ret, _, _ := pGetWindowLongW.Call(uintptr(hwnd), uintptr(index))
+func SetWindowLongW(hwnd HWND, index int, long LONG) LONG {
+	ret, _, _ := pSetWindowLongW.Call(uintptr(hwnd), uintptr(index), uintptr(long))
 	return LONG(ret)
 }
 
@@ -467,9 +474,33 @@ func TimeBeginPeriod(uPeriod UINT) UINT {
 }
 
 var (
+	gdi32 = syscall.NewLazyDLL("gdi32.dll")
+
+	pGetDeviceCaps = gdi32.NewProc("GetDeviceCaps")
+	pCreateRectRgn = gdi32.NewProc("CreateRectRgn")
+	pDeleteObject  = gdi32.NewProc("DeleteObject")
+)
+
+func GetDeviceCaps(hdc HDC, index int) int {
+	result, _, _ := pGetDeviceCaps.Call(uintptr(hdc), uintptr(index))
+	return int(result)
+}
+
+func CreateRectRgn(x1 int, y1 int, x2 int, y2 int) HRGN {
+	result, _, _ := pCreateRectRgn.Call(uintptr(x1), uintptr(y1), uintptr(x2), uintptr(y2))
+	return HRGN(result)
+}
+
+func DeleteObject(obj HANDLE) bool {
+	result, _, _ := pDeleteObject.Call(uintptr(obj))
+	return int32(result) != 0
+}
+
+var (
 	dwmapi = syscall.NewLazyDLL("dwmapi.dll")
 
-	pDwmGetWindowAttribute = dwmapi.NewProc("DwmGetWindowAttribute")
+	pDwmGetWindowAttribute     = dwmapi.NewProc("DwmGetWindowAttribute")
+	pDwmEnableBlurBehindWindow = dwmapi.NewProc("DwmEnableBlurBehindWindow")
 )
 
 func DwmGetWindowAttribute(hwnd HWND, dwAttribute DWORD, pvAttribute unsafe.Pointer, cbAttribute DWORD) bool {
@@ -477,15 +508,9 @@ func DwmGetWindowAttribute(hwnd HWND, dwAttribute DWORD, pvAttribute unsafe.Poin
 	return int32(result) == 0 /* S_OK */
 }
 
-var (
-	gdi32 = syscall.NewLazyDLL("gdi32.dll")
-
-	pGetDeviceCaps = gdi32.NewProc("GetDeviceCaps")
-)
-
-func GetDeviceCaps(hdc HDC, index int) int {
-	result, _, _ := pGetDeviceCaps.Call(uintptr(hdc), uintptr(index))
-	return int(result)
+func DwmEnableBlurBehindWindow(hwnd HWND, pBlurBehind *DWM_BLURBEHIND) bool {
+	result, _, _ := pDwmGetWindowAttribute.Call(uintptr(hwnd), uintptr(unsafe.Pointer(pBlurBehind)))
+	return int32(result) == 0 /* S_OK */
 }
 
 //

@@ -124,8 +124,6 @@ func windowCallback(hwnd HWND, message uint32, wParam WPARAM, lParam LPARAM) LRE
 		scaley := float64(LOWORD(uint32(wParam))) / float64(USER_DEFAULT_SCREEN_DPI)
 		w.Scale = Size{Width: scalex, Height: scaley}
 
-		log.Println(w.Scale)
-
 		// NOTE(nick): adjust the window rect when the DPI scale changes
 		// For example, if you go into the "Make everything bigger" section and change the global pixel scale
 		suggested := (*RECT)(unsafe.Pointer(lParam))
@@ -165,14 +163,14 @@ func New(options Options) (*Window, error) {
 
 	if !didInitWindowClass {
 		// NOTE(nick): setting the icon here sets it for the whole application
-		if !RegisterWindowClass(apptronClassName, GetModuleHandle(), windowCallback, CS_HREDRAW|CS_VREDRAW|CS_OWNDC, icon) {
+		if !RegisterWindowClass(apptronClassName, GetModuleHandle(), windowCallback, 0, icon) {
 			return nil, ErrRegisterWindowClass
 		}
 
 		didInitWindowClass = true
 	}
 
-	style := DWORD(WS_OVERLAPPEDWINDOW)
+	var style DWORD = WS_OVERLAPPEDWINDOW
 
 	if options.Frameless {
 		style = WS_POPUP
@@ -188,10 +186,35 @@ func New(options Options) (*Window, error) {
 		return nil, ErrCreateWindow
 	}
 
-	menu := app.Menu()
+	// @Incomplete:
+	/*
+		if options.Transparent {
+			SetWindowLongW(hwnd, GWL_EXSTYLE, GetWindowLongW(hwnd, GWL_EXSTYLE)|WS_EX_LAYERED)
+
+			//
+			// When specifying an explicit RGB color, the COLORREF value has the following hexadecimal form: 0x00bbggrr
+			// https://docs.microsoft.com/en-us/windows/win32/gdi/colorref
+			//
+			SetLayeredWindowAttributes(hwnd, 0x000000ff, 200, LWA_COLORKEY)
+
+			// Empty region for the blur effect, so the window is fully transparent
+			region := CreateRectRgn(0, 0, -1, -1)
+
+			bb := DWM_BLURBEHIND{}
+			bb.DwFlags = DWM_BB_ENABLE | DWM_BB_BLURREGION
+			bb.FEnable = TRUE
+			bb.HRgnBlur = region
+			bb.FTransitionOnMaximized = FALSE
+
+			DwmEnableBlurBehindWindow(hwnd, &bb)
+			DeleteObject(HANDLE(region))
+		}
+	*/
+
 	var hasMenu BOOL = FALSE
+	menu := app.Menu()
 	if menu != nil {
-		SetMenu(hwnd, menu.Menu)
+		//SetMenu(hwnd, menu.Menu)
 		hasMenu = TRUE
 	}
 
@@ -268,10 +291,6 @@ func New(options Options) (*Window, error) {
 		}
 	}
 
-	// @Incomplete:
-	if options.Transparent {
-	}
-
 	if options.Fullscreen {
 		win.SetFullscreen(true)
 	}
@@ -314,18 +333,23 @@ func (w *Window) Focus() {
 func (w *Window) SetVisible(visible bool) {
 	if visible {
 		ShowWindow(w.Window, SW_SHOW)
-		w.Webview.Show()
+		if w.Webview != nil {
+			w.Webview.Show()
+		}
 	} else {
 		ShowWindow(w.Window, SW_HIDE)
-		w.Webview.Hide()
+		if w.Webview != nil {
+			w.Webview.Hide()
+		}
 	}
 }
 
 func (w *Window) IsVisible() bool {
-	// @Incomplete: is this the same as NSWindow visible?
-
+	// @Robustness: is this the same as NSWindow visible?
+	//
 	// NOTE(nick): from the Apple docs for NSWindow visible:
 	// A Boolean value that indicates whether the window is visible onscreen
+	//
 
 	return IsWindowVisible(w.Window) && !IsIconic(w.Window) && !IsWindowCloaked(w.Window)
 }
@@ -373,7 +397,7 @@ func (w *Window) SetFullscreen(fullscreen bool) {
 		SetWindowLongW(hwnd, GWL_STYLE, style|WS_OVERLAPPEDWINDOW)
 		SetWindowPlacement(hwnd, &w.Placement)
 
-		// @Robustness: do we need this?
+		// @Robustness: is this necessary?
 		var flags UINT = SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_FRAMECHANGED
 		SetWindowPos(hwnd, 0, 0, 0, 0, 0, flags)
 	}
