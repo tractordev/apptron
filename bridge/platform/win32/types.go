@@ -142,6 +142,7 @@ const (
 	WM_CHAR             = 0x0102
 	WM_SYSCHAR          = 0x0106
 	WM_UNICHAR          = 0x0109
+	WM_COMMAND          = 0x0111
 	WM_SYSCOMMAND       = 0x0112
 	WM_LBUTTONDOWN      = 0x0201
 	WM_RBUTTONDOWN      = 0x0204

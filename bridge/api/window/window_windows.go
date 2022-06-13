@@ -28,16 +28,6 @@ func init() {
 }
 
 func windowCallback(hwnd HWND, message uint32, wParam WPARAM, lParam LPARAM) LRESULT {
-	// @Incomplete: proper window scaling
-
-	switch message {
-	case WM_CREATE:
-		menu := app.Menu()
-		if menu != nil {
-			SetMenu(hwnd, menu.Menu)
-		}
-	}
-
 	w := (*Window)(unsafe.Pointer(GetWindowLongPtrW(hwnd, GWLP_USERDATA)))
 
 	if w == nil {
@@ -96,6 +86,15 @@ func windowCallback(hwnd HWND, message uint32, wParam WPARAM, lParam LPARAM) LRE
 			Type:     event.Moved,
 			Window:   w.Handle,
 			Position: w.GetOuterPosition(),
+		})
+
+	case WM_COMMAND:
+		id := LOWORD(uint32(wParam))
+		// @Incomplete: can other things trigger WM_COMMAND other than our menu?
+		event.Emit(event.Event{
+			Type:     event.MenuItem,
+			Window:   w.Handle,
+			MenuItem: int(id),
 		})
 
 	case WM_GETMINMAXINFO:
@@ -185,6 +184,11 @@ func New(options Options) (*Window, error) {
 	hwnd := CreateWindowExW(0, apptronClassName, options.Title, style, x, y, w, h, 0, 0, GetModuleHandle(), 0)
 	if hwnd == 0 {
 		return nil, ErrCreateWindow
+	}
+
+	menu := app.Menu()
+	if menu != nil {
+		SetMenu(hwnd, menu.Menu)
 	}
 
 	chromium := edge.NewChromium()
@@ -371,18 +375,14 @@ func (w *Window) SetSize(size Size) {
 
 func (w *Window) SetMinSize(size Size) {
 	w.MinSize = POINT{X: LONG(size.Width), Y: LONG(size.Height)}
-
-	// @Incomplete: will this trigger a WM_GETMINMAXINFO event?
-	var flags UINT = SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_FRAMECHANGED
-	SetWindowPos(w.Window, 0, 0, 0, 0, 0, flags)
+	// NOTE(nick): re-set window size to let WM_GETMINMAXINFO clamp the window if needed
+	windowResetSize(w.Window)
 }
 
 func (w *Window) SetMaxSize(size Size) {
 	w.MaxSize = POINT{X: LONG(size.Width), Y: LONG(size.Height)}
-
-	// @Incomplete: will this trigger a WM_GETMINMAXINFO event?
-	var flags UINT = SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_FRAMECHANGED
-	SetWindowPos(w.Window, 0, 0, 0, 0, 0, flags)
+	// NOTE(nick): re-set window size to let WM_GETMINMAXINFO clamp the window if needed
+	windowResetSize(w.Window)
 }
 
 func (w *Window) SetResizable(resizable bool) {
@@ -445,6 +445,17 @@ func windowSizeForClientSize(style DWORD, size Size) POINT {
 	AdjustWindowRect(&wr, style, FALSE)
 
 	return POINT{X: (wr.Right - wr.Left), Y: (wr.Bottom - wr.Top)}
+}
+
+func windowResetSize(hwnd HWND) {
+	var rect RECT
+	if GetWindowRect(hwnd, &rect) {
+		windowWidth := LONG(rect.Right - rect.Left)
+		windowHeight := LONG(rect.Bottom - rect.Top)
+
+		var flags UINT = SWP_NOMOVE | SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_FRAMECHANGED
+		SetWindowPos(hwnd, 0, 0, 0, int(windowWidth), int(windowHeight), flags)
+	}
 }
 
 /*
