@@ -214,7 +214,7 @@ func New(options Options) (*Window, error) {
 	var hasMenu BOOL = FALSE
 	menu := app.Menu()
 	if menu != nil {
-		//SetMenu(hwnd, menu.Menu)
+		SetMenu(hwnd, menu.Menu)
 		hasMenu = TRUE
 	}
 
