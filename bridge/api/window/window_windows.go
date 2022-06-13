@@ -17,7 +17,7 @@ type Window struct {
 	window
 
 	Window  HWND
-	Webview *edge.Chromium
+	webview *edge.Chromium
 
 	MinSize   POINT
 	MaxSize   POINT
@@ -67,8 +67,8 @@ func windowCallback(hwnd HWND, message uint32, wParam WPARAM, lParam LPARAM) LRE
 		})
 
 	case WM_SIZE:
-		if w.Webview != nil {
-			w.Webview.Resize()
+		if w.webview != nil {
+			w.webview.Resize()
 		}
 
 		event.Emit(event.Event{
@@ -78,12 +78,12 @@ func windowCallback(hwnd HWND, message uint32, wParam WPARAM, lParam LPARAM) LRE
 		})
 
 	case WM_ACTIVATE:
-		if w.Webview != nil {
-			w.Webview.Focus()
+		if w.webview != nil {
+			w.webview.Focus()
 		}
 
 	case WM_MOVE, WM_MOVING:
-		w.Webview.NotifyParentWindowPositionChanged()
+		w.webview.NotifyParentWindowPositionChanged()
 
 		event.Emit(event.Event{
 			Type:     event.Moved,
@@ -261,7 +261,7 @@ func New(options Options) (*Window, error) {
 	resource.Retain(win.Handle, win)
 
 	win.Window = hwnd
-	win.Webview = chromium
+	win.webview = chromium
 	win.HasMenu = hasMenu
 	win.Scale = scale
 	win.MinSize = POINT{X: LONG(options.MinSize.Width), Y: LONG(options.MinSize.Height)}
@@ -320,8 +320,8 @@ func New(options Options) (*Window, error) {
 }
 
 func (w *Window) Destroy() {
-	w.Webview.Release()
-	w.Webview = nil
+	w.webview.Release()
+	w.webview = nil
 
 	DestroyWindow(w.Window)
 }
@@ -333,13 +333,13 @@ func (w *Window) Focus() {
 func (w *Window) SetVisible(visible bool) {
 	if visible {
 		ShowWindow(w.Window, SW_SHOW)
-		if w.Webview != nil {
-			w.Webview.Show()
+		if w.webview != nil {
+			w.webview.Show()
 		}
 	} else {
 		ShowWindow(w.Window, SW_HIDE)
-		if w.Webview != nil {
-			w.Webview.Hide()
+		if w.webview != nil {
+			w.webview.Hide()
 		}
 	}
 }
