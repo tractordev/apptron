@@ -204,6 +204,16 @@ func SetMenu(hwnd HWND, hmenu HMENU) bool {
 	return int32(ret) != 0
 }
 
+func GetDC(hwnd HWND) HDC {
+	ret, _, _ := pGetDC.Call(uintptr(hwnd))
+	return HDC(ret)
+}
+
+func ReleaseDC(hwnd HWND, hdc HDC) int32 {
+	ret, _, _ := pReleaseDC.Call(uintptr(hwnd), uintptr(hdc))
+	return int32(ret)
+}
+
 func ValidateRect(hwnd HWND, lpRect *RECT) bool {
 	ret, _, _ := pValidateRect.Call(uintptr(hwnd), uintptr(unsafe.Pointer(lpRect)))
 	return int32(ret) != 0
@@ -468,10 +478,15 @@ func DwmGetWindowAttribute(hwnd HWND, dwAttribute DWORD, pvAttribute unsafe.Poin
 }
 
 var (
-	gdi = syscall.NewLazyDLL("gdi.dll")
+	gdi32 = syscall.NewLazyDLL("gdi32.dll")
 
-	pGetDeviceCaps = dwmapi.NewProc("GetDeviceCaps")
+	pGetDeviceCaps = gdi32.NewProc("GetDeviceCaps")
 )
+
+func GetDeviceCaps(hdc HDC, index int) int {
+	result, _, _ := pGetDeviceCaps.Call(uintptr(hdc), uintptr(index))
+	return int(result)
+}
 
 //
 // Helpers

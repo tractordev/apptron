@@ -22,6 +22,9 @@ type Window struct {
 	MinSize   POINT
 	MaxSize   POINT
 	Placement WINDOWPLACEMENT
+
+	HasMenu BOOL
+	Scale   Size
 }
 
 func init() {
@@ -100,23 +103,28 @@ func windowCallback(hwnd HWND, message uint32, wParam WPARAM, lParam LPARAM) LRE
 	case WM_GETMINMAXINFO:
 		info := (*MINMAXINFO)(unsafe.Pointer(lParam))
 
-		// NOTE(nick): we assume "0" max size means the window can be as big as possible
-		if w.MaxSize.X == 0 {
-			w.MaxSize.X = LONG_MAX
-		}
-		if w.MaxSize.Y == 0 {
-			w.MaxSize.Y = LONG_MAX
+		style := DWORD(GetWindowLongW(w.Window, GWL_STYLE))
+
+		if w.MinSize.X > 0 && w.MinSize.Y > 0 {
+			minSize := mulSize(Size{Width: float64(w.MinSize.X), Height: float64(w.MinSize.Y)}, w.Scale)
+			minSize = windowSizeForClientSize(style, minSize, w.HasMenu)
+			info.PtMinTrackSize = POINT{X: LONG(minSize.Width), Y: LONG(minSize.Height)}
 		}
 
-		info.PtMinTrackSize = w.MinSize
-		info.PtMaxTrackSize = w.MaxSize
+		if w.MaxSize.X > 0 && w.MaxSize.Y > 0 {
+			maxSize := mulSize(Size{Width: float64(w.MaxSize.X), Height: float64(w.MaxSize.Y)}, w.Scale)
+			maxSize = windowSizeForClientSize(style, maxSize, w.HasMenu)
+			info.PtMaxTrackSize = POINT{X: LONG(maxSize.Width), Y: LONG(maxSize.Height)}
+		}
 
 		return 0
 
 	case WM_DPICHANGED:
-		//scalex := HIWORD(wParam) / (float64)(USER_DEFAULT_SCREEN_DPI)
-		//scaley := LOWORD(wParam) / (float64)(USER_DEFAULT_SCREEN_DPI)
-		//window->scale = v2(scalex, scaley);
+		scalex := float64(HIWORD(uint32(wParam))) / float64(USER_DEFAULT_SCREEN_DPI)
+		scaley := float64(LOWORD(uint32(wParam))) / float64(USER_DEFAULT_SCREEN_DPI)
+		w.Scale = Size{Width: scalex, Height: scaley}
+
+		log.Println(w.Scale)
 
 		// NOTE(nick): adjust the window rect when the DPI scale changes
 		// For example, if you go into the "Make everything bigger" section and change the global pixel scale
@@ -164,9 +172,6 @@ func New(options Options) (*Window, error) {
 		didInitWindowClass = true
 	}
 
-	// @Incomplete: size is in pixels
-	// On MacOS, size is in pixels * window scale
-
 	style := DWORD(WS_OVERLAPPEDWINDOW)
 
 	if options.Frameless {
@@ -175,9 +180,6 @@ func New(options Options) (*Window, error) {
 
 	x := int32(options.Position.X)
 	y := int32(options.Position.Y)
-	//s := windowSizeForClientSize(style, options.Size)
-	//w := int32(s.X)
-	//h := int32(s.Y)
 	w := int32(options.Size.Width)
 	h := int32(options.Size.Height)
 
@@ -187,15 +189,24 @@ func New(options Options) (*Window, error) {
 	}
 
 	menu := app.Menu()
+	var hasMenu BOOL = FALSE
 	if menu != nil {
 		SetMenu(hwnd, menu.Menu)
+		hasMenu = TRUE
 	}
+
+	// NOTE(nick): resize window based on pixel scale
+	scale := windowGetPixelScale(hwnd)
+	s := mulSize(options.Size, scale)
+	s = windowSizeForClientSize(style, s, hasMenu)
+	SetWindowPos(hwnd, HWND_TOP, 0, 0, int(s.Width), int(s.Height), SWP_NOMOVE|SWP_NOOWNERZORDER)
 
 	chromium := edge.NewChromium()
 	//chromium.DataPath = options.DataPath
 	chromium.SetPermission(edge.CoreWebView2PermissionKindClipboardRead, edge.CoreWebView2PermissionStateAllow)
 
 	if !chromium.Embed(uintptr(hwnd)) {
+		DestroyWindow(hwnd)
 		return nil, ErrEmbed
 	}
 
@@ -228,6 +239,8 @@ func New(options Options) (*Window, error) {
 
 	win.Window = hwnd
 	win.Webview = chromium
+	win.HasMenu = hasMenu
+	win.Scale = scale
 	win.MinSize = POINT{X: LONG(options.MinSize.Width), Y: LONG(options.MinSize.Height)}
 	win.MaxSize = POINT{X: LONG(options.MaxSize.Width), Y: LONG(options.MaxSize.Height)}
 
@@ -367,10 +380,12 @@ func (w *Window) SetFullscreen(fullscreen bool) {
 }
 
 func (w *Window) SetSize(size Size) {
-	style := DWORD(GetWindowLongW(w.Window, GWL_STYLE))
-	s := windowSizeForClientSize(style, size)
+	size = mulSize(size, w.Scale)
 
-	SetWindowPos(w.Window, HWND_TOP, int(s.X), int(s.Y), 0, 0, SWP_NOMOVE)
+	style := DWORD(GetWindowLongW(w.Window, GWL_STYLE))
+	size = windowSizeForClientSize(style, size, w.HasMenu)
+
+	SetWindowPos(w.Window, HWND_TOP, int(size.Width), int(size.Height), 0, 0, SWP_NOMOVE)
 }
 
 func (w *Window) SetMinSize(size Size) {
@@ -440,11 +455,11 @@ func (w *Window) GetOuterSize() Size {
 // Helpers
 //
 
-func windowSizeForClientSize(style DWORD, size Size) POINT {
+func windowSizeForClientSize(style DWORD, size Size, menu BOOL) Size {
 	wr := RECT{0, 0, LONG(size.Width), LONG(size.Height)}
-	AdjustWindowRect(&wr, style, FALSE)
+	AdjustWindowRect(&wr, style, menu)
 
-	return POINT{X: (wr.Right - wr.Left), Y: (wr.Bottom - wr.Top)}
+	return Size{Width: float64(wr.Right - wr.Left), Height: float64(wr.Bottom - wr.Top)}
 }
 
 func windowResetSize(hwnd HWND) {
@@ -458,17 +473,18 @@ func windowResetSize(hwnd HWND) {
 	}
 }
 
-/*
-func windowGetPixelScale() Size {
-  HDC dc = GetDC(hwnd);
-  int scalex = GetDeviceCaps(dc, LOGPIXELSX);
-  int scaley = GetDeviceCaps(dc, LOGPIXELSY);
-  ReleaseDC(hwnd, dc);
+func windowGetPixelScale(hwnd HWND) Size {
+	dc := GetDC(hwnd)
+	scalex := GetDeviceCaps(dc, LOGPIXELSX)
+	scaley := GetDeviceCaps(dc, LOGPIXELSY)
+	ReleaseDC(hwnd, dc)
 
-  auto result = Vector2{
-    scalex / (f32)USER_DEFAULT_SCREEN_DPI,
-    scaley / (f32)USER_DEFAULT_SCREEN_DPI,
-  };
-  return result;
+	return Size{
+		Width:  float64(float64(scalex) / float64(USER_DEFAULT_SCREEN_DPI)),
+		Height: float64(float64(scaley) / float64(USER_DEFAULT_SCREEN_DPI)),
+	}
 }
-*/
+
+func mulSize(a Size, b Size) Size {
+	return Size{Width: a.Width * b.Width, Height: a.Height * b.Height}
+}
