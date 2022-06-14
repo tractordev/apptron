@@ -178,38 +178,35 @@ func New(options Options) (*Window, error) {
 
 	x := int32(options.Position.X)
 	y := int32(options.Position.Y)
-	w := int32(options.Size.Width)
-	h := int32(options.Size.Height)
+	w := int32(0)
+	h := int32(0)
 
 	hwnd := CreateWindowExW(0, apptronClassName, options.Title, style, x, y, w, h, 0, 0, GetModuleHandle(), 0)
 	if hwnd == 0 {
 		return nil, ErrCreateWindow
 	}
 
-	// @Incomplete:
-	/*
-		if options.Transparent {
-			SetWindowLongW(hwnd, GWL_EXSTYLE, GetWindowLongW(hwnd, GWL_EXSTYLE)|WS_EX_LAYERED)
+	if options.Transparent {
+		SetWindowLongW(hwnd, GWL_EXSTYLE, GetWindowLongW(hwnd, GWL_EXSTYLE)|WS_EX_LAYERED)
 
-			//
-			// When specifying an explicit RGB color, the COLORREF value has the following hexadecimal form: 0x00bbggrr
-			// https://docs.microsoft.com/en-us/windows/win32/gdi/colorref
-			//
-			SetLayeredWindowAttributes(hwnd, 0x000000ff, 200, LWA_COLORKEY)
+		//
+		// When specifying an explicit RGB color, the COLORREF value has the following hexadecimal form: 0x00bbggrr
+		// https://docs.microsoft.com/en-us/windows/win32/gdi/colorref
+		//
+		SetLayeredWindowAttributes(hwnd, 0x000000ff, 0, LWA_COLORKEY)
 
-			// Empty region for the blur effect, so the window is fully transparent
-			region := CreateRectRgn(0, 0, -1, -1)
+		// Empty region for the blur effect, so the window is fully transparent
+		region := CreateRectRgn(0, 0, -1, -1)
 
-			bb := DWM_BLURBEHIND{}
-			bb.DwFlags = DWM_BB_ENABLE | DWM_BB_BLURREGION
-			bb.FEnable = TRUE
-			bb.HRgnBlur = region
-			bb.FTransitionOnMaximized = FALSE
+		bb := DWM_BLURBEHIND{}
+		bb.DwFlags = DWM_BB_ENABLE | DWM_BB_BLURREGION
+		bb.FEnable = TRUE
+		bb.HRgnBlur = region
+		bb.FTransitionOnMaximized = FALSE
 
-			DwmEnableBlurBehindWindow(hwnd, &bb)
-			DeleteObject(HANDLE(region))
-		}
-	*/
+		DwmEnableBlurBehindWindow(hwnd, &bb)
+		DeleteObject(HANDLE(region))
+	}
 
 	var hasMenu BOOL = FALSE
 	menu := app.Menu()
@@ -231,6 +228,19 @@ func New(options Options) (*Window, error) {
 	if !chromium.Embed(uintptr(hwnd)) {
 		DestroyWindow(hwnd)
 		return nil, ErrEmbed
+	}
+
+	if options.Transparent {
+		controller2 := chromium.GetController().GetICoreWebView2Controller2()
+		if controller2 != nil {
+			color := edge.COREWEBVIEW2_COLOR{}
+			color.R = 255
+			color.G = 0
+			color.B = 0
+			color.A = 0
+
+			controller2.PutDefaultBackgroundColor(color)
+		}
 	}
 
 	settings, err := chromium.GetSettings()

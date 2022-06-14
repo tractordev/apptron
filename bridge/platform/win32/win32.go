@@ -49,6 +49,7 @@ var (
 	pDestroyWindow       = user32.NewProc("DestroyWindow")
 	pSetWindowPos        = user32.NewProc("SetWindowPos")
 	pShowWindow          = user32.NewProc("ShowWindow")
+	pUpdateWindow        = user32.NewProc("UpdateWindow")
 	pGetWindowPlacement  = user32.NewProc("GetWindowPlacement")
 	pSetWindowPlacement  = user32.NewProc("SetWindowPlacement")
 	pMonitorFromWindow   = user32.NewProc("MonitorFromWindow")
@@ -74,6 +75,7 @@ var (
 	pReleaseDC = user32.NewProc("ReleaseDC")
 
 	pSetLayeredWindowAttributes = user32.NewProc("SetLayeredWindowAttributes")
+	pUpdateLayeredWindow        = user32.NewProc("UpdateLayeredWindow")
 
 	pDispatchMessageW    = user32.NewProc("DispatchMessageW")
 	pGetMessageW         = user32.NewProc("GetMessageW")
@@ -151,6 +153,11 @@ func ShowWindow(hwnd HWND, nCmdShow int) bool {
 	return int32(ret) != 0
 }
 
+func UpdateWindow(hwnd HWND) bool {
+	ret, _, _ := pUpdateWindow.Call(uintptr(hwnd))
+	return int32(ret) != 0
+}
+
 func GetWindowPlacement(hwnd HWND, lpwndpl *WINDOWPLACEMENT) bool {
 	ret, _, _ := pGetWindowPlacement.Call(uintptr(hwnd), uintptr(unsafe.Pointer(lpwndpl)))
 	return int32(ret) != 0
@@ -216,8 +223,8 @@ func ReleaseDC(hwnd HWND, hdc HDC) int32 {
 	return int32(ret)
 }
 
-func SetLayeredWindowAttributes(hwnd HWND, crKey uint, bAlpha uint, dwFlags DWORD) bool {
-	ret, _, _ := pReleaseDC.Call(uintptr(hwnd), uintptr(crKey), uintptr(bAlpha), uintptr(dwFlags))
+func SetLayeredWindowAttributes(hwnd HWND, crKey DWORD, bAlpha byte, dwFlags DWORD) bool {
+	ret, _, _ := pSetLayeredWindowAttributes.Call(uintptr(hwnd), uintptr(crKey), uintptr(bAlpha), uintptr(dwFlags))
 	return int32(ret) != 0
 }
 
@@ -509,7 +516,7 @@ func DwmGetWindowAttribute(hwnd HWND, dwAttribute DWORD, pvAttribute unsafe.Poin
 }
 
 func DwmEnableBlurBehindWindow(hwnd HWND, pBlurBehind *DWM_BLURBEHIND) bool {
-	result, _, _ := pDwmGetWindowAttribute.Call(uintptr(hwnd), uintptr(unsafe.Pointer(pBlurBehind)))
+	result, _, _ := pDwmEnableBlurBehindWindow.Call(uintptr(hwnd), uintptr(unsafe.Pointer(pBlurBehind)))
 	return int32(result) == 0 /* S_OK */
 }
 
@@ -775,7 +782,6 @@ func RegisterWindowClass(className string, instance HINSTANCE, callback WNDPROC,
 		HCursor:       cursor,
 		HIcon:         icon,
 		Style:         style,
-		HbrBackground: HBRUSH(COLOR_WINDOW + 1),
 		LpszClassName: syscall.StringToUTF16Ptr(className),
 	}
 	wc.CbSize = UINT(unsafe.Sizeof(wc))
