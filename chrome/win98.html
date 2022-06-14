@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <link
+  rel="stylesheet"
+  href="https://unpkg.com/98.css"
+>
+  <style>
+    :root {
+      --highlight: #777;
+      --shadow: #222;
+      --panel: #424242;
+    }
+    body {
+      position: absolute;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      right: 0;
+      margin: 0;
+    }
+    body > div {
+      position: absolute;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      right: 0;
+      margin: 0;
+      border-right: 1px solid var(--shadow);
+      border-bottom: 1px solid var(--shadow);
+      border-left: 1px solid var(--highlight);
+      border-top: 1px solid var(--highlight);
+      padding: 2px;
+      padding-right: 2px;
+      padding-bottom: 2px;
+      background-color: var(--panel);
+      display: flex;
+      flex-direction: column;
+    }
+    main {
+      flex-grow: 1;
+      display: flex;
+      margin: 0px;
+    }
+    main > div {
+      width: 100%;
+      background-color: white;
+    }
+    .title-bar {
+      padding: 2px 2px 2px 4px;
+    }
+    iframe {
+      border: 0;
+      width: 100%;
+    }
+  </style>
+</head>
+<body>
+<div class="window">
+  <div class="title-bar apptron-draggable">
+    <div class="title-bar-text apptron-title"></div>
+    <div class="title-bar-controls">
+      <button class="apptron-minimize" aria-label="Minimize"></button>
+      <button class="apptron-maximize" aria-label="Maximize"></button>
+      <button class="apptron-close" aria-label="Close"></button>
+    </div>
+  </div>
+  <main class="window-body">
+    <iframe class="apptron-frame"></iframe>
+  </main>
+</div>
+</body>
+</html>

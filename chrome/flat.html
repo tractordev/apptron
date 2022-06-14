@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    :root {
+      --highlight: #777;
+      --shadow: #222;
+      --panel: #424242;
+    }
+    body {
+      position: absolute;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      right: 0;
+      margin: 0;
+    }
+    body > div {
+      position: absolute;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      right: 0;
+      margin: 0;
+      border: 2px solid black;
+      background-color: white;
+      display: flex;
+      flex-direction: column;
+    }
+    main {
+      flex-grow: 1;
+      display: flex;
+    }
+    .titlebar {
+      padding-right: 0px;
+      padding-left: 0px;
+      padding-top: 1px;
+      padding-bottom: 3px;
+      text-align: left;
+      line-height: 14px;
+      display: flex;
+      background-color: black;
+    }
+    .title {
+      display: inline-block;
+      padding-left: 6px;
+      padding-right: 6px;
+      flex-grow: 1;
+      font-size: 14px;
+      font-family: 'Roboto', sans-serif;
+      color: white;
+    }
+    .control {
+      margin-left: 1px;
+      margin-right: 4px;
+      margin-top: 2px;
+      width: 12px;
+      height: 12px;
+      
+    }
+    .control > div {
+      width: 10px;
+      height: 10px;
+    }
+    iframe {
+      border: 0;
+      width: 100%;
+    }
+  </style>
+</head>
+<body>
+<div>
+  <div class="titlebar apptron-draggable">
+    <div class="title apptron-title"></div>
+    <div class="control apptron-minimize"><div style="background-color: white;"></div></div>
+    <div class="control apptron-maximize"><div style="background-color: white;"></div></div>
+    <div class="control apptron-close"><div style="background-color: white;"></div></div>
+  </div>
+  <main>
+    <iframe class="apptron-frame"></iframe>
+  </main>
+</div>
+</body>
+</html>
