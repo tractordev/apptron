@@ -34,7 +34,7 @@ func Bundle() {
 	//fmt.Println(dir)
 
 	if _, err := os.Stat(filepath.Join(wd, cmdname)); os.IsNotExist(err) {
-		build.Build()
+		build.Build(false)
 	}
 	os.MkdirAll(filepath.Join(dir, "assets"), 0755)
 	exePath := filepath.Join(dir, "assets", appname)

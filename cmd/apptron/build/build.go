@@ -32,7 +32,7 @@ func Clean() {
 	fatal(os.RemoveAll(workdir))
 }
 
-func Build() {
+func Build(debug bool) {
 	os.Setenv("GOPRIVATE", "tractor.dev/*")
 	gobin, err := exec.LookPath("go")
 	fatal(err)
@@ -48,6 +48,9 @@ func Build() {
 	os.MkdirAll(workdir, 0755)
 
 	fmt.Printf("building %s ...\n", appname)
+	if debug {
+		fmt.Printf("  in %s\n", workdir)
+	}
 
 	start := time.Now()
 
@@ -71,6 +74,15 @@ func Build() {
 	for _, fi := range di {
 		if !fi.IsDir() && fi.Name() != appname {
 			fatal(copyFile(filepath.Join(dir, fi.Name()), filepath.Join(workdir, fi.Name())))
+		}
+		if fi.IsDir() {
+			cmd := exec.Command("/bin/sh", "-c",
+				fmt.Sprintf("cp -r %s %s",
+					filepath.Join(dir, fi.Name()),
+					filepath.Join(workdir, fi.Name())))
+			cmd.Stdout = os.Stderr
+			cmd.Stderr = os.Stderr
+			fatal(cmd.Run())
 		}
 	}
 

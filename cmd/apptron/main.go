@@ -64,13 +64,15 @@ windows. Running without a subcommand starts the API service over STDIO.`,
 		},
 	})
 
-	root.AddCommand(&cli.Command{
+	buildcmd := &cli.Command{
 		Usage: "build",
 		Short: "compile webview app from HTML",
 		Run: func(ctx context.Context, args []string) {
-			build.Build()
+			build.Build(flagDebug)
 		},
-	})
+	}
+	buildcmd.Flags().BoolVar(&flagDebug, "debug", false, "debug mode")
+	root.AddCommand(buildcmd)
 
 	root.AddCommand(&cli.Command{
 		Usage: "clean",
