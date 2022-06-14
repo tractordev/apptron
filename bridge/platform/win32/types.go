@@ -283,6 +283,10 @@ type POINT struct {
 	Y LONG
 }
 
+type SIZE struct {
+	Cx LONG
+	Cy LONG
+}
 // https://docs.microsoft.com/en-us/windows/win32/api/windef/ns-windef-rect
 type RECT struct {
 	Left   LONG
@@ -445,4 +449,12 @@ type DWM_BLURBEHIND struct {
 	FEnable                BOOL
 	HRgnBlur               HRGN
 	FTransitionOnMaximized BOOL
+}
+type PAINTSTRUCT struct {
+	Hdc         HDC
+	FErase      BOOL
+	RcPaint     RECT
+	FRestore    BOOL
+	FIncUpdate  BOOL
+	RgbReserved [32]BYTE
 }

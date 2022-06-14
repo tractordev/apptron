@@ -16,15 +16,16 @@ import (
 type Window struct {
 	window
 
-	Window  HWND
+	hwnd    HWND
 	webview *edge.Chromium
 
-	MinSize   POINT
-	MaxSize   POINT
-	Placement WINDOWPLACEMENT
+	minSize   POINT
+	maxSize   POINT
+	placement WINDOWPLACEMENT
 
-	HasMenu BOOL
-	Scale   Size
+	hasMenu       BOOL
+	scale         Size
+	isTransparent bool
 }
 
 func init() {
@@ -82,8 +83,30 @@ func windowCallback(hwnd HWND, message uint32, wParam WPARAM, lParam LPARAM) LRE
 			w.webview.Focus()
 		}
 
+	case WM_PAINT:
+		if w.isTransparent {
+			clientRect := RECT{}
+			GetClientRect(hwnd, &clientRect)
+
+			ps := PAINTSTRUCT{}
+			hdc := BeginPaint(hwnd, &ps)
+
+			bgRgn := CreateRectRgnIndirect(&clientRect)
+			hBrush := CreateSolidBrush(0x000000ff)
+
+			FillRgn(hdc, bgRgn, hBrush)
+
+			DeleteObject(HANDLE(bgRgn))
+			DeleteObject(HANDLE(hBrush))
+
+			EndPaint(hwnd, &ps)
+			return 0
+		}
+
 	case WM_MOVE, WM_MOVING:
-		w.webview.NotifyParentWindowPositionChanged()
+		if w.webview != nil {
+			w.webview.NotifyParentWindowPositionChanged()
+		}
 
 		event.Emit(event.Event{
 			Type:     event.Moved,
@@ -103,17 +126,17 @@ func windowCallback(hwnd HWND, message uint32, wParam WPARAM, lParam LPARAM) LRE
 	case WM_GETMINMAXINFO:
 		info := (*MINMAXINFO)(unsafe.Pointer(lParam))
 
-		style := DWORD(GetWindowLongW(w.Window, GWL_STYLE))
+		style := DWORD(GetWindowLongW(w.hwnd, GWL_STYLE))
 
-		if w.MinSize.X > 0 && w.MinSize.Y > 0 {
-			minSize := mulSize(Size{Width: float64(w.MinSize.X), Height: float64(w.MinSize.Y)}, w.Scale)
-			minSize = windowSizeForClientSize(style, minSize, w.HasMenu)
+		if w.minSize.X > 0 && w.minSize.Y > 0 {
+			minSize := mulSize(Size{Width: float64(w.minSize.X), Height: float64(w.minSize.Y)}, w.scale)
+			minSize = windowSizeForClientSize(style, minSize, w.hasMenu)
 			info.PtMinTrackSize = POINT{X: LONG(minSize.Width), Y: LONG(minSize.Height)}
 		}
 
-		if w.MaxSize.X > 0 && w.MaxSize.Y > 0 {
-			maxSize := mulSize(Size{Width: float64(w.MaxSize.X), Height: float64(w.MaxSize.Y)}, w.Scale)
-			maxSize = windowSizeForClientSize(style, maxSize, w.HasMenu)
+		if w.maxSize.X > 0 && w.maxSize.Y > 0 {
+			maxSize := mulSize(Size{Width: float64(w.maxSize.X), Height: float64(w.maxSize.Y)}, w.scale)
+			maxSize = windowSizeForClientSize(style, maxSize, w.hasMenu)
 			info.PtMaxTrackSize = POINT{X: LONG(maxSize.Width), Y: LONG(maxSize.Height)}
 		}
 
@@ -122,12 +145,12 @@ func windowCallback(hwnd HWND, message uint32, wParam WPARAM, lParam LPARAM) LRE
 	case WM_DPICHANGED:
 		scalex := float64(HIWORD(uint32(wParam))) / float64(USER_DEFAULT_SCREEN_DPI)
 		scaley := float64(LOWORD(uint32(wParam))) / float64(USER_DEFAULT_SCREEN_DPI)
-		w.Scale = Size{Width: scalex, Height: scaley}
+		w.scale = Size{Width: scalex, Height: scaley}
 
 		// NOTE(nick): adjust the window rect when the DPI scale changes
 		// For example, if you go into the "Make everything bigger" section and change the global pixel scale
 		suggested := (*RECT)(unsafe.Pointer(lParam))
-		SetWindowPos(w.Window, HWND_TOP,
+		SetWindowPos(w.hwnd, HWND_TOP,
 			int(suggested.Left),
 			int(suggested.Top),
 			int(suggested.Right-suggested.Left),
@@ -270,12 +293,13 @@ func New(options Options) (*Window, error) {
 	}
 	resource.Retain(win.Handle, win)
 
-	win.Window = hwnd
+	win.hwnd = hwnd
 	win.webview = chromium
-	win.HasMenu = hasMenu
-	win.Scale = scale
-	win.MinSize = POINT{X: LONG(options.MinSize.Width), Y: LONG(options.MinSize.Height)}
-	win.MaxSize = POINT{X: LONG(options.MaxSize.Width), Y: LONG(options.MaxSize.Height)}
+	win.hasMenu = hasMenu
+	win.scale = scale
+	win.minSize = POINT{X: LONG(options.MinSize.Width), Y: LONG(options.MinSize.Height)}
+	win.maxSize = POINT{X: LONG(options.MaxSize.Width), Y: LONG(options.MaxSize.Height)}
+	win.isTransparent = options.Transparent
 
 	chromium.MessageCallback = win.messageCallback
 	chromium.Eval("window.chrome.webview.postMessage('Hello, sir!');")
@@ -330,24 +354,29 @@ func New(options Options) (*Window, error) {
 }
 
 func (w *Window) Destroy() {
-	w.webview.Release()
-	w.webview = nil
+	if w.webview != nil {
+		w.webview.Release()
+		w.webview = nil
+	}
 
-	DestroyWindow(w.Window)
+	if w.hwnd != 0 {
+		DestroyWindow(w.hwnd)
+		w.hwnd = 0
+	}
 }
 
 func (w *Window) Focus() {
-	SetFocus(w.Window)
+	SetFocus(w.hwnd)
 }
 
 func (w *Window) SetVisible(visible bool) {
 	if visible {
-		ShowWindow(w.Window, SW_SHOW)
+		ShowWindow(w.hwnd, SW_SHOW)
 		if w.webview != nil {
 			w.webview.Show()
 		}
 	} else {
-		ShowWindow(w.Window, SW_HIDE)
+		ShowWindow(w.hwnd, SW_HIDE)
 		if w.webview != nil {
 			w.webview.Hide()
 		}
@@ -361,33 +390,33 @@ func (w *Window) IsVisible() bool {
 	// A Boolean value that indicates whether the window is visible onscreen
 	//
 
-	return IsWindowVisible(w.Window) && !IsIconic(w.Window) && !IsWindowCloaked(w.Window)
+	return IsWindowVisible(w.hwnd) && !IsIconic(w.hwnd) && !IsWindowCloaked(w.hwnd)
 }
 
 func (w *Window) SetMaximized(maximized bool) {
 	if maximized {
-		ShowWindow(w.Window, SW_MAXIMIZE)
+		ShowWindow(w.hwnd, SW_MAXIMIZE)
 	} else {
-		ShowWindow(w.Window, SW_NORMAL)
+		ShowWindow(w.hwnd, SW_NORMAL)
 	}
 }
 
 func (w *Window) SetMinimized(minimized bool) {
 	if minimized {
-		ShowWindow(w.Window, SW_SHOWMINNOACTIVE)
+		ShowWindow(w.hwnd, SW_SHOWMINNOACTIVE)
 	} else {
-		ShowWindow(w.Window, SW_NORMAL)
+		ShowWindow(w.hwnd, SW_NORMAL)
 	}
 }
 
 func (w *Window) SetFullscreen(fullscreen bool) {
-	hwnd := w.Window
+	hwnd := w.hwnd
 
 	style := GetWindowLongW(hwnd, GWL_STYLE)
 
 	if fullscreen {
 		info := MONITORINFOEX{}
-		if GetWindowPlacement(hwnd, &w.Placement) &&
+		if GetWindowPlacement(hwnd, &w.placement) &&
 			GetMonitorInfoW(MonitorFromWindow(hwnd, MONITOR_DEFAULTTOPRIMARY), &info) {
 
 			SetWindowLongW(hwnd, GWL_STYLE, style&(^WS_OVERLAPPEDWINDOW))
@@ -405,7 +434,7 @@ func (w *Window) SetFullscreen(fullscreen bool) {
 
 	} else {
 		SetWindowLongW(hwnd, GWL_STYLE, style|WS_OVERLAPPEDWINDOW)
-		SetWindowPlacement(hwnd, &w.Placement)
+		SetWindowPlacement(hwnd, &w.placement)
 
 		// @Robustness: is this necessary?
 		var flags UINT = SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_FRAMECHANGED
@@ -414,58 +443,58 @@ func (w *Window) SetFullscreen(fullscreen bool) {
 }
 
 func (w *Window) SetSize(size Size) {
-	size = mulSize(size, w.Scale)
+	size = mulSize(size, w.scale)
 
-	style := DWORD(GetWindowLongW(w.Window, GWL_STYLE))
-	size = windowSizeForClientSize(style, size, w.HasMenu)
+	style := DWORD(GetWindowLongW(w.hwnd, GWL_STYLE))
+	size = windowSizeForClientSize(style, size, w.hasMenu)
 
-	SetWindowPos(w.Window, HWND_TOP, int(size.Width), int(size.Height), 0, 0, SWP_NOMOVE)
+	SetWindowPos(w.hwnd, HWND_TOP, int(size.Width), int(size.Height), 0, 0, SWP_NOMOVE)
 }
 
 func (w *Window) SetMinSize(size Size) {
-	w.MinSize = POINT{X: LONG(size.Width), Y: LONG(size.Height)}
+	w.minSize = POINT{X: LONG(size.Width), Y: LONG(size.Height)}
 	// NOTE(nick): re-set window size to let WM_GETMINMAXINFO clamp the window if needed
-	windowResetSize(w.Window)
+	windowResetSize(w.hwnd)
 }
 
 func (w *Window) SetMaxSize(size Size) {
-	w.MaxSize = POINT{X: LONG(size.Width), Y: LONG(size.Height)}
+	w.maxSize = POINT{X: LONG(size.Width), Y: LONG(size.Height)}
 	// NOTE(nick): re-set window size to let WM_GETMINMAXINFO clamp the window if needed
-	windowResetSize(w.Window)
+	windowResetSize(w.hwnd)
 }
 
 func (w *Window) SetResizable(resizable bool) {
-	style := GetWindowLongW(w.Window, GWL_STYLE)
+	style := GetWindowLongW(w.hwnd, GWL_STYLE)
 
 	// NOTE(nick): WS_THICKFRAME controls the windows resizability
 	if resizable {
-		SetWindowLongW(w.Window, GWL_STYLE, style|WS_THICKFRAME)
+		SetWindowLongW(w.hwnd, GWL_STYLE, style|WS_THICKFRAME)
 	} else {
-		SetWindowLongW(w.Window, GWL_STYLE, style&(^WS_THICKFRAME))
+		SetWindowLongW(w.hwnd, GWL_STYLE, style&(^WS_THICKFRAME))
 	}
 }
 
 func (w *Window) SetAlwaysOnTop(always bool) {
 	if always {
-		SetWindowPos(w.Window, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE|SWP_NOSIZE)
+		SetWindowPos(w.hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE|SWP_NOSIZE)
 	} else {
-		SetWindowPos(w.Window, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE|SWP_NOSIZE)
+		SetWindowPos(w.hwnd, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE|SWP_NOSIZE)
 	}
 }
 
 func (w *Window) SetPosition(position Position) {
-	SetWindowPos(w.Window, HWND_TOP, int(position.X), int(position.Y), 0, 0, SWP_NOSIZE)
+	SetWindowPos(w.hwnd, HWND_TOP, int(position.X), int(position.Y), 0, 0, SWP_NOSIZE)
 }
 
 func (w *Window) SetTitle(title string) {
-	SetWindowTextW(w.Window, title)
+	SetWindowTextW(w.hwnd, title)
 }
 
 func (w *Window) GetOuterPosition() Position {
 	result := Position{X: 0, Y: 0}
 
 	var rect RECT
-	if GetWindowRect(w.Window, &rect) {
+	if GetWindowRect(w.hwnd, &rect) {
 		result.X = float64(rect.Left)
 		result.Y = float64(rect.Top)
 	}
@@ -477,7 +506,7 @@ func (w *Window) GetOuterSize() Size {
 	result := Size{Width: 0, Height: 0}
 
 	var rect RECT
-	if GetWindowRect(w.Window, &rect) {
+	if GetWindowRect(w.hwnd, &rect) {
 		result.Width = float64(rect.Right - rect.Left)
 		result.Height = float64(rect.Bottom - rect.Top)
 	}

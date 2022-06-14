@@ -71,11 +71,14 @@ var (
 	pAdjustWindowRect    = user32.NewProc("AdjustWindowRect")
 	pSetMenu             = user32.NewProc("SetMenu")
 
+	pInvalidateRect = user32.NewProc("InvalidateRect")
+	pBeginPaint     = user32.NewProc("BeginPaint")
+	pEndPaint       = user32.NewProc("EndPaint")
+
 	pGetDC     = user32.NewProc("GetDC")
 	pReleaseDC = user32.NewProc("ReleaseDC")
 
 	pSetLayeredWindowAttributes = user32.NewProc("SetLayeredWindowAttributes")
-	pUpdateLayeredWindow        = user32.NewProc("UpdateLayeredWindow")
 
 	pDispatchMessageW    = user32.NewProc("DispatchMessageW")
 	pGetMessageW         = user32.NewProc("GetMessageW")
@@ -210,6 +213,21 @@ func AdjustWindowRect(rect *RECT, style DWORD, bMenu BOOL) bool {
 
 func SetMenu(hwnd HWND, hmenu HMENU) bool {
 	ret, _, _ := pSetMenu.Call(uintptr(hwnd), uintptr(hmenu))
+	return int32(ret) != 0
+}
+
+func InvalidateRect(hwnd HWND, rect *RECT, erase BOOL) bool {
+	ret, _, _ := pInvalidateRect.Call(uintptr(hwnd), uintptr(unsafe.Pointer(rect)), uintptr(erase))
+	return int32(ret) != 0
+}
+
+func BeginPaint(hwnd HWND, lpPaintstruct *PAINTSTRUCT) HDC {
+	ret, _, _ := pBeginPaint.Call(uintptr(hwnd), uintptr(unsafe.Pointer(lpPaintstruct)))
+	return HDC(ret)
+}
+
+func EndPaint(hwnd HWND, lpPaintstruct *PAINTSTRUCT) bool {
+	ret, _, _ := pEndPaint.Call(uintptr(hwnd), uintptr(unsafe.Pointer(lpPaintstruct)))
 	return int32(ret) != 0
 }
 
@@ -483,9 +501,12 @@ func TimeBeginPeriod(uPeriod UINT) UINT {
 var (
 	gdi32 = syscall.NewLazyDLL("gdi32.dll")
 
-	pGetDeviceCaps = gdi32.NewProc("GetDeviceCaps")
-	pCreateRectRgn = gdi32.NewProc("CreateRectRgn")
-	pDeleteObject  = gdi32.NewProc("DeleteObject")
+	pGetDeviceCaps         = gdi32.NewProc("GetDeviceCaps")
+	pCreateRectRgn         = gdi32.NewProc("CreateRectRgn")
+	pDeleteObject          = gdi32.NewProc("DeleteObject")
+	pCreateRectRgnIndirect = gdi32.NewProc("CreateRectRgnIndirect")
+	pCreateSolidBrush      = gdi32.NewProc("CreateSolidBrush")
+	pFillRgn               = gdi32.NewProc("FillRgn")
 )
 
 func GetDeviceCaps(hdc HDC, index int) int {
@@ -500,6 +521,21 @@ func CreateRectRgn(x1 int, y1 int, x2 int, y2 int) HRGN {
 
 func DeleteObject(obj HANDLE) bool {
 	result, _, _ := pDeleteObject.Call(uintptr(obj))
+	return int32(result) != 0
+}
+
+func CreateRectRgnIndirect(lprect *RECT) HRGN {
+	result, _, _ := pCreateRectRgnIndirect.Call(uintptr(unsafe.Pointer(lprect)))
+	return HRGN(result)
+}
+
+func CreateSolidBrush(color COLORREF) HBRUSH {
+	result, _, _ := pCreateSolidBrush.Call(uintptr(color))
+	return HBRUSH(result)
+}
+
+func FillRgn(hdc HDC, hrgn HRGN, hbr HBRUSH) bool {
+	result, _, _ := pFillRgn.Call(uintptr(hdc), uintptr(hrgn), uintptr(hbr))
 	return int32(result) != 0
 }
 
