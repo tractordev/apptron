@@ -7,13 +7,20 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"net"
+	"net/http"
 	"os"
+	"os/exec"
+	"path/filepath"
 	"runtime"
 	"strings"
 	"text/tabwriter"
 
 	"github.com/progrium/qtalk-go/mux"
+	"github.com/progrium/qtalk-go/rpc"
 	"golang.design/x/hotkey/mainthread"
+	"tractor.dev/apptron"
+	"tractor.dev/apptron/apputil"
 	"tractor.dev/apptron/bridge"
 	"tractor.dev/apptron/bridge/api/app"
 	"tractor.dev/apptron/bridge/api/menu"
@@ -22,6 +29,7 @@ import (
 	"tractor.dev/apptron/bridge/event"
 	"tractor.dev/apptron/bridge/misc"
 	"tractor.dev/apptron/bridge/platform"
+	"tractor.dev/apptron/client"
 	"tractor.dev/apptron/cmd/apptron/build"
 	"tractor.dev/apptron/cmd/apptron/bundle"
 	"tractor.dev/apptron/cmd/apptron/cli"
@@ -57,21 +65,45 @@ windows. Running without a subcommand starts the API service over STDIO.`,
 	root.Flags().BoolVar(&flagDebug, "debug", false, "debug mode")
 
 	root.AddCommand(&cli.Command{
-		Usage: "dev",
+		Usage: "run",
 		Short: "launch a webview window from HTML",
 		Run: func(ctx context.Context, args []string) {
-			//build.Build()
+			url := ""
+			if len(args) == 1 {
+				url = args[0]
+			}
+			launchWindow(url)
 		},
 	})
 
+	var flagSetup bool
 	buildcmd := &cli.Command{
 		Usage: "build",
 		Short: "compile webview app from HTML",
 		Run: func(ctx context.Context, args []string) {
+			if flagSetup {
+				// TODO: check for go in path
+				url := "https://go.dev/doc/install"
+				fmt.Println("Use this URL to download Golang for your platform:")
+				fmt.Println("  ", url)
+				switch runtime.GOOS {
+				case "windows":
+					cmd := exec.Command(filepath.Join(os.Getenv("SYSTEMROOT"), "System32", "rundll32.exe"), "url.dll,FileProtocolHandler", url)
+					cmd.Run()
+				case "darwin":
+					cmd := exec.Command("open", url)
+					cmd.Run()
+				case "linux":
+					// TODO
+				default:
+				}
+				return
+			}
 			build.Build(flagDebug)
 		},
 	}
 	buildcmd.Flags().BoolVar(&flagDebug, "debug", false, "debug mode")
+	buildcmd.Flags().BoolVar(&flagSetup, "setup", false, "setup compiler")
 	root.AddCommand(buildcmd)
 
 	root.AddCommand(&cli.Command{
@@ -203,15 +235,6 @@ func parseMenuFile(path string) (items []menu.Item, table map[int]string, err er
 	}
 	items = itemStack[0]
 	return
-}
-
-func windowLaunch() *cli.Command {
-	return &cli.Command{
-		Usage: "launch",
-		Run: func(ctx context.Context, args []string) {
-			// TODO
-		},
-	}
 }
 
 func appIndicator() *cli.Command {
@@ -401,4 +424,62 @@ func shellShortcuts() *cli.Command {
 			})
 		},
 	}
+}
+
+func windowLaunch() *cli.Command {
+	return &cli.Command{
+		Usage: "launch [URL]",
+		Run: func(ctx context.Context, args []string) {
+			url := ""
+			if len(args) == 1 {
+				url = args[0]
+			}
+			launchWindow(url)
+		},
+	}
+}
+
+func launchWindow(url string) {
+	// TODO: use url, live reloads, env var config
+
+	ctx := context.Background()
+	dir, err := os.Getwd()
+	if err != nil {
+		log.Fatal(err)
+	}
+	fsys := os.DirFS(dir)
+
+	appOpts := apputil.AppOptionsFromHTML(fsys, "index.html", "application", client.AppOptions{})
+	native, err := apptron.Run(ctx, appOpts)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	l, err := net.Listen("tcp4", "127.0.0.1:0")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	http.Handle("/-/", apputil.BackendServer(native, func(mux *rpc.RespondMux) {
+		//mux.Handle("user", fn.HandlerFrom(&extensions{}))
+	}))
+	http.Handle("/", http.FileServer(http.FS(fsys)))
+	srv := &http.Server{Handler: http.DefaultServeMux}
+	go srv.Serve(l)
+
+	_, err = native.Window.New(ctx, apputil.WindowOptionsFromHTML(fsys, "index.html", "window", client.WindowOptions{
+		Size: client.Size{
+			Width:  800,
+			Height: 600,
+		},
+		Center:  true,
+		Visible: true,
+		URL:     fmt.Sprintf("http://%s/", l.Addr().String()),
+	}))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	native.Wait()
+
 }
