@@ -12,11 +12,29 @@ var (
 )
 
 func init() {
-	//
-	// @Robustness: add support for older versions of Windows
-	// @see https://github.com/glfw/glfw/blob/master/src/win32_init.c#L643
-	//
-	win32.SetProcessDpiAwarenessContext(win32.DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2)
+	// @see https://github.com/glfw/glfw/blob/master/src/win32_init.c#L692
+
+	// NOTE(nick): the exact snippet from GLFW is:
+	/*
+			if (_glfwIsWindows10Version1703OrGreaterWin32())
+		        SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
+		    else if (IsWindows8Point1OrGreater())
+		        SetProcessDpiAwareness(PROCESS_PER_MONITOR_DPI_AWARE);
+		    else if (IsWindowsVistaOrGreater())
+		        SetProcessDPIAware();
+
+	*/
+	// BUT, I think it's sufficient to just check if these proceedures are loaded?
+	// @Robustness: test this assumption
+
+	success := win32.SetProcessDpiAwarenessContext(win32.DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2)
+	if !success {
+		success = win32.SetProcessDpiAwareness(win32.PROCESS_PER_MONITOR_DPI_AWARE)
+
+		if !success {
+			success = win32.SetProcessDPIAware()
+		}
+	}
 }
 
 func Menu() *menu.Menu {
@@ -24,7 +42,6 @@ func Menu() *menu.Menu {
 }
 
 func SetMenu(menu *menu.Menu) error {
-	//app.SetMainMenu(menu.NSMenu)
 	mainMenu = menu
 	return nil
 }
@@ -38,7 +55,7 @@ func NewIndicator(icon []byte, items []menu.Item) {
 		})
 	}
 
-	win32.NewTrayMenu(menu.HMENU, icon, onClick)
+	win32.NewTrayMenu(menu.PopupMenu, icon, onClick)
 }
 
 func Run(options Options) error {

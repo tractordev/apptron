@@ -33,6 +33,7 @@ type HMENU HANDLE
 type HBITMAP HANDLE
 type HDC HANDLE
 type HMONITOR HANDLE
+type HRGN HANDLE
 
 type WPARAM UINT_PTR
 type LPARAM LONG_PTR
@@ -41,7 +42,14 @@ type WNDPROC func(hwnd HWND, msg uint32, wparam WPARAM, lparam LPARAM) LRESULT
 
 type MONITORENUMPROC func(unnamedParam1 HMONITOR, unnamedParam2 HDC, unnamedParam3 *RECT, unnamedParam4 LPARAM) uintptr
 
+type COLORREF DWORD
+
 // https://github.com/AllenDang/w32/blob/ad0a36d80adcd081d5c0dded8e97a009b486d1db/constants.go
+
+const UINT_MAX = ^uint(0)
+const INT_MAX = ^int(0)
+
+const LONG_MAX = 2147483647
 
 const (
 	NULL  = 0
@@ -50,7 +58,54 @@ const (
 )
 
 const (
-	SW_SHOW = 5
+	SW_HIDE            = 0
+	SW_NORMAL          = 1
+	SW_SHOWMINIMIZED   = 2
+	SW_SHOWMAXIMIZED   = 3
+	SW_MAXIMIZE        = 3
+	SW_SHOW            = 5
+	SW_MINIMIZE        = 6
+	SW_SHOWMINNOACTIVE = 7
+	SW_RESTORE         = 9
+)
+
+const (
+	CS_VREDRAW         = 0x00000001
+	CS_HREDRAW         = 0x00000002
+	CS_KEYCVTWINDOW    = 0x00000004
+	CS_DBLCLKS         = 0x00000008
+	CS_OWNDC           = 0x00000020
+	CS_CLASSDC         = 0x00000040
+	CS_PARENTDC        = 0x00000080
+	CS_NOKEYCVT        = 0x00000100
+	CS_NOCLOSE         = 0x00000200
+	CS_SAVEBITS        = 0x00000800
+	CS_BYTEALIGNCLIENT = 0x00001000
+	CS_BYTEALIGNWINDOW = 0x00002000
+	CS_GLOBALCLASS     = 0x00004000
+	CS_IME             = 0x00010000
+	CS_DROPSHADOW      = 0x00020000
+)
+
+const (
+	HWND_TOP       = (HWND)(0)
+	HWND_BOTTOM    = (HWND)(1)
+	HWND_TOPMOST   = (HWND)(UINT_MAX - 1 + 1)
+	HWND_NOTOPMOST = (HWND)(UINT_MAX - 2 + 1)
+)
+
+const (
+	MONITOR_DEFAULTTOPRIMARY = 0x00000001
+	MONITOR_DEFAULTTONEAREST = 0x00000002
+)
+
+const (
+	SWP_NOSIZE        = 0x0001
+	SWP_NOMOVE        = 0x0002
+	SWP_NOZORDER      = 0x0004
+	SWP_NOACTIVATE    = 0x0010
+	SWP_FRAMECHANGED  = 0x0020
+	SWP_NOOWNERZORDER = 0x0200
 )
 
 const (
@@ -62,26 +117,48 @@ const (
 )
 
 const (
-	WS_VISIBLE = 0x10000000
+	WS_VISIBLE          = 0x10000000
+	WS_CAPTION          = 0x00C00000
+	WS_MAXIMIZEBOX      = 0x00010000
+	WS_MINIMIZEBOX      = 0x00020000
+	WS_OVERLAPPED       = 0x00000000
+	WS_SYSMENU          = 0x00080000
+	WS_THICKFRAME       = 0x00040000
+	WS_POPUP            = 0x80000000
+	WS_OVERLAPPEDWINDOW = (WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX)
 
-	WS_CAPTION     = 0x00C00000
-	WS_MAXIMIZEBOX = 0x00010000
-	WS_MINIMIZEBOX = 0x00020000
-	WS_OVERLAPPED  = 0x00000000
-	WS_SYSMENU     = 0x00080000
-	WS_THICKFRAME  = 0x00040000
-
-	WS_OVERLAPPEDWINDOW = WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX
+	WS_EX_LAYERED = 0x00080000
 )
 
 const (
-	WM_QUIT    = 18
-	WM_DESTROY = 0x0002
-	WM_CLOSE   = 0x0010
-	WM_USER    = 0x0400
+	WM_CREATE           = 0x0001
+	WM_DESTROY          = 0x0002
+	WM_MOVE             = 0x0003
+	WM_SIZE             = 0x0005
+	WM_ACTIVATE         = 0x0006
+	WM_SETFOCUS         = 0x0007
+	WM_KILLFOCUS        = 0x0008
+	WM_PAINT            = 0x000f
+	WM_CLOSE            = 0x0010
+	WM_QUIT             = 0x0012
+	WM_GETMINMAXINFO    = 0x0024
+	WM_WINDOWPOSCHANGED = 0x0047
+	WM_CHAR             = 0x0102
+	WM_SYSCHAR          = 0x0106
+	WM_UNICHAR          = 0x0109
+	WM_COMMAND          = 0x0111
+	WM_SYSCOMMAND       = 0x0112
+	WM_LBUTTONDOWN      = 0x0201
+	WM_RBUTTONDOWN      = 0x0204
+	WM_MOVING           = 0x0216
+	WM_DPICHANGED       = 0x02E0
+	WM_USER             = 0x0400
+)
 
-	WM_LBUTTONDOWN = 0x0201
-	WM_RBUTTONDOWN = 0x0204
+const (
+	SC_KEYMENU      = 0xF100
+	SC_SCREENSAVE   = 0xF140
+	SC_MONITORPOWER = 0xF170
 )
 
 const (
@@ -141,14 +218,16 @@ const (
 	TPM_RIGHTBUTTON = 0x0002
 )
 
-const UINT_MAX = ^uint(0)
-const INT_MAX = ^int(0)
-
 // https://docs.microsoft.com/en-us/windows/win32/hidpi/dpi-awareness-context
 const DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2 = (HANDLE)(UINT_MAX - 4 + 1)
 
+const PROCESS_PER_MONITOR_DPI_AWARE = 2
+
 const (
-	GWL_USERDATA = (int)(INT_MAX - 21 + 1)
+	GWL_STYLE     = -16
+	GWL_EXSTYLE   = -20
+	GWL_USERDATA  = -21
+	GWLP_USERDATA = -21
 )
 
 const ENUM_CURRENT_SETTINGS = 0xFFFFFFFF
@@ -179,12 +258,35 @@ const (
 	IDOK = 1
 )
 
+const (
+	DWMWA_CLOAKED = 14
+)
+
+const (
+	LOGPIXELSX = 88
+	LOGPIXELSY = 90
+)
+
+const (
+	LWA_COLORKEY = 0x00000001
+	LWA_ALPHA    = 0x00000002
+)
+
+const (
+	DWM_BB_ENABLE     = 0x00000001
+	DWM_BB_BLURREGION = 0x00000002
+)
+
 // https://docs.microsoft.com/en-us/windows/win32/api/windef/ns-windef-point
 type POINT struct {
 	X LONG
 	Y LONG
 }
 
+type SIZE struct {
+	Cx LONG
+	Cy LONG
+}
 // https://docs.microsoft.com/en-us/windows/win32/api/windef/ns-windef-rect
 type RECT struct {
 	Left   LONG
@@ -322,4 +424,37 @@ type DEVMODE struct {
 	DmReserved2        DWORD
 	DmPanningWidth     DWORD
 	DmPanningHeight    DWORD
+}
+
+type WINDOWPLACEMENT struct {
+	Length           UINT
+	Flags            UINT
+	ShowCmd          UINT
+	PtMinPosition    POINT
+	PtMaxPosition    POINT
+	RcNormalPosition RECT
+	RcDevice         RECT
+}
+
+type MINMAXINFO struct {
+	PtReserved     POINT
+	PtMaxSize      POINT
+	PtMaxPosition  POINT
+	PtMinTrackSize POINT
+	PtMaxTrackSize POINT
+}
+
+type DWM_BLURBEHIND struct {
+	DwFlags                DWORD
+	FEnable                BOOL
+	HRgnBlur               HRGN
+	FTransitionOnMaximized BOOL
+}
+type PAINTSTRUCT struct {
+	Hdc         HDC
+	FErase      BOOL
+	RcPaint     RECT
+	FRestore    BOOL
+	FIncUpdate  BOOL
+	RgbReserved [32]BYTE
 }

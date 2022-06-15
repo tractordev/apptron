@@ -19,6 +19,8 @@ import (
 
 const QUIT_ID = 1
 
+var theWindow *window.Window
+
 func init() {
 	runtime.LockOSThread()
 }
@@ -40,6 +42,12 @@ func run() {
 
 		if e.Type == event.MenuItem && e.MenuItem == QUIT_ID {
 			platform.Terminate()
+		}
+
+		if e.Type == event.MenuItem && e.MenuItem == 123 {
+			if theWindow != nil {
+				theWindow.SetMaxSize(window.Size{Width: 400, Height: 400})
+			}
 		}
 
 		return nil
@@ -65,6 +73,7 @@ func run() {
 				},
 				{
 					Title: "TWO",
+					ID:    123,
 				},
 			},
 		},
@@ -123,7 +132,7 @@ func run() {
 		Visible:     true,
 		Resizable:   true,
 		Position:    window.Position{X: 10, Y: 10},
-		Size:        window.Size{Width: 360, Height: 240},
+		Size:        window.Size{Width: 640, Height: 480},
 		Center:      true,
 		Icon:        iconData,
 		HTML: `
@@ -143,14 +152,16 @@ func run() {
 
 	platform.Dispatch(func() {
 		w1, err := window.New(options)
+		theWindow = w1
 		fatal(err)
 
 		fmt.Println("[main] window", w1)
+		fmt.Println("[main] visible?", w1.IsVisible())
 
 		w1.SetTitle("Hello, Sailor!")
 		fmt.Println("[main] window position", w1.GetOuterPosition())
 
-		w1.SetMinSize(window.Size{Width: 100, Height: 100})
+		//w1.SetMinSize(window.Size{Width: 100, Height: 100})
 	})
 
 	platform.Dispatch(func() {

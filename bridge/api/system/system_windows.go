@@ -10,7 +10,7 @@ func Displays() (displays []Display) {
 		info := win32.MONITORINFOEX{}
 		devMode := win32.DEVMODE{}
 
-		if win32.GetMonitorInfo(monitor, &info) {
+		if win32.GetMonitorInfoW(monitor, &info) {
 			if win32.EnumDisplaySettings(&info.DeviceName[0], win32.ENUM_CURRENT_SETTINGS, &devMode) {
 				rect = &win32.RECT{
 					Left:   devMode.DmPosition.X,

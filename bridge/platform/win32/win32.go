@@ -18,6 +18,7 @@ var (
 
 	pGetModuleHandleW = kernel32.NewProc("GetModuleHandleW")
 	pExitProcess      = kernel32.NewProc("ExitProcess")
+	pGetLastError     = kernel32.NewProc("GetLastError")
 
 	pGlobalLock    = kernel32.NewProc("GlobalLock")
 	pGlobalUnlock  = kernel32.NewProc("GlobalUnlock")
@@ -35,12 +36,50 @@ func ExitProcess(exitCode UINT) {
 	pExitProcess.Call(uintptr(exitCode))
 }
 
+func GetLastError() DWORD {
+	ret, _, _ := pGetLastError.Call()
+	return DWORD(ret)
+}
+
 var (
 	user32 = syscall.NewLazyDLL("user32.dll")
 
 	pCreateWindowExW     = user32.NewProc("CreateWindowExW")
 	pDefWindowProcW      = user32.NewProc("DefWindowProcW")
 	pDestroyWindow       = user32.NewProc("DestroyWindow")
+	pSetWindowPos        = user32.NewProc("SetWindowPos")
+	pShowWindow          = user32.NewProc("ShowWindow")
+	pUpdateWindow        = user32.NewProc("UpdateWindow")
+	pGetWindowPlacement  = user32.NewProc("GetWindowPlacement")
+	pSetWindowPlacement  = user32.NewProc("SetWindowPlacement")
+	pMonitorFromWindow   = user32.NewProc("MonitorFromWindow")
+	pSetWindowTextW      = user32.NewProc("SetWindowTextW")
+	pGetCursorPos        = user32.NewProc("GetCursorPos")
+	pSetForegroundWindow = user32.NewProc("SetForegroundWindow")
+	pGetActiveWindow     = user32.NewProc("GetActiveWindow")
+	pGetWindowLongW      = user32.NewProc("GetWindowLongW")
+	pSetWindowLongW      = user32.NewProc("SetWindowLongW")
+	pGetWindowLongPtrW   = user32.NewProc("GetWindowLongPtrW")
+	pSetWindowLongPtrW   = user32.NewProc("SetWindowLongPtrW")
+	pValidateRect        = user32.NewProc("ValidateRect")
+	pGetClientRect       = user32.NewProc("GetClientRect")
+	pGetForegroundWindow = user32.NewProc("GetForegroundWindow")
+	pSetFocus            = user32.NewProc("SetFocus")
+	pIsWindowVisible     = user32.NewProc("IsWindowVisible")
+	pIsIconic            = user32.NewProc("IsIconic")
+	pGetWindowRect       = user32.NewProc("GetWindowRect")
+	pAdjustWindowRect    = user32.NewProc("AdjustWindowRect")
+	pSetMenu             = user32.NewProc("SetMenu")
+
+	pInvalidateRect = user32.NewProc("InvalidateRect")
+	pBeginPaint     = user32.NewProc("BeginPaint")
+	pEndPaint       = user32.NewProc("EndPaint")
+
+	pGetDC     = user32.NewProc("GetDC")
+	pReleaseDC = user32.NewProc("ReleaseDC")
+
+	pSetLayeredWindowAttributes = user32.NewProc("SetLayeredWindowAttributes")
+
 	pDispatchMessageW    = user32.NewProc("DispatchMessageW")
 	pGetMessageW         = user32.NewProc("GetMessageW")
 	pPeekMessageW        = user32.NewProc("PeekMessageW")
@@ -48,11 +87,6 @@ var (
 	pPostQuitMessage     = user32.NewProc("PostQuitMessage")
 	pRegisterClassExW    = user32.NewProc("RegisterClassExW")
 	pTranslateMessage    = user32.NewProc("TranslateMessage")
-	pGetCursorPos        = user32.NewProc("GetCursorPos")
-	pSetForegroundWindow = user32.NewProc("SetForegroundWindow")
-	pGetActiveWindow     = user32.NewProc("GetActiveWindow")
-	pSetWindowLongW      = user32.NewProc("SetWindowLongW")
-	pGetWindowLongW      = user32.NewProc("GetWindowLongW")
 	pEnumDisplayMonitors = user32.NewProc("EnumDisplayMonitors")
 	pEnumDisplaySettings = user32.NewProc("EnumDisplaySettingsW")
 	pGetMonitorInfoW     = user32.NewProc("GetMonitorInfoW")
@@ -74,13 +108,14 @@ var (
 	pLookupIconIdFromDirectoryEx = user32.NewProc("LookupIconIdFromDirectoryEx")
 
 	pSetProcessDpiAwarenessContext = user32.NewProc("SetProcessDpiAwarenessContext")
+	pSetProcessDPIAware            = user32.NewProc("SetProcessDPIAware")
 
 	pMessageBoxW = user32.NewProc("MessageBoxW")
 )
 
-func CreateWindow(className, windowName string, style uint32, x, y, width, height int32, parent, menu, instance HINSTANCE) (HWND, error) {
-	ret, _, err := pCreateWindowExW.Call(
-		uintptr(0),
+func CreateWindowExW(dwExStyle DWORD, className string, windowName string, style DWORD, x, y, width, height int32, parent, menu, instance HINSTANCE, lpParam uintptr) HWND {
+	ret, _, _ := pCreateWindowExW.Call(
+		uintptr(dwExStyle),
 		uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(className))),
 		uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(windowName))),
 		uintptr(style),
@@ -91,12 +126,9 @@ func CreateWindow(className, windowName string, style uint32, x, y, width, heigh
 		uintptr(parent),
 		uintptr(menu),
 		uintptr(instance),
-		uintptr(0),
+		uintptr(lpParam),
 	)
-	if ret == 0 {
-		return 0, err
-	}
-	return HWND(ret), nil
+	return HWND(ret)
 }
 
 func DefWindowProc(hwnd HWND, msg uint32, wparam WPARAM, lparam LPARAM) LRESULT {
@@ -104,12 +136,119 @@ func DefWindowProc(hwnd HWND, msg uint32, wparam WPARAM, lparam LPARAM) LRESULT 
 	return LRESULT(ret)
 }
 
-func DestroyWindow(hwnd HWND) error {
-	ret, _, err := pDestroyWindow.Call(uintptr(hwnd))
-	if ret == 0 {
-		return err
-	}
-	return nil
+func DestroyWindow(hwnd HWND) bool {
+	ret, _, _ := pDestroyWindow.Call(uintptr(hwnd))
+	return int32(ret) != 0
+}
+
+func SetWindowPos(hwnd HWND, hwndInsertAfter HWND, x int, y int, cx int, cy int, flags UINT) bool {
+	ret, _, _ := pSetWindowPos.Call(uintptr(hwnd), uintptr(hwndInsertAfter), uintptr(x), uintptr(y), uintptr(cx), uintptr(cy), uintptr(flags))
+	return int32(ret) != 0
+}
+
+func MonitorFromWindow(hwnd HWND, dwFlags DWORD) HMONITOR {
+	ret, _, _ := pMonitorFromWindow.Call(uintptr(hwnd), uintptr(dwFlags))
+	return HMONITOR(ret)
+}
+
+func ShowWindow(hwnd HWND, nCmdShow int) bool {
+	ret, _, _ := pShowWindow.Call(uintptr(hwnd), uintptr(nCmdShow))
+	return int32(ret) != 0
+}
+
+func UpdateWindow(hwnd HWND) bool {
+	ret, _, _ := pUpdateWindow.Call(uintptr(hwnd))
+	return int32(ret) != 0
+}
+
+func GetWindowPlacement(hwnd HWND, lpwndpl *WINDOWPLACEMENT) bool {
+	ret, _, _ := pGetWindowPlacement.Call(uintptr(hwnd), uintptr(unsafe.Pointer(lpwndpl)))
+	return int32(ret) != 0
+}
+
+func SetWindowPlacement(hwnd HWND, lpwndpl *WINDOWPLACEMENT) bool {
+	ret, _, _ := pSetWindowPlacement.Call(uintptr(hwnd), uintptr(unsafe.Pointer(lpwndpl)))
+	return int32(ret) != 0
+}
+
+func SetWindowTextW(hwnd HWND, title string) bool {
+	ret, _, _ := pSetWindowTextW.Call(uintptr(hwnd), uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(title))))
+	return int32(ret) != 0
+}
+
+func GetClientRect(hwnd HWND, lpRect *RECT) bool {
+	ret, _, _ := pGetClientRect.Call(uintptr(hwnd), uintptr(unsafe.Pointer(lpRect)))
+	return int32(ret) != 0
+}
+
+func GetForegroundWindow() HWND {
+	ret, _, _ := pGetForegroundWindow.Call()
+	return HWND(ret)
+}
+
+func SetFocus(hwnd HWND) HWND {
+	ret, _, _ := pSetFocus.Call(uintptr(hwnd))
+	return HWND(ret)
+}
+
+func IsWindowVisible(hwnd HWND) bool {
+	ret, _, _ := pIsWindowVisible.Call(uintptr(hwnd))
+	return int32(ret) != 0
+}
+
+func IsIconic(hwnd HWND) bool {
+	ret, _, _ := pIsIconic.Call(uintptr(hwnd))
+	return int32(ret) != 0
+}
+
+func GetWindowRect(hwnd HWND, lpRect *RECT) bool {
+	ret, _, _ := pGetWindowRect.Call(uintptr(hwnd), uintptr(unsafe.Pointer(lpRect)))
+	return int32(ret) != 0
+}
+
+func AdjustWindowRect(rect *RECT, style DWORD, bMenu BOOL) bool {
+	ret, _, _ := pAdjustWindowRect.Call(uintptr(unsafe.Pointer(rect)), uintptr(style), uintptr(bMenu))
+	return int32(ret) != 0
+}
+
+func SetMenu(hwnd HWND, hmenu HMENU) bool {
+	ret, _, _ := pSetMenu.Call(uintptr(hwnd), uintptr(hmenu))
+	return int32(ret) != 0
+}
+
+func InvalidateRect(hwnd HWND, rect *RECT, erase BOOL) bool {
+	ret, _, _ := pInvalidateRect.Call(uintptr(hwnd), uintptr(unsafe.Pointer(rect)), uintptr(erase))
+	return int32(ret) != 0
+}
+
+func BeginPaint(hwnd HWND, lpPaintstruct *PAINTSTRUCT) HDC {
+	ret, _, _ := pBeginPaint.Call(uintptr(hwnd), uintptr(unsafe.Pointer(lpPaintstruct)))
+	return HDC(ret)
+}
+
+func EndPaint(hwnd HWND, lpPaintstruct *PAINTSTRUCT) bool {
+	ret, _, _ := pEndPaint.Call(uintptr(hwnd), uintptr(unsafe.Pointer(lpPaintstruct)))
+	return int32(ret) != 0
+}
+
+func GetDC(hwnd HWND) HDC {
+	ret, _, _ := pGetDC.Call(uintptr(hwnd))
+	return HDC(ret)
+}
+
+func ReleaseDC(hwnd HWND, hdc HDC) int32 {
+	ret, _, _ := pReleaseDC.Call(uintptr(hwnd), uintptr(hdc))
+	return int32(ret)
+}
+
+func SetLayeredWindowAttributes(hwnd HWND, crKey DWORD, bAlpha byte, dwFlags DWORD) bool {
+	ret, _, _ := pSetLayeredWindowAttributes.Call(uintptr(hwnd), uintptr(crKey), uintptr(bAlpha), uintptr(dwFlags))
+	return int32(ret) != 0
+}
+
+func ValidateRect(hwnd HWND, lpRect *RECT) bool {
+	ret, _, _ := pValidateRect.Call(uintptr(hwnd), uintptr(unsafe.Pointer(lpRect)))
+	return int32(ret) != 0
 }
 
 func GetMessage(msg *MSG, hwnd HWND, msgFilterMin uint32, msgFilterMax uint32) bool {
@@ -153,7 +292,7 @@ func PostQuitMessage(exitCode int32) {
 	pPostQuitMessage.Call(uintptr(exitCode))
 }
 
-func RegisterClassEx(wcx *WNDCLASSEXW) (uint16, error) {
+func RegisterClassExW(wcx *WNDCLASSEXW) (uint16, error) {
 	ret, _, err := pRegisterClassExW.Call(uintptr(unsafe.Pointer(wcx)))
 	if ret == 0 {
 		return 0, err
@@ -162,7 +301,20 @@ func RegisterClassEx(wcx *WNDCLASSEXW) (uint16, error) {
 }
 
 func SetProcessDpiAwarenessContext(context HANDLE) bool {
+	if pSetProcessDpiAwarenessContext == nil {
+		return false
+	}
+
 	ret, _, _ := pSetProcessDpiAwarenessContext.Call(uintptr(context))
+	return ret != 0
+}
+
+func SetProcessDPIAware() bool {
+	if pSetProcessDPIAware == nil {
+		return false
+	}
+
+	ret, _, _ := pSetProcessDPIAware.Call()
 	return ret != 0
 }
 
@@ -176,14 +328,24 @@ func GetActiveWindow() HWND {
 	return HWND(ret)
 }
 
+func GetWindowLongW(hwnd HWND, index int) LONG {
+	ret, _, _ := pGetWindowLongW.Call(uintptr(hwnd), uintptr(index))
+	return LONG(ret)
+}
+
 func SetWindowLongW(hwnd HWND, index int, long LONG) LONG {
 	ret, _, _ := pSetWindowLongW.Call(uintptr(hwnd), uintptr(index), uintptr(long))
 	return LONG(ret)
 }
 
-func GetWindowLongW(hwnd HWND, index int) LONG {
-	ret, _, _ := pGetWindowLongW.Call(uintptr(hwnd), uintptr(index))
-	return LONG(ret)
+func GetWindowLongPtrW(hwnd HWND, index int) uintptr {
+	ret, _, _ := pGetWindowLongPtrW.Call(uintptr(hwnd), uintptr(index))
+	return uintptr(ret)
+}
+
+func SetWindowLongPtrW(hwnd HWND, index int, dwNewLong unsafe.Pointer) uintptr {
+	ret, _, _ := pSetWindowLongPtrW.Call(uintptr(hwnd), uintptr(index), uintptr(dwNewLong))
+	return uintptr(ret)
 }
 
 func EnumDisplayMonitors(hdc HDC, clip *RECT, enumProc MONITORENUMPROC, data LPARAM) bool {
@@ -198,7 +360,7 @@ func EnumDisplaySettings(deviceName *uint16, iModeNum DWORD, lpDevMode *DEVMODE)
 	return ret != 0
 }
 
-func GetMonitorInfo(monitor HMONITOR, info *MONITORINFOEX) bool {
+func GetMonitorInfoW(monitor HMONITOR, info *MONITORINFOEX) bool {
 	info.CbSize = DWORD(unsafe.Sizeof(*info))
 
 	ret, _, _ := pGetMonitorInfoW.Call(uintptr(monitor), uintptr(unsafe.Pointer(info)))
@@ -208,6 +370,11 @@ func GetMonitorInfo(monitor HMONITOR, info *MONITORINFOEX) bool {
 func GetCursorPos(pos *POINT) bool {
 	ret, _, _ := pGetCursorPos.Call(uintptr(unsafe.Pointer(pos)))
 	return ret != 0
+}
+
+func CreateMenu() HMENU {
+	ret, _, _ := pCreateMenu.Call()
+	return HMENU(ret)
 }
 
 func CreatePopupMenu() HMENU {
@@ -298,11 +465,26 @@ var (
 
 	// min support Windows 8.1 [desktop apps only]
 	pGetDpiForMonitor = shcore.NewProc("GetDpiForMonitor")
+
+	pSetProcessDpiAwareness = shcore.NewProc("pSetProcessDpiAwareness")
 )
 
 func GetDpiForMonitor(monitor HMONITOR, dpiType uint32 /*MONITOR_DPI_TYPE*/, dpiX *UINT, dpiY *UINT) bool {
+	if pGetDpiForMonitor == nil {
+		return false
+	}
+
 	ret, _, _ := pGetDpiForMonitor.Call(uintptr(monitor), uintptr(dpiType), uintptr(unsafe.Pointer(dpiX)), uintptr(unsafe.Pointer(dpiY)))
 	return ret == 0 /*S_OK*/
+}
+
+func SetProcessDpiAwareness(awareness int32) bool {
+	if pSetProcessDpiAwareness == nil {
+		return false
+	}
+
+	ret, _, _ := pSetProcessDpiAwareness.Call(uintptr(awareness))
+	return ret != 0
 }
 
 var (
@@ -310,6 +492,100 @@ var (
 
 	pTimeBeginPeriod = winmm.NewProc("timeBeginPeriod")
 )
+
+func TimeBeginPeriod(uPeriod UINT) UINT {
+	result, _, _ := pTimeBeginPeriod.Call(uintptr(uPeriod))
+	return UINT(result)
+}
+
+var (
+	gdi32 = syscall.NewLazyDLL("gdi32.dll")
+
+	pGetDeviceCaps         = gdi32.NewProc("GetDeviceCaps")
+	pCreateRectRgn         = gdi32.NewProc("CreateRectRgn")
+	pDeleteObject          = gdi32.NewProc("DeleteObject")
+	pCreateRectRgnIndirect = gdi32.NewProc("CreateRectRgnIndirect")
+	pCreateSolidBrush      = gdi32.NewProc("CreateSolidBrush")
+	pFillRgn               = gdi32.NewProc("FillRgn")
+)
+
+func GetDeviceCaps(hdc HDC, index int) int {
+	result, _, _ := pGetDeviceCaps.Call(uintptr(hdc), uintptr(index))
+	return int(result)
+}
+
+func CreateRectRgn(x1 int, y1 int, x2 int, y2 int) HRGN {
+	result, _, _ := pCreateRectRgn.Call(uintptr(x1), uintptr(y1), uintptr(x2), uintptr(y2))
+	return HRGN(result)
+}
+
+func DeleteObject(obj HANDLE) bool {
+	result, _, _ := pDeleteObject.Call(uintptr(obj))
+	return int32(result) != 0
+}
+
+func CreateRectRgnIndirect(lprect *RECT) HRGN {
+	result, _, _ := pCreateRectRgnIndirect.Call(uintptr(unsafe.Pointer(lprect)))
+	return HRGN(result)
+}
+
+func CreateSolidBrush(color COLORREF) HBRUSH {
+	result, _, _ := pCreateSolidBrush.Call(uintptr(color))
+	return HBRUSH(result)
+}
+
+func FillRgn(hdc HDC, hrgn HRGN, hbr HBRUSH) bool {
+	result, _, _ := pFillRgn.Call(uintptr(hdc), uintptr(hrgn), uintptr(hbr))
+	return int32(result) != 0
+}
+
+var (
+	dwmapi = syscall.NewLazyDLL("dwmapi.dll")
+
+	pDwmGetWindowAttribute     = dwmapi.NewProc("DwmGetWindowAttribute")
+	pDwmEnableBlurBehindWindow = dwmapi.NewProc("DwmEnableBlurBehindWindow")
+)
+
+func DwmGetWindowAttribute(hwnd HWND, dwAttribute DWORD, pvAttribute unsafe.Pointer, cbAttribute DWORD) bool {
+	result, _, _ := pDwmGetWindowAttribute.Call(uintptr(hwnd), uintptr(dwAttribute), uintptr(pvAttribute), uintptr(cbAttribute))
+	return int32(result) == 0 /* S_OK */
+}
+
+func DwmEnableBlurBehindWindow(hwnd HWND, pBlurBehind *DWM_BLURBEHIND) bool {
+	result, _, _ := pDwmEnableBlurBehindWindow.Call(uintptr(hwnd), uintptr(unsafe.Pointer(pBlurBehind)))
+	return int32(result) == 0 /* S_OK */
+}
+
+//
+// Helpers
+//
+
+func MakeIntResource(id uint16) *uint16 {
+	return (*uint16)(unsafe.Pointer(uintptr(id)))
+}
+
+func LOWORD(dw uint32) uint16 {
+	return uint16(dw)
+}
+
+func HIWORD(dw uint32) uint16 {
+	return uint16(dw >> 16 & 0xffff)
+}
+
+func Utf16PtrToString(p uintptr) string {
+	n := 0
+	for ptr := unsafe.Pointer(p); *(*uint16)(ptr) != 0; n++ {
+		ptr = unsafe.Pointer(uintptr(ptr) +
+			unsafe.Sizeof(*((*uint16)(unsafe.Pointer(p)))))
+	}
+
+	var s []uint16
+	h := (*reflect.SliceHeader)(unsafe.Pointer(&s))
+	h.Data = p
+	h.Len = n
+	h.Cap = n
+	return syscall.UTF16ToString(s)
+}
 
 //
 // Functions
@@ -319,8 +595,7 @@ var win32SleepIsGranular = false
 
 func OS_Init() {
 	// NOTE(nick): request high-precision timers
-	result, _, _ := pTimeBeginPeriod.Call(1)
-	win32SleepIsGranular = UINT(result) == 0 /* TIMERR_NOERROR */
+	win32SleepIsGranular = TimeBeginPeriod(1) == 0 /* TIMERR_NOERROR */
 
 	//log.Println("[OS] sleep is granular", win32SleepIsGranular)
 }
@@ -339,21 +614,6 @@ func SleepMS(float64 miliseconds) {
   CloseHandle(timer);
 }
 */
-
-func Utf16PtrToSlice(p uintptr) []uint16 {
-	n := 0
-	for ptr := unsafe.Pointer(p); *(*uint16)(ptr) != 0; n++ {
-		ptr = unsafe.Pointer(uintptr(ptr) +
-			unsafe.Sizeof(*((*uint16)(unsafe.Pointer(p)))))
-	}
-
-	var s []uint16
-	h := (*reflect.SliceHeader)(unsafe.Pointer(&s))
-	h.Data = p
-	h.Len = n
-	h.Cap = n
-	return s
-}
 
 func OS_GetClipboardText() string {
 	var result string
@@ -381,7 +641,7 @@ func OS_GetClipboardText() string {
 		return result
 	}
 
-	result = string(syscall.UTF16ToString(Utf16PtrToSlice(ret)))
+	result = Utf16PtrToString(ret)
 
 	pCloseClipboard.Call()
 
@@ -452,30 +712,6 @@ func PollEvents() {
 
 func (info *MONITORINFOEX) GetDeviceName() string {
 	return syscall.UTF16ToString(info.DeviceName[:])
-}
-
-func RegisterWindowClass(className string, instance HINSTANCE, callback WNDPROC) bool {
-	cursor, err := LoadCursorResource(IDC_ARROW)
-	if err != nil {
-		log.Println(err)
-		return false
-	}
-
-	wc := WNDCLASSEXW{
-		LpfnWndProc:   syscall.NewCallback(callback),
-		HInstance:     instance,
-		HCursor:       cursor,
-		HbrBackground: COLOR_WINDOW + 1,
-		LpszClassName: syscall.StringToUTF16Ptr(className),
-	}
-	wc.CbSize = UINT(unsafe.Sizeof(wc))
-
-	if _, err = RegisterClassEx(&wc); err != nil {
-		log.Println(err)
-		return false
-	}
-
-	return true
 }
 
 func MakeMenuItemSeparator() MENUITEMINFO {
@@ -569,11 +805,52 @@ func trayWindowCallback(hwnd HWND, message uint32, wParam WPARAM, lParam LPARAM)
 	return 0
 }
 
+func RegisterWindowClass(className string, instance HINSTANCE, callback WNDPROC, style UINT, icon HICON) bool {
+	cursor, err := LoadCursorResource(IDC_ARROW)
+	if err != nil {
+		log.Println(err)
+		return false
+	}
+
+	wc := WNDCLASSEXW{
+		LpfnWndProc:   syscall.NewCallback(callback),
+		HInstance:     instance,
+		HCursor:       cursor,
+		HIcon:         icon,
+		Style:         style,
+		LpszClassName: syscall.StringToUTF16Ptr(className),
+	}
+	wc.CbSize = UINT(unsafe.Sizeof(wc))
+
+	if _, err = RegisterClassExW(&wc); err != nil {
+		log.Println(err)
+		return false
+	}
+
+	return true
+}
+
+func CreateIconFromBytes(icon []byte) HICON {
+	iconSize := len(icon)
+	if iconSize > 0 {
+		data := (*BYTE)(unsafe.Pointer(&icon[0]))
+
+		offset := LookupIconIdFromDirectoryEx(data, TRUE, 0, 0, 0x00008000 /*LR_SHARED*/)
+
+		if offset > 0 {
+			data = (*BYTE)(unsafe.Pointer(&icon[offset]))
+			return CreateIconFromResourceEx(data, DWORD(iconSize), TRUE, 0x00030000, 32, 32, 0 /*LR_DEFAULTCOLOR*/)
+		}
+	}
+
+	return HICON(0)
+}
+
 func NewTrayMenu(menu HMENU, icon []byte, callback func(id int32)) bool {
 	trayClassName := "APPTRON_TRAY_WINDOW_CLASS"
 
 	if !didInitTrayWindowClass {
-		if !RegisterWindowClass(trayClassName, GetModuleHandle(), trayWindowCallback) {
+		if !RegisterWindowClass(trayClassName, GetModuleHandle(), trayWindowCallback, 0, 0) {
 			log.Println("Failed to register tray window class!")
 			return false
 		}
@@ -581,9 +858,9 @@ func NewTrayMenu(menu HMENU, icon []byte, callback func(id int32)) bool {
 		didInitTrayWindowClass = true
 	}
 
-	hwnd, err := CreateWindow(trayClassName, "Tray Window", 0, 0, 0, 1, 1, 0, 0, GetModuleHandle())
-	if err != nil {
-		log.Println("Failed to create tray window!", err)
+	hwnd := CreateWindowExW(0, trayClassName, "Tray Window", 0, 0, 0, 1, 1, 0, 0, GetModuleHandle(), 0)
+	if hwnd == 0 {
+		log.Println("Failed to create tray window!")
 		return false
 	}
 
@@ -595,18 +872,7 @@ func NewTrayMenu(menu HMENU, icon []byte, callback func(id int32)) bool {
 	trayIconData.UCallbackMessage = Win32TrayIconMessage
 
 	// @Robustness: convert from PNG to ICO
-
-	iconSize := len(icon)
-	if iconSize > 0 {
-		data := (*BYTE)(unsafe.Pointer(&icon[0]))
-
-		offset := LookupIconIdFromDirectoryEx(data, TRUE, 0, 0, 0x00008000 /*LR_SHARED*/)
-
-		if offset > 0 {
-			data = (*BYTE)(unsafe.Pointer(&icon[offset]))
-			trayIconData.HIcon = CreateIconFromResourceEx(data, DWORD(iconSize), TRUE, 0x00030000, 32, 32, 0 /*LR_DEFAULTCOLOR*/)
-		}
-	}
+	trayIconData.HIcon = CreateIconFromBytes(icon)
 
 	// @Robustness: provide a default placeholder icon?
 	//trayIconData.HIcon = LoadIcon(GetModuleHandle(0), MAKEINTRESOURCE(101));
@@ -637,57 +903,7 @@ func RemoveAllTrayMenus() {
 	trays = make([]Win32_Tray, 0)
 }
 
-func testWindowCallback(hwnd HWND, message uint32, wParam WPARAM, lParam LPARAM) LRESULT {
-	switch message {
-	case WM_CLOSE:
-		DestroyWindow(hwnd)
-	case WM_DESTROY:
-		PostQuitMessage(0)
-	default:
-		return DefWindowProc(hwnd, message, wParam, lParam)
-	}
-	return 0
-}
-
-func CreateTestWindow() {
-	className := "testClass"
-
-	instance := GetModuleHandle()
-
-	cursor, err := LoadCursorResource(IDC_ARROW)
-	if err != nil {
-		log.Println(err)
-		return
-	}
-
-	wc := WNDCLASSEXW{
-		LpfnWndProc:   syscall.NewCallback(testWindowCallback),
-		HInstance:     instance,
-		HCursor:       cursor,
-		HbrBackground: COLOR_WINDOW + 1,
-		LpszClassName: syscall.StringToUTF16Ptr(className),
-	}
-	wc.CbSize = UINT(unsafe.Sizeof(wc))
-
-	if _, err = RegisterClassEx(&wc); err != nil {
-		log.Println(err)
-		return
-	}
-
-	_, err = CreateWindow(
-		className,
-		"Test Window",
-		WS_VISIBLE|WS_OVERLAPPEDWINDOW,
-		CW_USEDEFAULT,
-		CW_USEDEFAULT,
-		CW_USEDEFAULT,
-		CW_USEDEFAULT,
-		0,
-		0,
-		instance,
-	)
-	if err != nil {
-		log.Println(err)
-		return
-	}
+func IsWindowCloaked(hwnd HWND) bool {
+	var isCloaked BOOL = FALSE
+	return DwmGetWindowAttribute(hwnd, DWMWA_CLOAKED, unsafe.Pointer(&isCloaked), 4 /* sizeof(isCloaked) */) && isCloaked == TRUE
 }

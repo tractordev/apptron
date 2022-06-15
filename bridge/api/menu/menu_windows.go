@@ -1,15 +1,15 @@
 package menu
 
 import (
-	"log"
-
 	"tractor.dev/apptron/bridge/platform/win32"
 	"tractor.dev/apptron/bridge/resource"
 )
 
 type Menu struct {
 	menu
-	win32.HMENU
+
+	PopupMenu win32.HMENU
+	Menu      win32.HMENU
 }
 
 func New(items []Item) *Menu {
@@ -20,7 +20,9 @@ func New(items []Item) *Menu {
 		},
 	}
 
-	menu.HMENU = createMenu(items)
+	// @Cleanup: maybe just dynamically create the win32 menu each time it's needed?
+	menu.PopupMenu = createMenu(true, items)
+	menu.Menu = createMenu(false, items)
 
 	return menu
 }
@@ -33,9 +35,14 @@ func (m *Menu) Destroy() {
 	// @see https://docs.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-destroymenu
 	//
 
-	if m.HMENU != 0 {
-		win32.DestroyMenu(m.HMENU)
-		m.HMENU = 0
+	if m.PopupMenu != 0 {
+		win32.DestroyMenu(m.PopupMenu)
+		m.PopupMenu = 0
+	}
+
+	if m.Menu != 0 {
+		win32.DestroyMenu(m.Menu)
+		m.Menu = 0
 	}
 }
 
@@ -43,7 +50,6 @@ func (m *Menu) Popup() int {
 	hwnd := win32.GetActiveWindow()
 
 	if hwnd == 0 {
-		log.Println("null!")
 		return 0
 	}
 
@@ -53,13 +59,18 @@ func (m *Menu) Popup() int {
 	win32.GetCursorPos(&mousePosition)
 
 	var flags win32.UINT = win32.TPM_RIGHTBUTTON | win32.TPM_NONOTIFY | win32.TPM_RETURNCMD
-	result := win32.TrackPopupMenu(m.HMENU, flags, int32(mousePosition.X), int32(mousePosition.Y), 0, hwnd, nil)
+	result := win32.TrackPopupMenu(m.PopupMenu, flags, int32(mousePosition.X), int32(mousePosition.Y), 0, hwnd, nil)
 
 	return int(result)
 }
 
-func createMenu(items []Item) win32.HMENU {
-	menu := win32.CreatePopupMenu()
+func createMenu(popup bool, items []Item) win32.HMENU {
+	var menu win32.HMENU
+	if popup {
+		menu = win32.CreatePopupMenu()
+	} else {
+		menu = win32.CreateMenu()
+	}
 
 	if menu != win32.NULL {
 		for _, it := range items {
@@ -78,7 +89,7 @@ func createMenu(items []Item) win32.HMENU {
 				info = win32.MakeMenuItem(it.ID, title, it.Disabled, it.Selected, it.Selected == true)
 
 				if !it.Disabled && len(it.SubMenu) > 0 {
-					submenu := createMenu(it.SubMenu)
+					submenu := createMenu(popup, it.SubMenu)
 					win32.AppendSubmenu(submenu, &info)
 				}
 			}
