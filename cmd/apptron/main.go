@@ -3,7 +3,6 @@ package main
 
 import (
 	"context"
-	"flag"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -240,6 +239,7 @@ func parseMenuFile(path string) (items []menu.Item, table map[int]string, err er
 func appIndicator() *cli.Command {
 	return &cli.Command{
 		Usage: "indicator <menu-path> [icon-path]",
+		Short: "show app indicator with menu",
 		Args:  cli.MinArgs(1),
 		Run: func(ctx context.Context, args []string) {
 			items, table, err := parseMenuFile(args[0])
@@ -272,6 +272,7 @@ func appIndicator() *cli.Command {
 func menuPopup() *cli.Command {
 	return &cli.Command{
 		Usage: "popup <menu-path>",
+		Short: "popup a context menu",
 		Args:  cli.ExactArgs(1),
 		Run: func(ctx context.Context, args []string) {
 			items, table, err := parseMenuFile(args[0])
@@ -289,6 +290,7 @@ func menuPopup() *cli.Command {
 func systemDisplays() *cli.Command {
 	return &cli.Command{
 		Usage: "displays",
+		Short: "show display information",
 		Run: func(ctx context.Context, args []string) {
 			w := tabwriter.NewWriter(os.Stdout, 0, 0, 1, ' ', 0)
 			for _, d := range system.Module.Displays() {
@@ -306,12 +308,13 @@ func systemDisplays() *cli.Command {
 func shellNotification() *cli.Command {
 	return &cli.Command{
 		Usage: "notification <title> <body>",
+		Short: "show desktop notification",
 		Args:  cli.ExactArgs(2),
 		Run: func(ctx context.Context, args []string) {
 			runApp(func() {
 				shell.Module.ShowNotification(shell.Notification{
-					Title: flag.Arg(2),
-					Body:  flag.Arg(3),
+					Title: args[0],
+					Body:  args[1],
 				})
 			}, true)
 		},
@@ -325,6 +328,7 @@ func shellMessage() *cli.Command {
 	)
 	cmd := &cli.Command{
 		Usage: "message [flags...] <title> <body>",
+		Short: "show message dialog",
 		Args:  cli.ExactArgs(2),
 		Run: func(ctx context.Context, args []string) {
 			runApp(func() {
@@ -351,7 +355,8 @@ func shellFilePicker() *cli.Command {
 		filters   string
 	)
 	cmd := &cli.Command{
-		Usage: "file-picker [flags...] <mode> [title]", //pickfile, pickfiles, pickfolder, savefile
+		Usage: "file-picker [flags...] <mode> [title]", //file, files, folder, savefile
+		Short: "show file picker dialog",
 		Args:  cli.MinArgs(1),
 		Run: func(ctx context.Context, args []string) {
 			title := ""
@@ -362,9 +367,14 @@ func shellFilePicker() *cli.Command {
 			if filters != "" {
 				fltrs = strings.Split(filters, ";")
 			}
+			mode := args[0]
+			if mode != "savefile" {
+				// TODO: maybe push up to API?
+				mode = fmt.Sprintf("pick%s", mode)
+			}
 			runApp(func() {
 				paths := shell.Module.ShowFilePicker(shell.FileDialog{
-					Mode:      args[0],
+					Mode:      mode,
 					Title:     title,
 					Directory: directory,
 					Filename:  filename,
@@ -376,8 +386,8 @@ func shellFilePicker() *cli.Command {
 			}, true)
 		},
 	}
-	cmd.Flags().StringVar(&directory, "directory", "", "directory to start in")
-	cmd.Flags().StringVar(&filename, "filename", "", "default file selected")
+	cmd.Flags().StringVar(&directory, "dir", "", "directory to start in")
+	cmd.Flags().StringVar(&filename, "default", "", "default file selected")
 	cmd.Flags().StringVar(&filters, "filters", "", "extension filters [ex: txt or text:dat,txt;source:go,html]")
 	return cmd
 }
@@ -385,6 +395,7 @@ func shellFilePicker() *cli.Command {
 func shellClipboard() *cli.Command {
 	return &cli.Command{
 		Usage: "clipboard [string]",
+		Short: "show or set the clipboard text value",
 		Args:  cli.MaxArgs(1),
 		Run: func(ctx context.Context, args []string) {
 			if len(args) == 1 {
@@ -408,6 +419,7 @@ func shellClipboard() *cli.Command {
 func shellShortcuts() *cli.Command {
 	return &cli.Command{
 		Usage: "shortcuts <accelerator>...",
+		Short: "register global shortcuts",
 		Run: func(ctx context.Context, args []string) {
 			mainthread.Init(func() {
 				for _, arg := range args {
@@ -429,6 +441,7 @@ func shellShortcuts() *cli.Command {
 func windowLaunch() *cli.Command {
 	return &cli.Command{
 		Usage: "launch [URL]",
+		Short: "launch a webview window from HTML",
 		Run: func(ctx context.Context, args []string) {
 			url := ""
 			if len(args) == 1 {

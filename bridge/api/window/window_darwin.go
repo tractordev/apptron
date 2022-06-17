@@ -183,6 +183,10 @@ func New(options Options) (*Window, error) {
 		frame = mac.Rect(options.Position.X, options.Position.Y, options.Size.Width, options.Size.Height)
 	}
 
+	if options.Hidden {
+		frame = mac.Rect(options.Position.X, options.Position.Y, 0, 0)
+	}
+
 	delegate := objc.Get("WindowDelegate").Alloc().Init()
 
 	wkconfig := webkit.WKWebViewConfiguration_New()

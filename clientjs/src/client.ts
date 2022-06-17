@@ -430,6 +430,7 @@ export interface WindowOptions {
 	Title:       string
 	Transparent: boolean
 	Visible:     boolean
+  Hidden:      boolean
 	Center:      boolean
 	IconSel:     string // TODO
 	URL:         string

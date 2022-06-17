@@ -41,6 +41,7 @@ func WindowOptionsFromHTML(fsys fs.FS, filename, metaname string, fallback clien
 		Transparent: optBool(opts["transparent"], fallback.Transparent),
 		Frameless:   optBool(opts["frameless"], fallback.Frameless),
 		Visible:     optBool(opts["visible"], fallback.Visible),
+		Hidden:      optBool(opts["hidden"], fallback.Hidden),
 		Center:      optBool(opts["center"], fallback.Center),
 		Position: client.Position{
 			X: optFloat(opts["x"], fallback.Position.X),

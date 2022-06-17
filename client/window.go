@@ -32,6 +32,7 @@ type WindowOptions struct {
 	Title       string
 	Transparent bool
 	Visible     bool
+	Hidden      bool
 	Center      bool
 	IconSel     string
 	Icon        []byte
