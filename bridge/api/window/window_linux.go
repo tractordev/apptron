@@ -194,6 +194,11 @@ func New(options Options) (*Window, error) {
   win.Webview = webview
   win.callbackId = callbackId
 
+  event.Emit(event.Event{
+    Type:   event.Created,
+    Window: win.Handle,
+  })
+
   return win, nil
 }
 

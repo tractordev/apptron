@@ -61,6 +61,7 @@ func NewIndicator(icon []byte, items []menu.Item) {
 }
 
 func Run(options Options) error {
+	// NOTE(nick): MacOS-style window behavior
 	if options.Agent == false {
 		var windowCount int64
 
