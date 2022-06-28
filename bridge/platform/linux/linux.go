@@ -193,6 +193,7 @@ func (window *Window) SetSize(width int, height int) {
 }
 
 func (window *Window) SetPosition(x int, y int) {
+
 	C.gtk_window_move(window.Handle, C.int(x), C.int(y))
 }
 

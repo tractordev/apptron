@@ -21,6 +21,7 @@ type EventType int
 const (
 	None EventType = iota
 	Close
+	Created
 	Destroyed
 	Focused
 	Blurred
@@ -34,6 +35,7 @@ func (e EventType) String() string {
 	return []string{
 		"",
 		"close",
+		"create",
 		"destroy",
 		"focus",
 		"blur",

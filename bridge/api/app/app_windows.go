@@ -1,6 +1,8 @@
 package app
 
 import (
+	"sync/atomic"
+
 	"tractor.dev/apptron/bridge/api/menu"
 	"tractor.dev/apptron/bridge/event"
 	"tractor.dev/apptron/bridge/platform"
@@ -59,6 +61,25 @@ func NewIndicator(icon []byte, items []menu.Item) {
 }
 
 func Run(options Options) error {
+	// NOTE(nick): MacOS-style window behavior
+	if options.Agent == false {
+		var windowCount int64
+
+		event.Listen("__APPTRON_Platform_listener__", func(e event.Event) error {
+			if e.Type == event.Created {
+				atomic.AddInt64(&windowCount, 1)
+			}
+
+			if e.Type == event.Destroyed {
+				if atomic.AddInt64(&windowCount, -1) == 0 {
+					platform.Terminate()
+				}
+			}
+
+			return nil
+		})
+	}
+
 	platform.Start()
 	return nil
 }
