@@ -2,40 +2,26 @@
 <html>
 <head>
   <style>
-    :root {
-      --highlight: #777;
-      --shadow: #222;
-      --panel: #424242;
-    }
-    body {
+    body, body > div {
       position: absolute;
       top: 0;
       left: 0;
       bottom: 0;
       right: 0;
       margin: 0;
-    }
-    body > div {
-      position: absolute;
-      top: 0;
-      left: 0;
-      bottom: 0;
-      right: 0;
-      margin: 0;
-      border: 2px solid black;
       background-color: white;
       display: flex;
       flex-direction: column;
+    }
+    body > div {
+      border: 2px solid black;
     }
     main {
       flex-grow: 1;
       display: flex;
     }
     .titlebar {
-      padding-right: 0px;
-      padding-left: 0px;
-      padding-top: 1px;
-      padding-bottom: 3px;
+      padding: 1px 0 3px 0;
       text-align: left;
       line-height: 14px;
       display: flex;
@@ -53,18 +39,22 @@
     .control {
       margin-left: 1px;
       margin-right: 4px;
-      margin-top: 2px;
+      margin-top: 0px;
       width: 12px;
-      height: 12px;
-      
-    }
-    .control > div {
-      width: 10px;
-      height: 10px;
+      height: 12px; 
     }
     iframe {
       border: 0;
       width: 100%;
+    }
+    .apptron-minimize {
+      background-color: yellow;
+    }
+    .apptron-maximize {
+      background-color: green;
+    }
+    .apptron-close {
+      background-color: red;
     }
   </style>
 </head>
@@ -72,9 +62,9 @@
 <div>
   <div class="titlebar apptron-draggable">
     <div class="title apptron-title"></div>
-    <div class="control apptron-minimize"><div style="background-color: white;"></div></div>
-    <div class="control apptron-maximize"><div style="background-color: white;"></div></div>
-    <div class="control apptron-close"><div style="background-color: white;"></div></div>
+    <div class="control apptron-minimize"></div>
+    <div class="control apptron-maximize"></div>
+    <div class="control apptron-close"></div>
   </div>
   <main>
     <iframe class="apptron-frame"></iframe>

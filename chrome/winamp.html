@@ -1,0 +1,199 @@
+<html>
+<head>
+<style>
+  /* based on https://codepen.io/r___r/pen/DWmevY */
+        body * {
+          box-sizing: border-box;
+          /* -webkit-box-sizing: border-box; */
+        }
+        iframe {
+          border: 0;
+          width: 100%;
+          flex-grow: 1;
+        }
+        main {
+          flex-grow: 1;
+          display: flex;
+          flex-direction: column;
+        }
+        /*----------------------------------------------------
+         * Container  */
+        .module {
+          position: absolute;
+          left: 0;
+          right: 0;
+          top: 0;
+          bottom: 0;
+          width: 100%;
+          border: 1px solid #000;
+          background: #2a2a3e;
+          padding: 0px;
+          display: flex;
+          flex-direction: column;
+        }
+        .module__inner {
+          border: 1.5px solid white;
+          border-color: rgba(255, 255, 255, 0.6) transparent transparent rgba(255, 255, 255, 0.4);
+          display: flex;
+          flex-direction: column;
+          flex-grow: 1;
+        }
+        /*----------------------------------------------------
+         * Title */
+        .module__title {
+          position: relative;
+          background: transparent;
+          height: 10px;
+          padding: 0 2px;
+          display: flex;
+        }
+        .module__title__text {
+          white-space: nowrap;
+          text-align: center;
+          flex-grow: 1;
+          display: block;
+          text-transform: uppercase;
+          text-shadow: 0 0 3px black;
+          color: white;
+          font-family: arial;
+          font-weight: bold;
+          font-size: 8px;
+          font-weight: 600;
+          padding: 1px 4px 0 4px;
+          
+        }
+        .module__title__bar {
+          /* position: absolute; */
+          height: 6px;
+          flex-grow: 1;
+          margin: 2px 2px;
+          border-radius: 2px;
+          background: linear-gradient(to bottom, #a89a6e, #e1ddce, rgba(42, 42, 62, 0.4), #a89a6e, #bbb08e);
+        }
+        .module--main .module__title__bar--first {
+          /* left: 16px; */
+          width: 100%;
+        }
+        .module--main .module__title__bar--second {
+          /* left: 161px; */
+          width: 100%;
+        }
+        .module__title__buttons {
+          /* position: absolute; */
+          right: 2px;
+          top: 0;
+          width: 78px;
+        }
+        .module__title__button {
+          float: right;
+          margin: 1px 0 0 2px;
+          border: none;
+          border: 1px solid rgba(0, 0, 0, 0.05);
+          background: rgba(0, 0, 0, 0.2);
+          padding: 0;
+          width: 7px;
+          height: 7px;
+          border-radius: 3px;
+        }
+        .module__title__button--close {
+          position: relative;
+        }
+        .module__title__button--close:after {
+          display: block;
+          position: absolute;
+          top: 3px;
+          left: -1px;
+          content: "×";
+          opacity: 0.8;
+          color: #a89a6e;
+          text-shadow: 0px 0px 2px #a89a6e;
+          line-height: 0px;
+          font-size: 14px;
+        }
+        .module__title__button--maximise,
+        .module__title__button--minimise {
+          background: linear-gradient(#cec6ae 15%, rgba(35, 35, 35, 0.4) 55%, rgba(85, 85, 85, 0.7) 100%);
+          border: none;
+          transform: rotate(180deg);
+        }
+        .module__title__thingie {
+          
+          left: 2px;
+          margin-top: -1px;
+          width: 38px;
+          height: 14px;
+          transform: scale(0.6) rotate(-55deg);
+        }
+        .module__title__thingie .module__title__thingie__triangle {
+          width: 0;
+          height: 0;
+          border-color: #a89a6e;
+          border-style: solid;
+          border-width: 0;
+          border-left: 5px solid transparent;
+          border-right: 5px solid transparent;
+          border-top-width: 5px;
+        }
+        .module__title__thingie .module__title__thingie__triangle:before {
+          content: "";
+          display: block;
+          position: absolute;
+          top: 0px;
+          left: 0px;
+          width: 0;
+          height: 0;
+          border-color: #2a2a3e;
+          border-style: solid;
+          border-width: 0;
+          border-left: 5px solid transparent;
+          border-right: 5px solid transparent;
+          border-top-width: 5px;
+          transform: scale(0.6);
+        }
+        .module__title__thingie .module__title__thingie__triangle:last-child {
+          transform: rotate(180deg);
+        }
+        /*----------------------------------------------------
+         * Content */
+        .module__content {
+          height: calc(100%-8px);
+          margin: 0 2px 2px 2px;
+          padding: 1px;
+          border: 1.5px solid black;
+          border-color: transparent rgba(255, 255, 255, 0.3) rgba(255, 255, 255, 0.3) transparent;
+          background: rgba(0, 0, 0, 0.7);
+        }
+        .module__content__inner {
+          height: 100%;
+          background: #2a2a3e;
+          border: 1px solid black;
+          border-color: rgba(255, 255, 255, 0.2) transparent transparent rgba(255, 255, 255, 0.2);
+        }
+        
+        </style>
+    </head>
+<body>
+  <div class="module module--main">
+    <div class="module__inner">
+      <div class="module__title">
+        <div class="module__title__thingie">
+          <div class="module__title__thingie__triangle"></div>
+          <div class="module__title__thingie__triangle"></div>
+        </div>
+        <div class="module__title__bar apptron-draggable module__title__bar--first"></div>
+        <div class="module__title__text apptron-title"></div>
+        <div class="module__title__bar apptron-draggable module__title__bar--second"></div>
+        <div class="module__title__buttons">
+          <button class="apptron-close module__title__button module__title__button--close"></button>
+          <button class="apptron-maximize module__title__button module__title__button--maximise"></button>
+          <button class="apptron-minimize module__title__button module__title__button--minimise"></button>
+        </div>
+      </div>
+
+      <main class="window-body">
+        <iframe class="apptron-frame"></iframe>
+      </main>
+      
+    </div>
+</body>
+</html>
