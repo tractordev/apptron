@@ -125,7 +125,9 @@ There is a `#apptron` channel in the Progrium Discord. Feel free to ask for help
 
 ## Contributing
 
-PLEASE help make this project ready to release. Contribute by submitting issues or especially PRs. Ask for help in Discord. 
+PLEASE help make this project ready to release. Contribute by submitting issues or especially PRs. Ask for help in Discord.
+
+Since this repository is private, GitHub won't allow you to fork. With early access you do have write permission, so you can push to a branch with your username and submit a PR from your branch into main. 
 
 ## License
 
