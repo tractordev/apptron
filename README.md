@@ -1,6 +1,6 @@
 # Apptron (early access)
 
-Apptron gives you webview windows and common platform APIs for your simple scripts, homebrew utilities, or full applications. Building cross-platform (Win, Mac, Linux) programs that leverage native functionality like menus, dialogs, notifications, global shortcuts, and others, has never been more accessible.
+Apptron gives you webview windows and common platform APIs for your simple scripts, homebrew utilities, or full applications. Building cross-platform (Win, Mac, Linux) programs that leverage native functionality (menus, dialogs, notifications, global shortcuts, etc) has never been more accessible.
 
 The Apptron executable provides these cross-platform API modules:
 

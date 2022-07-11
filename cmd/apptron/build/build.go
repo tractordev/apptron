@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"time"
 
@@ -24,12 +25,23 @@ func fatal(err error) {
 	}
 }
 
-func Clean() {
+func execFilename(name string) string {
+	if runtime.GOOS != "windows" {
+		return name
+	}
+	return fmt.Sprintf("%s.exe", name)
+}
+
+func tempwd() string {
 	dir, err := os.Getwd()
 	fatal(err)
 	parts := strings.Split(dir, string(filepath.Separator))
-	workdir := filepath.Join(os.TempDir(), strings.Join(parts[len(parts)-3:], "-"))
-	fatal(os.RemoveAll(workdir))
+	folder := strings.Replace(strings.Join(parts[len(parts)-3:], "-"), ":", "", -1)
+	return filepath.Join(os.TempDir(), folder)
+}
+
+func Clean() {
+	fatal(os.RemoveAll(tempwd()))
 }
 
 func Build(debug bool) {
@@ -42,11 +54,9 @@ func Build(debug bool) {
 	dir, err := os.Getwd()
 	fatal(err)
 	appname := filepath.Base(dir)
+	workdir := tempwd()
 
-	parts := strings.Split(dir, string(filepath.Separator))
-	workdir := filepath.Join(os.TempDir(), strings.Join(parts[len(parts)-3:], "-"))
 	os.MkdirAll(workdir, 0755)
-
 	fmt.Printf("building %s ...\n", appname)
 	if debug {
 		fmt.Printf("  in %s\n", workdir)
@@ -54,7 +64,7 @@ func Build(debug bool) {
 
 	start := time.Now()
 
-	binFile := filepath.Join(workdir, "apptron")
+	binFile := filepath.Join(workdir, execFilename("apptron"))
 	if _, err := os.Stat(binFile); err != nil {
 		fatal(copyFile(selfbin, binFile))
 		// err, errlog := sign.Sign(dir, "com.progrium.Apptron", binFile)
@@ -72,7 +82,7 @@ func Build(debug bool) {
 	di, err := ioutil.ReadDir(dir)
 	fatal(err)
 	for _, fi := range di {
-		if !fi.IsDir() && fi.Name() != appname {
+		if !fi.IsDir() && fi.Name() != execFilename(appname) {
 			fatal(copyFile(filepath.Join(dir, fi.Name()), filepath.Join(workdir, fi.Name())))
 		}
 		if fi.IsDir() {
@@ -95,7 +105,7 @@ func Build(debug bool) {
 		run(&buf, workdir, gobin, "get")
 	}
 
-	run(&buf, workdir, gobin, "build", "-o", filepath.Join(dir, appname), ".")
+	run(&buf, workdir, gobin, "build", "-o", filepath.Join(dir, execFilename(appname)), ".")
 
 	fmt.Printf("done! [%s]\n", time.Since(start).Round(time.Millisecond))
 

@@ -10,7 +10,6 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"runtime"
 	"strings"
 	"text/tabwriter"
@@ -80,22 +79,28 @@ windows. Running without a subcommand starts the API service over STDIO.`,
 		Usage: "build",
 		Short: "compile webview app from HTML",
 		Run: func(ctx context.Context, args []string) {
-			if flagSetup {
-				// TODO: check for go in path
-				url := "https://go.dev/doc/install"
+			_, err := exec.LookPath("go")
+			if err != nil {
+				fmt.Println("Unable to find Go in your PATH.\n")
 				fmt.Println("Use this URL to download Golang for your platform:")
-				fmt.Println("  ", url)
-				switch runtime.GOOS {
-				case "windows":
-					cmd := exec.Command(filepath.Join(os.Getenv("SYSTEMROOT"), "System32", "rundll32.exe"), "url.dll,FileProtocolHandler", url)
-					cmd.Run()
-				case "darwin":
-					cmd := exec.Command("open", url)
-					cmd.Run()
-				case "linux":
-					// TODO
-				default:
-				}
+				fmt.Println("  https://go.dev/doc/install\n")
+				fmt.Println("EARLY ACCESS NOTE")
+				fmt.Println("Make sure Git can access Apptron repo over SSH:")
+				fmt.Println("  https://github.com/tractordev/tractordev.github.io/wiki/Private-Repository\n")
+				os.Exit(1)
+			}
+			if flagSetup {
+				// switch runtime.GOOS {
+				// case "windows":
+				// 	cmd := exec.Command(filepath.Join(os.Getenv("SYSTEMROOT"), "System32", "rundll32.exe"), "url.dll,FileProtocolHandler", url)
+				// 	cmd.Run()
+				// case "darwin":
+				// 	cmd := exec.Command("open", url)
+				// 	cmd.Run()
+				// case "linux":
+				// 	// TODO
+				// default:
+				// }
 				return
 			}
 			build.Build(flagDebug)
