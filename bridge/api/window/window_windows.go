@@ -302,7 +302,7 @@ func New(options Options) (*Window, error) {
 	win.isTransparent = options.Transparent
 
 	chromium.MessageCallback = win.messageCallback
-	chromium.Eval("window.chrome.webview.postMessage('Hello, sir!');")
+	//chromium.Eval("window.chrome.webview.postMessage('Hello, sir!');")
 
 	SetWindowLongPtrW(hwnd, GWLP_USERDATA, unsafe.Pointer(win))
 

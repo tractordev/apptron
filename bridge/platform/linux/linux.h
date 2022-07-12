@@ -1,7 +1,7 @@
 #include <gtk/gtk.h>
 #include <JavaScriptCore/JavaScript.h>
 #include <webkit2/webkit2.h>
-#include <libappindicator/app-indicator.h>
+#include <libayatana-appindicator/app-indicator.h>
 
 extern void go_menu_callback(GtkMenuItem *,int);
 
