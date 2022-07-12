@@ -33,7 +33,7 @@ import (
 	"tractor.dev/apptron/cmd/apptron/cli"
 )
 
-const Version = "0.3.0"
+var Version = "dev"
 
 func init() {
 	runtime.LockOSThread()

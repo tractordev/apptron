@@ -1,13 +1,14 @@
 ROOT_DIR := $(dir $(realpath $(lastword $(MAKEFILE_LIST))))
 GO_FILES := $(shell find . -name "*.go")
 ifeq ($(OS),Windows_NT)
-	EXE := ./apptron.exe
+	EXE := ./dist/apptron.exe
 else
-	EXE := ./apptron
+	EXE := ./dist/apptron
 endif
+version=$(shell cat version)
 
-apptron: clientjs/dist/client.js $(GO_FILES)
-	CGO_CFLAGS="-w" go build -o $(EXE) ./cmd/apptron/main.go
+apptron: $(GO_FILES)
+	CGO_CFLAGS="-w" go build -ldflags $(ldflags) -o $(EXE) ./cmd/apptron/main.go
 
 debug-pkg: $(GO_FILES)
 	CGO_CFLAGS="-w" go build -tags pkg -o ./debug-pkg ./cmd/debug
@@ -28,3 +29,7 @@ install:
 .PHONY: clean
 clean:
 	rm -rf ./debug-pkg ./debug-app ./debug-cmd ./apptron
+
+version=$(shell cat version)
+branch=$(shell git branch --show-current)
+ldflags="-X main.Version=$(version:dev=$(branch))"

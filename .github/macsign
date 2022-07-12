@@ -1,0 +1,27 @@
+#!/bin/sh
+
+# Utility for signing and notarizing with gon in releases.
+# Expected argument is version to be used in artifact filenames.
+# Should be run from project root!
+
+set -e
+export version=${1:-$(cat ./version)}
+cat <<CONFIG > ./dist/gon.json
+{
+  "source" : ["./dist/apptron"],
+  "bundle_id" : "com.progrium.apptron",
+  "sign": {
+      "application_identity" : "Developer ID Application: Jeff Lindsay"
+  },
+  "zip": {
+    "output_path": "./dist/apptron_darwin_amd64_${version}.zip"
+  },
+  "notarize": [{
+      "path": "./dist/apptron_darwin_amd64_${version}.zip",
+      "bundle_id": "com.progrium.apptron",
+      "staple": false
+  }]
+}
+
+CONFIG
+gon -log-level=info ./dist/gon.json

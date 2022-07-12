@@ -12,6 +12,9 @@ import (
 	"net"
 	"os"
 	"os/exec"
+	"path/filepath"
+	"runtime"
+	"strings"
 	"sync"
 	"syscall"
 
@@ -111,16 +114,35 @@ func Dial(addr string) (*Client, error) {
 	return New(peer), nil
 }
 
-func Spawn() (*Client, error) {
-	bridgecmd := os.Getenv("BRIDGECMD")
-	if bridgecmd == "" {
-		bridgecmd = "apptron"
+func findCmd() string {
+	cmd := os.Getenv("APPTRON_CMD")
+	if cmd == "" {
+		if runtime.GOOS == "windows" {
+			cmd = "apptron.exe"
+		} else {
+			cmd = "apptron"
+		}
 	}
-	cmdpath, err := exec.LookPath(bridgecmd)
+
+	selfcmd, err := os.Executable()
+	if err == nil && strings.Contains(strings.ToLower(selfcmd), cmd) {
+		return selfcmd
+	}
+
+	dircmd := filepath.Join(".", cmd)
+	if fi, err := os.Stat(dircmd); err == nil && fi.Mode().Perm()&0111 != 0 {
+		return dircmd
+	}
+
+	pathcmd, err := exec.LookPath(cmd)
 	if err != nil {
-		return nil, err
+		log.Fatal(err)
 	}
-	cmd := exec.Command(cmdpath)
+	return pathcmd
+}
+
+func Spawn() (*Client, error) {
+	cmd := exec.Command(findCmd())
 	cmd.Stderr = os.Stderr
 	wc, err := cmd.StdinPipe()
 	if err != nil {

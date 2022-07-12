@@ -17,7 +17,7 @@
 # Dependency directories (remove the comment below to include it)
 # vendor/
 /demo
-
+/dist
 /debug-pkg
 /debug-rpc
 /debug-app
