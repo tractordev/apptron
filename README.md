@@ -21,13 +21,19 @@ These modules can be used a number of ways:
 
 ## Getting Apptron
 
-Until release automation is setup for signed executables ([helped wanted](https://github.com/tractordev/apptron/issues/44)), you'll need to build from source. This means [installing Go](https://go.dev/dl/). Mac will need XCode Developer Tools installed. Linux has [more pre-requisites](https://github.com/tractordev/apptron/tree/main/bridge/platform/linux).
+### Download Release
+
+Still getting [release automation](https://github.com/tractordev/apptron/issues/44) up to speed, but there are [builds you can download](https://github.com/tractordev/apptron/releases). Let me know if you have problems with them or what kinds of warnings they present on your platform. The macOS build is signed and notarized, but the others aren't yet. Homebrew Tap coming soon.
+
+### Build Source
+
+I'd love you to build from source so we can iterate quickly. It's pretty painless. This means [installing Go](https://go.dev/dl/). Mac will need XCode Developer Tools installed. Linux has [more pre-requisites](https://github.com/tractordev/apptron/tree/main/bridge/platform/linux).
 
 ```bash
 make apptron
 ```
 
-This will produce an `apptron` executable you can put in your PATH.
+This will produce an executable at `./dist/apptron` that you can put in your PATH.
 
 ## Using Apptron CLI
 
