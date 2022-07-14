@@ -127,7 +127,7 @@ func main() {
 
 ## Getting Help
 
-There is a `#apptron` channel in the Progrium Discord. Feel free to ask for help.
+There is a `#apptron` channel in the [Progrium Discord](https://discord.gg/4zp9WMUtTD). Feel free to ask for help.
 
 ## Contributing
 
