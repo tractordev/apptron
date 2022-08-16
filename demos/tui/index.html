@@ -1,0 +1,72 @@
+<html>
+<head>
+  <link rel="stylesheet" href="/xterm/xterm-4.19.0.css" />
+  <script src="/xterm/xterm-4.19.0.min.js"></script>
+  <script src="/xterm/xterm-fit-0.5.0.min.js"></script>
+  <style>
+    .xterm-viewport::-webkit-scrollbar {
+      background-color: rgba(0,0,0,0);
+      width: 5px;
+    }
+  </style>
+</head>
+<body style="height: 100%; margin: 0; -webkit-user-select: none; user-select: none; background-color: black;">
+<main style="height: 100%;"></main>
+<script type="module">
+  import * as qtalk from "/qtalk/qtalk.min.js"
+
+  const terminal = new Terminal({
+    convertEol: true,
+    fontSize: 20,
+    fontFamily: "Menlo, Monaco, 'Courier New', monospace",
+    scrollback: 0,
+    allowTransparency: true,
+  })
+  const fitAddon = new FitAddon.FitAddon()
+  
+  terminal.loadAddon(fitAddon)
+  terminal.open(document.querySelector("main"))
+
+  const rpc = await qtalk.connect(`ws://${window.location.host}/rpc`, new qtalk.JSONCodec())
+  const resp = await rpc.call("terminal", {Term: "xterm-256color", Rows: 20, Cols: 80})
+  const ch = resp.channel
+  let enc = new TextEncoder()
+  terminal.onData(async (data) => {
+    ch.write(enc.encode(data))
+  })
+  terminal.onResize((size) => {
+    rpc.call("terminal.resize", {Rows: size.rows, Cols: size.cols});
+  })
+  fitAddon.fit();
+  window.onresize = () => {
+    fitAddon.fit()
+  }
+  terminal.attachCustomKeyEventHandler((e) => {
+    // not sure why we need a custom handler for
+    // backspace, but here we are. without this,
+    // xterm throws JSON parsing exception.
+    if (e.key==="Backspace") {
+      if (e.type === "keydown") {
+        let enc = new TextEncoder();
+        ch.write(enc.encode("\b"));
+      }
+      return false;
+    }
+  });
+  const b = new Uint8Array(512);
+  let gotEOF = false;
+  while (gotEOF === false) {
+    const n = await ch.read(b);
+    if (n === null) {
+      gotEOF = true;
+    } else {
+      let dec = new TextDecoder();
+      terminal.write(dec.decode(b.subarray(0, n)));
+    }
+  }
+
+
+
+</script>
+</body>
+</html>
