@@ -21,7 +21,7 @@ func TestMain(m *testing.M) {
 	// call flag.Parse() here if TestMain uses flags
 	go func() {
 		m.Run()
-		platform.Terminate()
+		platform.Terminate(true)
 	}()
 	platform.Main()
 }

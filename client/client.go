@@ -49,9 +49,6 @@ func (c *Client) Close() error {
 		!errors.Is(err, syscall.ECONNRESET) {
 		return err
 	}
-	if c.cmd != nil {
-		c.cmd.Process.Kill()
-	}
 	if err := c.Peer.Close(); err != nil &&
 		!errors.Is(err, net.ErrClosed) &&
 		!errors.Is(err, os.ErrClosed) &&
@@ -59,6 +56,9 @@ func (c *Client) Close() error {
 		!errors.Is(err, syscall.EPIPE) &&
 		!errors.Is(err, syscall.ECONNRESET) {
 		return err
+	}
+	if c.cmd != nil {
+		c.cmd.Process.Kill()
 	}
 	return nil
 }

@@ -6,7 +6,7 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"os"
+	//	"os"
 
 	"tractor.dev/apptron"
 	"tractor.dev/apptron/bridge/misc"
@@ -14,7 +14,7 @@ import (
 )
 
 func main() {
-	os.Setenv("BRIDGECMD", "./apptron")
+	//os.Setenv("BRIDGECMD", "./apptron")
 	ctx := context.Background()
 	c, err := apptron.Run(ctx, client.AppOptions{})
 	if err != nil {
@@ -24,9 +24,18 @@ func main() {
 
 	c.OnEvent = func(e client.Event) {
 		log.Println(e)
+		if e.Shortcut == "CMD+C" {
+			if err := c.Close(); err != nil {
+				log.Println(err)
+			}
+		}
 	}
 
 	if err := c.Shell.RegisterShortcut(ctx, "CMD+S"); err != nil {
+		panic(err)
+	}
+
+	if err := c.Shell.RegisterShortcut(ctx, "CMD+C"); err != nil {
 		panic(err)
 	}
 

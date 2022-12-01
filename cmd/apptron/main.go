@@ -47,6 +47,7 @@ func main() {
 		Long: `Apptron is a tool for scriptable native app functionality and webview
 windows. Running without a subcommand starts the API service over STDIO.`,
 		Run: func(ctx context.Context, args []string) {
+			log.SetOutput(os.Stderr)
 			sess, err := mux.DialIO(os.Stdout, os.Stdin)
 			if err != nil {
 				log.Fatal(err)
@@ -55,7 +56,7 @@ windows. Running without a subcommand starts the API service over STDIO.`,
 			go srv.Respond(sess, context.Background())
 			go func() {
 				sess.Wait()
-				platform.Terminate()
+				platform.Terminate(true)
 			}()
 			platform.Main()
 		},
@@ -180,7 +181,7 @@ func runApp(fn func(), term bool) {
 		}
 		platform.Dispatch(fn)
 		if term {
-			platform.Terminate()
+			platform.Terminate(true)
 		} else {
 			select {}
 		}
@@ -190,9 +191,11 @@ func runApp(fn func(), term bool) {
 
 // Item1
 // Item2
-// 	Subitem1
-// 	  Subsubitem
-// 	Subitem2
+//
+//	Subitem1
+//	  Subsubitem
+//	Subitem2
+//
 // ---
 // Item3
 func parseMenuFile(path string) (items []menu.Item, table map[int]string, err error) {

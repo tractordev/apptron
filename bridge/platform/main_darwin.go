@@ -1,6 +1,8 @@
 package platform
 
-import "github.com/progrium/macdriver/cocoa"
+import (
+	"github.com/progrium/macdriver/cocoa"
+)
 
 func Main() {
 	app := cocoa.NSApp()
@@ -8,9 +10,14 @@ func Main() {
 	app.Run()
 }
 
-func Terminate() {
-	Dispatch(func() {
+func Terminate(dispatch bool) {
+	fn := func() {
 		app := cocoa.NSApp()
 		app.Terminate()
-	})
+	}
+	if dispatch {
+		Dispatch(fn)
+	} else {
+		fn()
+	}
 }

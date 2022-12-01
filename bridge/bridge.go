@@ -26,7 +26,7 @@ func NewServer() *rpc.Server {
 	}))
 
 	mux.Handle("Shutdown", rpc.HandlerFunc(func(r rpc.Responder, c *rpc.Call) {
-		platform.Terminate()
+		platform.Terminate(false)
 	}))
 
 	mux.Handle("window", fn.HandlerFrom(window.Module))
