@@ -16,7 +16,7 @@ func init() {
 func TestMain(m *testing.M) {
 	go func() {
 		m.Run()
-		platform.Terminate()
+		platform.Terminate(true)
 	}()
 	platform.Main()
 }
