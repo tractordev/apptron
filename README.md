@@ -1,8 +1,8 @@
-# Apptron (early access)
+# Apptron
 
 Apptron gives you webview windows and common platform APIs for your simple scripts, homebrew utilities, or full applications. Building cross-platform (Win, Mac, Linux) programs that leverage native functionality (menus, dialogs, notifications, global shortcuts, etc) has never been more accessible.
 
-The Apptron executable provides these cross-platform API modules:
+Apptron currently provides these cross-platform API modules:
 
 - **window**: create and manage native windows with a native (non-Chromium) webview
 - **menu**: create and manage native menus
@@ -10,20 +10,18 @@ The Apptron executable provides these cross-platform API modules:
 - **shell**: native desktop shell dialogs, notifications, clipboard, global shortcuts
 - **system**: system resource information (displays, cpu/memory, OS info)
 
-*Early Access Note: Smaller APIs might not be implemented in Windows/Linux yet, please [report](https://github.com/tractordev/apptron/issues) anything not working on your platform.*
-
 These modules can be used a number of ways:
 
-- **API**: run as a subprocess and use full API over STDIO from any language using a library
+- **API/library**: run as a subprocess and use full API over STDIO from any language
 - **CLI**: shell script friendly command line versions of most of the API
 - **build**: build a webview binary with `apptron build` and use the API from pages in JavaScript
-- **import**: use module packages directly in Go (forces CGO, takes up main thread, advanced use only)
+- **Go package**: use module packages directly in Go (forces CGO, takes up main thread, advanced use only)
 
 ## Getting Apptron
 
-### Download Release
+### Download Executable
 
-Still getting [release automation](https://github.com/tractordev/apptron/issues/44) up to speed, but there are [builds you can download](https://github.com/tractordev/apptron/releases). Let me know if you have problems with them or what kinds of warnings they present on your platform. The macOS build is signed and notarized, but the others aren't yet. Homebrew Tap coming soon.
+There are [builds you can download](https://github.com/tractordev/apptron/releases). Let me know if you have problems with them or what kinds of warnings they present on your platform. The macOS build is signed and notarized, but the others aren't yet. Homebrew Tap coming soon.
 
 ### Build Source
 
@@ -67,11 +65,11 @@ Flags:
 Use "apptron [command] -help" for more information about a command.
 ```
 
-The `build` subcommand depends on Go, which shouldn't be an issue since we build from source right now. However, it pulls from this repository so you may run into issues related to working with private repositories. Refer to this [wiki page](https://github.com/tractordev/tractordev.github.io/wiki/Private-Repository) for resolving this.
+The `build` subcommand depends on Go, which shouldn't be an issue since we build from source right now.
 
 ## Using Apptron API
 
-Apptron exposes a [qtalk](https://github.com/tractordev/qtalk) API over STDIO. We currently have a Go client that makes using this API easy. There is a JavaScript wrapper for once you have a channel established (over STDIO or sometimes WebSocket). Any other language will need at the very least a qtalk/qmux implementation. Submit or upvote an issue to prioritize support for your language if you can't contribute it yourself.
+Apptron exposes a [qtalk](https://github.com/tractordev/qtalk) API over STDIO. We currently have a Go client that makes using this API easy. There is a JavaScript wrapper for once you have a channel established (over STDIO or sometimes WebSocket). Any other language will need at the very least a qtalk implementation. Submit or upvote an issue to prioritize support for your language if you can't contribute it yourself.
 
 In the meantime, you can shell out and use the CLI commands, or you can use the API from HTML/JavaScript using `apptron build` or `apptron run`, or you can use Go.
 
@@ -131,9 +129,8 @@ There is a `#apptron` channel in the [Progrium Discord](https://discord.gg/4zp9W
 
 ## Contributing
 
-PLEASE help make this project ready to release. Contribute by submitting issues or especially PRs. Ask for help in Discord.
+Contribute by submitting issues or especially PRs. Ask for help in Discord.
 
-Since this repository is private, GitHub won't allow you to fork. With early access you do have write permission, so you can push to a branch with your username and submit a PR from your branch into main. 
 
 ## License
 
