@@ -1,0 +1,452 @@
+<html>
+<head>
+    <meta name="go-import" content="tractor.dev/apptron git https://github.com/tractordev/apptron" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/1.9.0/jquery.min.js" integrity="sha512-synHs+rLg2WDVE9U0oHVJURDCiqft60GcWOW7tXySy8oIr0Hjl3K9gv7Bq/gSj4NDVpc5vmsNkMGGJ6t2VpUMA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js" integrity="sha512-uto9mlQzrs59VwILcLiRYeLKPPbS/bT71da/OEBYEwcdNUk8jYIy+D176RYoop1Da+f9mvkYrmj5MCLZWEtQuA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <link rel="shortcut icon" href="./apptron.png" />
+    <title>Apptron</title>
+    <style>
+        @font-face{font-family:"Pixelated MS Sans Serif";font-style:normal;font-weight:400;src:url(https://jdan.github.io/98.css/ms_sans_serif.woff) format("woff");src:url(https://jdan.github.io/98.css/ms_sans_serif.woff2) format("woff2")}@font-face{font-family:"Pixelated MS Sans Serif";font-style:normal;font-weight:700;src:url(https://jdan.github.io/98.css/ms_sans_serif_bold.woff) format("woff");src:url(https://jdan.github.io/98.css/ms_sans_serif_bold.woff2) format("woff2")}
+        body, input, button {
+            font-family: "Pixelated MS Sans Serif", Arial, sans-serif;
+        }
+        body {
+            background-color: teal;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            -khtml-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+            overflow: hidden;
+        }
+        .window {
+            position: relative;
+            border: 2px solid black;
+            background-color: #c1c7ce;
+            padding: 2px;
+        }
+        .frame {
+            box-sizing: border-box;
+            border: 1px solid black;
+            background: white;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+        .unmaximized {
+            width: 512px;
+            height: 380px;
+        }
+        .maximized {
+            position: absolute;
+            left: -4px;
+            right: -4px;
+            top: -4px;
+            bottom: -4px;
+        }
+        .body {
+            /* position: relative; */
+            flex-grow: 1;
+            border: 1px solid black;
+            background-color: white;
+            z-index: 2;
+            padding: 12px;
+        }
+        .titlebar {
+            height: 26px;
+            line-height: 25px;
+            background: #0000a8;
+            display: flex;
+            color: white;
+            text-align: center;
+            z-index: 2;
+        }
+        .title {
+            flex-grow: 1;
+            font-size: 16px;
+            font-weight: 700;
+            letter-spacing: 0.1rem;
+            border: 1px solid black;
+        }
+        .menubar {
+            height: 26px;
+            border: 1px solid black;
+            display: flex;
+            line-height: 28px;
+            font-size: 16px;
+            font-weight: 700;
+            z-index: 2;
+            overflow: hidden;
+        }
+        .menuitem {
+            padding-left: 12px;
+            padding-right: 12px;
+        }
+        .menuitem:active {
+          background: #0000a8;
+          color: #fff;
+        }
+        .menuitem span {
+          pointer-events:none;
+        }
+        .close {
+            background-color: #c1c7ce;
+            width: 24px;
+            font-size: 14px;
+            line-height: 23px;
+            border: 1px solid black;
+            text-shadow: -2px 0 black, 0 2px black, 2px 0 black, 0 -2px black;
+        }
+        .close span {
+            filter: drop-shadow(1px 1px #778);
+        }
+        .min {
+            background-color: #c1c7ce;
+            width: 24px;
+            border: 1px solid black;
+        }
+        .unmaximized .max span:first-child {
+            display: block;
+            transform: translateY(-2px) scaleY(0.6) rotate(180deg);
+        }
+        .unmaximized .max span:last-child {
+            display: none;
+        }
+        .max {
+            background-color: #c1c7ce;
+            width: 24px;
+            border: 1px solid black;
+        }
+        .min span {
+            display: block;
+            margin-left: -1px;
+            transform: scaleY(0.6) translateY(-1px);
+        }
+        .maximized .max span:first-child {
+            display: block;
+            transform: scaleY(0.6) rotate(180deg) translateY(10px);
+        }
+        .maximized .max span:last-child {
+            display: block;
+            transform: scaleY(0.6) translateY(-36px);
+        }
+        .shortbutton {
+            box-sizing: border-box;
+            font-size: 14px;
+            color: black;
+            background-color: #c1c7ce;
+            display: block;
+            width: 100%;
+            height: 100%;
+            border-top: 1px solid #fff;
+            border-left: 1px solid #fff;
+            border-right: 2px solid #888;
+            border-bottom: 2px solid #888;
+        }
+        .handle {
+            position: absolute;
+            border: 2px solid black;
+            width: 28px;
+            height: 28px;
+            z-index: 0;
+        }
+        .topleft { left: -2px; top: -2px; cursor: nw-resize; }
+        .topright { right: -2px; top: -2px; cursor: ne-resize; }
+        .bottomleft { left: -2px; bottom: -2px; cursor: sw-resize; }
+        .bottomright { right: -2px; bottom: -2px; cursor: se-resize; }
+        .ui-draggable-dragging > * {
+            display: none;
+            z-index: -999;
+        }
+        .ui-draggable-dragging {
+            --border: 8px;
+            border: none;
+            background: repeating-conic-gradient(#808080 0% 25%, transparent 0% 50%) 50% / 4px 4px;
+            z-index: 99;
+            clip-path: polygon(0% 0%, 0% 100%, var(--border) 100%, var(--border) var(--border), calc(100% - var(--border)) var(--border), calc(100% - var(--border)) calc(100% - var(--border)), var(--border) calc(100% - var(--border)), var(--border) 100%, 100% 100%, 100% 0%);
+        }
+        .ui-resizable-resizing {
+            /* border: 2px solid red; */
+        }
+        input, input:active {
+            outline: none;
+            /* outline: 1px solid #aaa; */
+            border: 2px solid black;
+            font-size: 16px;
+            line-height: 16px;
+            height: 28px;
+        }
+        button {
+            /* box-sizing:border-box; */
+            border-radius: 2px;
+            outline: 2px solid black;
+            font-size: 14px;
+            line-height: 22px;
+            height: 26px;
+            font-weight: 700;
+            background-color: #c1c7ce;
+            border-top: 2px solid #fff;
+            border-left: 2px solid #fff;
+            border-right: 3px solid #888;
+            border-bottom: 3px solid #888;
+        }
+        button span {
+            padding: 2px;
+            padding-bottom: 0px;
+        }
+        button:active {
+            border-top: 2px solid #888;
+            border-left: 2px solid #888;
+            border-right: 1px solid #c1c7ce;
+            border-bottom: 3px solid #c1c7ce;
+        }
+        button:active span {
+            margin-left: 2px;
+        }
+        button:focus {
+            outline: 3px solid black;
+        }
+        button:focus span {
+            border: 1px dotted #888;
+            padding: 1px;
+        }
+        .icon {
+            position: relative;
+            align-items: center;
+            display: flex;
+            flex-direction: column;
+            width: 50px;
+            margin-left: 24px;
+            margin-top: 18px;
+        }
+        .icon img {
+            width: 40px;
+            height: 40px;
+        }
+        label {
+            font-weight: 700;
+        }
+        .icon span {
+            top: 44px;
+            padding: 2px 4px 2px 4px;
+            position: absolute;
+            display: block;
+            /* background: #c1c7ce; */
+            background: #0000a8;
+            color: white;
+        }
+        fieldset {
+          border: 2px solid black;
+        }
+        .active {
+          background: #0000a8;
+          color: white;
+        }
+        form {
+          margin: 0;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          margin-top: 1.5rem;
+        }
+        fieldset input {
+          flex: 1;
+        }
+        .menu {
+          position: absolute;
+          z-index: 10;
+          border: 2px solid black;
+          background: white;
+          filter: drop-shadow(2px 2px #c1c7ce);
+          font-weight: 700;
+          line-height: 22px;
+        }
+        .menu hr {
+          border: 0;
+          border-bottom: 2px solid black;
+          margin: 4px 0 4px 0;
+        }
+        .menu .item {
+          padding: 2px 24px 2px 24px;
+        }
+        .menu .item:hover {
+          background: #0000a8;
+          color: white;
+        }
+        legend {
+          font-weight: 700;
+          padding: 0 6px 0 6px;
+        }
+        .menu a {
+          text-decoration: none;
+          color: black;
+        }
+        .menu a:hover {
+          color: white;
+        }
+    </style>
+</head>
+<body>
+
+<div class="window unmaximized" style="top: 10%; left: calc(50% - 256px);">
+<div class="frame">
+
+    <div class="titlebar">
+        <div class="close">
+            <span>&#8212;</span>
+        </div>
+        <div class="title">Apptron</div>
+        <div class="min"><div class="shortbutton"><span>&#9660;</span></div></div>
+        <div class="max"><div class="shortbutton"><span>&#9660;</span><span>&#9660;</span></div></div>
+    </div>
+    <div class="menubar">
+        <div class="menuitem" onclick="location.reload()">
+            <span style="text-decoration:underline;">S</span>tart
+          </div>
+          <div class="menuitem" data-menu="#demos-menu">
+            <span style="text-decoration:underline;">D</span>emos
+          </div>
+          <div class="menuitem" data-menu="#access-menu">
+            <span style="text-decoration:underline;">A</span>ccess
+          </div>
+          <div class="menuitem" data-menu="#help-menu">
+            <span style="text-decoration:underline;">H</span>elp
+          </div>
+          <!-- <div class="menuitem">
+            <span style="text-decoration:underline;">F</span>ile
+          </div>
+          <div class="menuitem">
+            <span style="text-decoration:underline;">O</span>ptions
+          </div>
+          <div class="menuitem">
+            <span style="text-decoration:underline;">W</span>indows
+          </div>
+          <div class="menuitem">
+            <span style="text-decoration:underline;">H</span>elp
+          </div> -->
+    </div>
+
+    <div class="body">
+
+      <h3 style="margin-top: 0.5rem;">Apptron Early Access</h3>
+
+      <p>
+        Apptron is a software primitive that lets you drive native platform APIs using the technologies you're already familiar with, enabling cross-platform webview apps and more.
+      </p>
+
+      <p>
+        When APIs stabilize and the project nears a 1.0 release, the project will be made public under MIT license. Until then, the Apptron project repository is currently only available to those that join early access. 
+      </p>
+
+      <fieldset>
+        <legend>Join Early Access</legend>
+
+        <form action="https://docs.google.com/forms/d/e/1FAIpQLSciem39yfvEnlxxjhgcJjwbdUy8HI6PFb8hZ2eJC0T6EVnq2A/viewform?usp=pp_url" method="get" style="margin-top: 0.5rem; margin-bottom: 0.5rem;">
+          <label>GitHub User:</label> <input type="text" name="entry.1790727032" /> <button onclick="$('form').submit()"><span>Submit</span></button>
+        </form>
+      </fieldset>
+        
+    </div>
+
+
+
+</div>
+<div class="bottomright handle ui-resizable-handle ui-resizable-se"></div>
+<div class="topright handle ui-resizable-handle ui-resizable-ne"></div>
+<div class="topleft handle ui-resizable-handle ui-resizable-nw"></div>
+<div class="bottomleft handle ui-resizable-handle ui-resizable-sw"></div>
+
+<div class="menu" id="help-menu" style="display: none;">
+  <a target="_blank" href="https://progrium.com/blog/apptron-announcement/"><div class="item">Apptron Announcement...</div></a>
+  <a target="_blank" href="https://github.com/sponsors/progrium"><div class="item">Sponsor Project...</div></a>
+  <hr />
+  <a target="_blank" href="https://progrium.com/blog/progrium-technology-thesis/"><div class="item">About Tractor System...</div></a>
+</div>
+<div class="menu" id="access-menu" style="display: none;">
+  <a target="_blank" href="https://docs.google.com/forms/d/e/1FAIpQLSciem39yfvEnlxxjhgcJjwbdUy8HI6PFb8hZ2eJC0T6EVnq2A/viewform?usp=pp_url"><div class="item">Join Early Access...</div></a>
+  <hr />
+  <a target="_blank" href="https://github.com/tractordev/apptron"><div class="item">GitHub Repository...</div></a>
+</div>
+<div class="menu" id="demos-menu" style="display: none;">
+  <a target="_blank" href="https://www.youtube.com/watch?v=XU-vrmA7j4U"><div class="item">1 Webview Window Building Block</div></a>
+  <a target="_blank" href="https://www.youtube.com/watch?v=7zsCQGOEBRU"><div class="item">2 Zero Config HTML5 Native Apps</div></a>
+  <a target="_blank" href="https://www.youtube.com/watch?v=UHFS4STFYXM"><div class="item">3 Shell Scriptable Native APIs</div></a>
+  <a target="_blank" href="https://www.youtube.com/watch?v=i9nNUOHF7G4"><div class="item">4 HTML5 Background Apps</div></a>
+  <a target="_blank" href="https://www.twitch.tv/progrium/schedule?segmentID=bf40c1f9-8ecf-458b-9d85-a9dce71f83b3"><div class="item">5 ???</div></a>
+</div>
+
+</div>
+
+<div class="icon" style="display:none;">
+    <img src="./apptron.png" />
+    <span>Apptron</span>
+</div>
+
+<script>
+    var dragTarget
+    $(".window").draggable({
+        handle: ".title",
+        helper: "clone",
+        start: (event, ui) => {
+            dragTarget = event.target
+        },
+        stop: (event, ui) => {
+            dragTarget.style.top = ui.position.top-8
+            dragTarget.style.left = ui.position.left-8
+        }
+    })
+    // $('.window').resizable({
+    //     // handles: "ne, se, sw, nw"
+    //     handles: {
+    //         'nw': '.topleft',
+    //         'ne': '.topright',
+    //         'sw': '.bottomleft',
+    //         'se': '.bottomright'
+    //     }
+    // })
+    $(".min, .close").click(() => {
+        $(".window").hide()
+        $(".icon").show()
+    })
+    $(".icon").dblclick(() => {
+        $(".window").show()
+        $(".icon").hide()
+    })
+    $(".max").click(() => {
+        if ($(".window").hasClass("unmaximized")) {
+            $(".window").data("left", $(".window").css("left"))
+            $(".window").data("top", $(".window").css("top"))
+            $(".window").data("width", $(".window").css("width"))
+            $(".window").data("height", $(".window").css("height"))
+            $(".window").css("left", "")
+            $(".window").css("top", "")
+            $(".window").css("width", "")
+            $(".window").css("height", "")
+        } else {
+            $(".window").css("left", $(".window").data("left"))
+            $(".window").css("top", $(".window").data("top"))
+            $(".window").css("width", $(".window").data("width"))
+            $(".window").css("height", $(".window").data("height"))
+        }
+        $(".window").toggleClass("maximized")
+        $(".window").toggleClass("unmaximized")
+    })
+    $(".menuitem").click((e) => {
+      if (e.target.dataset.menu) {
+        $(".menu").hide()
+        $(".menuitem").removeClass("active")
+        $(e.target).addClass("active")
+        $(e.target.dataset.menu).css("left", e.target.offsetLeft)
+        $(e.target.dataset.menu).css("top", 56)
+        $(e.target.dataset.menu).show()
+      }
+      e.stopPropagation()
+    })
+    $(document.body).click(() => {
+      $(".menu").hide()
+      $(".menuitem").removeClass("active")
+    })
+</script>
+</body>
+</html>
