@@ -86,6 +86,26 @@ func parseOptions(f io.Reader, metaname string) map[string]string {
 	z := html.NewTokenizer(f)
 	inTitle := false
 	opts := make(map[string]string)
+	parseMeta := func() {
+		var name, content string
+		attr := true
+		for attr {
+			var k, v []byte
+			k, v, attr = z.TagAttr()
+			if bytes.Equal(k, []byte("name")) {
+				name = string(v)
+			}
+			if bytes.Equal(k, []byte("content")) {
+				content = string(v)
+			}
+		}
+		if name == metaname {
+			for _, part := range strings.Split(content, ",") {
+				kv := strings.SplitN(part, "=", 2)
+				opts[kv[0]] = kv[1]
+			}
+		}
+	}
 	for {
 		tt := z.Next()
 		switch tt {
@@ -93,12 +113,15 @@ func parseOptions(f io.Reader, metaname string) map[string]string {
 			// also EOF aka done
 			return opts
 		case html.StartTagToken:
-			tn, _ := z.TagName()
+			tn, attr := z.TagName()
 			if bytes.Equal(tn, []byte("body")) {
 				return opts
 			}
 			if bytes.Equal(tn, []byte("title")) {
 				inTitle = true
+			}
+			if bytes.Equal(tn, []byte("meta")) && attr {
+				parseMeta()
 			}
 		case html.TextToken:
 			if inTitle {
@@ -108,23 +131,7 @@ func parseOptions(f io.Reader, metaname string) map[string]string {
 		case html.SelfClosingTagToken:
 			tn, attr := z.TagName()
 			if bytes.Equal(tn, []byte("meta")) && attr {
-				var name, content string
-				for attr {
-					var k, v []byte
-					k, v, attr = z.TagAttr()
-					if bytes.Equal(k, []byte("name")) {
-						name = string(v)
-					}
-					if bytes.Equal(k, []byte("content")) {
-						content = string(v)
-					}
-				}
-				if name == metaname {
-					for _, part := range strings.Split(content, ",") {
-						kv := strings.SplitN(part, "=", 2)
-						opts[kv[0]] = kv[1]
-					}
-				}
+				parseMeta()
 			}
 		}
 	}
