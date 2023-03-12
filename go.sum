@@ -143,6 +143,8 @@ github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZN
 github.com/posener/complete v1.1.1/go.mod h1:em0nMJCgc9GFtwrmVmEMR/ZL6WyhyjMBndrE9hABlRI=
 github.com/progrium/macdriver v0.2.1-0.20211201224913-0c111bf46c68 h1:/gR4OcChr6Z38DIj2JUodJSD8hJfcKL4APqPix1KBx0=
 github.com/progrium/macdriver v0.2.1-0.20211201224913-0c111bf46c68/go.mod h1:QkZLlOeMkYF92euEWqUBpry7/tXrZuM575xZRwnuiig=
+github.com/progrium/macdriver v0.2.1-0.20230312220715-f94fcc89de07 h1:CyIY2Z1Mf8NGxcSNIOVwNR3SQhaOljD8UGC+WmVco9o=
+github.com/progrium/macdriver v0.2.1-0.20230312220715-f94fcc89de07/go.mod h1:QkZLlOeMkYF92euEWqUBpry7/tXrZuM575xZRwnuiig=
 github.com/progrium/macschema v0.1.0/go.mod h1:XzxlqYAo4vKozoZd837LBMjPcfJNlvwB5yBn5Nu+RDE=
 github.com/progrium/qtalk-go v0.5.1-0.20221129183950-4751754126a4 h1:pUfsAosuDKak9BhkBNPeEIH2661eBnuTNd3Qe8VrA3E=
 github.com/progrium/qtalk-go v0.5.1-0.20221129183950-4751754126a4/go.mod h1:0DOqGiaKmQpyRYKkOxkzkkgGOiiik8obeE/luvBU9es=

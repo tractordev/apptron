@@ -4,7 +4,7 @@ go 1.18
 
 require (
 	github.com/jchv/go-webview2 v0.0.0-20220506072306-ae3fc72a5edd
-	github.com/progrium/macdriver v0.2.1-0.20211201224913-0c111bf46c68
+	github.com/progrium/macdriver v0.2.1-0.20230312220715-f94fcc89de07
 	github.com/progrium/qtalk-go v0.5.1-0.20221129183950-4751754126a4
 	github.com/rs/xid v1.4.0
 	golang.design/x/hotkey v0.3.0

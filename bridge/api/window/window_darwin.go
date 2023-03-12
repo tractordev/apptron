@@ -73,7 +73,21 @@ func findWindow(win objc.Object) *Window {
 	return found
 }
 
+type WindowView struct {
+	objc.Object `objc:"WindowView : NSView"`
+}
+
+func (v *WindowView) keyDown(event objc.Object) {
+	// no-op, otherwise not having a keyDown in
+	// responder chain makes system beep on keyDown
+	// when not handled in javascript.
+}
+
 func init() {
+	viewClass := objc.NewClassFromStruct(WindowView{})
+	viewClass.AddMethod("keyDown:", (*WindowView).keyDown)
+	objc.RegisterClass(viewClass)
+
 	DelegateClass := objc.NewClass("WindowDelegate", "NSObject")
 	DelegateClass.AddMethod("windowDidMove:", func(self, notif objc.Object) {
 		if win := findWindow(notif.Get("object")); win != nil {
@@ -257,7 +271,10 @@ func New(options Options) (*Window, error) {
 		wv.SetValueForKey(mac.False, mac.String("drawsBackground"))
 	}
 
-	nswin.SetContentView(wv)
+	view := objc.Get("WindowView").Alloc().Init()
+	view.Send("addSubview:", wv)
+	nswin.Set("ContentView:", view)
+	nswin.Send("makeFirstResponder:", view)
 
 	if options.AlwaysOnTop {
 		nswin.SetLevel(cocoa.NSMainMenuWindowLevel)
