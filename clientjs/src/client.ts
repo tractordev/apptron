@@ -3,7 +3,7 @@ import * as qtalk from "../lib/qtalk.min.js";
 
 
 export async function connect(url: string): Promise<Client> {
-  return new Client(await qtalk.connect(url, new qtalk.JSONCodec()))
+  return new Client(await qtalk.connect(url, new qtalk.CBORCodec()))
 }
 
 export class Client {

@@ -18,10 +18,10 @@ import (
 	"sync"
 	"syscall"
 
-	"github.com/progrium/qtalk-go/codec"
 	"github.com/progrium/qtalk-go/mux"
 	"github.com/progrium/qtalk-go/rpc"
 	"github.com/progrium/qtalk-go/talk"
+	"github.com/progrium/qtalk-go/x/cbor/codec"
 )
 
 type Client struct {
@@ -107,7 +107,7 @@ func New(peer *talk.Peer) *Client {
 }
 
 func Dial(addr string) (*Client, error) {
-	peer, err := talk.Dial("tcp", addr, codec.JSONCodec{})
+	peer, err := talk.Dial("tcp", addr, codec.CBORCodec{})
 	if err != nil {
 		return nil, err
 	}
@@ -159,7 +159,7 @@ func Spawn() (*Client, error) {
 	if err := cmd.Start(); err != nil {
 		return nil, err
 	}
-	client := New(talk.NewPeer(sess, codec.JSONCodec{}))
+	client := New(talk.NewPeer(sess, codec.CBORCodec{}))
 	client.cmd = cmd
 	return client, nil
 }
