@@ -36,7 +36,6 @@ func (m *AppModule) SetMenu(ctx context.Context, menu Menu) (err error) {
 
 // NewIndicator
 func (m *AppModule) NewIndicator(ctx context.Context, icon []byte, items []MenuItem) (err error) {
-	iconSel := m.client.ServeData(icon)
-	_, err = m.client.Call(ctx, "app.NewIndicator", fn.Args{iconSel, items}, nil)
+	_, err = m.client.Call(ctx, "app.NewIndicator", fn.Args{icon, items}, nil)
 	return
 }

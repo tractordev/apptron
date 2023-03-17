@@ -34,7 +34,6 @@ type WindowOptions struct {
 	Visible     bool
 	Hidden      bool
 	Center      bool
-	IconSel     string
 	Icon        []byte
 	URL         string
 	HTML        string
@@ -55,10 +54,6 @@ func (ws *WindowModule) byID(id Handle) *Window {
 }
 
 func (s *WindowModule) New(ctx context.Context, opts WindowOptions) (*Window, error) {
-	if len(opts.Icon) > 0 {
-		opts.IconSel = s.client.ServeData(opts.Icon)
-		opts.Icon = nil
-	}
 	var win Window
 	_, err := s.client.Call(ctx, "window.New", fn.Args{opts}, &win)
 	if err != nil {

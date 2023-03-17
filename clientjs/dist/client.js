@@ -2043,21 +2043,6 @@ var Client = class {
     this.handleEvents(peer);
     this.peer.respond();
   }
-  async serveData(d) {
-    const selector = toHexString(new Uint8Array(await crypto.subtle.digest("SHA-1", d)));
-    if (selector in this.data) {
-      return selector;
-    }
-    this.data[selector] = d;
-    this.peer.handle(selector, { respondRPC: async (resp, call) => {
-      await call.receive();
-      const ch = await resp.continue();
-      const data = new Uint8Array(this.data[selector]);
-      await ch.write(data);
-      await ch.close();
-    } });
-    return selector;
-  }
   async handleEvents(peer) {
     const resp = await peer.call("Listen");
     while (true) {
@@ -2128,8 +2113,7 @@ var AppModule = class {
     this.rpc.app.SetMenu(m);
   }
   async NewIndicator(icon, items) {
-    const selector = await this.client.serveData(icon);
-    this.rpc.app.NewIndicator(selector, items);
+    this.rpc.app.NewIndicator(icon, items);
   }
 };
 var MenuModule = class {
@@ -2258,11 +2242,6 @@ var Window = class {
     return this.rpc.window.SetTitle(this.ID, title);
   }
 };
-function toHexString(byteArray) {
-  return Array.from(byteArray, function(byte) {
-    return ("0" + (byte & 255).toString(16)).slice(-2);
-  }).join("");
-}
 export {
   Client,
   Menu,

@@ -1,11 +1,7 @@
 package app
 
 import (
-	"context"
-
-	"github.com/progrium/qtalk-go/rpc"
 	"tractor.dev/apptron/bridge/api/menu"
-	"tractor.dev/apptron/bridge/misc"
 	"tractor.dev/apptron/bridge/resource"
 )
 
@@ -36,16 +32,7 @@ func (m *module) SetMenu(handle resource.Handle) error {
 	return nil
 }
 
-func (m *module) NewIndicator(iconSel string, items []menu.Item, call *rpc.Call) error {
-	icon, err := misc.FetchData(context.Background(), call, iconSel)
-	if err != nil {
-		return err
-	}
-	NewIndicator(icon, items)
-	return nil
-}
-
-func (m *module) NewIndicator_(icon []byte, items []menu.Item) error {
+func (m *module) NewIndicator(icon []byte, items []menu.Item) error {
 	NewIndicator(icon, items)
 	return nil
 }

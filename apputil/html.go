@@ -63,7 +63,6 @@ func WindowOptionsFromHTML(fsys fs.FS, filename, metaname string, fallback clien
 		URL:       optString(opts["url"], fallback.URL),
 		Script:    fallback.Script,
 		HTML:      fallback.HTML,
-		IconSel:   fallback.IconSel,
 		Icon:      fallback.Icon,
 	}
 }

@@ -2,10 +2,7 @@
 package client
 
 import (
-	"bytes"
 	"context"
-	"crypto/sha1"
-	"encoding/hex"
 	"errors"
 	"io"
 	"log"
@@ -19,7 +16,6 @@ import (
 	"syscall"
 
 	"github.com/progrium/qtalk-go/mux"
-	"github.com/progrium/qtalk-go/rpc"
 	"github.com/progrium/qtalk-go/talk"
 	"github.com/progrium/qtalk-go/x/cbor/codec"
 )
@@ -65,30 +61,6 @@ func (c *Client) Close() error {
 
 func (c *Client) Wait() error {
 	return c.cmd.Wait()
-}
-
-func (c *Client) ServeData(d []byte) string {
-	hash := sha1.New()
-	hash.Write(d)
-	selector := hex.EncodeToString(hash.Sum(nil))
-	dd, existed := c.files.LoadOrStore(selector, d)
-	if !existed {
-		c.Handle(selector, rpc.HandlerFunc(func(resp rpc.Responder, call *rpc.Call) {
-			call.Receive(nil)
-			ch, err := resp.Continue(nil)
-			if err != nil {
-				log.Println(err)
-				return
-			}
-			defer ch.Close()
-			buf := bytes.NewBuffer(dd.([]byte))
-			if _, err := io.Copy(ch, buf); err != nil {
-				log.Println(err)
-				return
-			}
-		}))
-	}
-	return selector
 }
 
 func New(peer *talk.Peer) *Client {
