@@ -1,9 +1,9 @@
 package bridge
 
 import (
-	"github.com/progrium/qtalk-go/codec"
 	"github.com/progrium/qtalk-go/fn"
 	"github.com/progrium/qtalk-go/rpc"
+	"github.com/progrium/qtalk-go/x/cbor/codec"
 
 	"tractor.dev/apptron/bridge/api/app"
 	"tractor.dev/apptron/bridge/api/menu"
@@ -36,7 +36,7 @@ func NewServer() *rpc.Server {
 	mux.Handle("shell", fn.HandlerFrom(shell.Module))
 
 	return &rpc.Server{
-		Codec: codec.JSONCodec{},
+		Codec: codec.CBORCodec{},
 		Handler: rpc.HandlerFunc(func(r rpc.Responder, c *rpc.Call) {
 			platform.Dispatch(func() {
 				mux.RespondRPC(r, c)

@@ -6,9 +6,9 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/progrium/qtalk-go/codec"
 	"github.com/progrium/qtalk-go/fn"
 	"github.com/progrium/qtalk-go/talk"
+	"github.com/progrium/qtalk-go/x/cbor/codec"
 	"tractor.dev/apptron/bridge/api/window"
 	"tractor.dev/apptron/bridge/platform"
 )
@@ -34,7 +34,7 @@ func TestBridge(t *testing.T) {
 	srv := NewServer()
 	go srv.Serve(l)
 
-	client, err := talk.Dial("tcp", l.Addr().String(), codec.JSONCodec{})
+	client, err := talk.Dial("tcp", l.Addr().String(), codec.CBORCodec{})
 	if err != nil {
 		t.Fatal(err)
 	}

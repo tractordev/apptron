@@ -10,9 +10,9 @@ import (
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/gdamore/tcell/v2/terminfo"
-	"github.com/progrium/qtalk-go/codec"
 	"github.com/progrium/qtalk-go/mux"
 	"github.com/progrium/qtalk-go/rpc"
+	"github.com/progrium/qtalk-go/x/cbor/codec"
 	"github.com/rivo/tview"
 	"golang.org/x/net/websocket"
 	"tractor.dev/apptron"
@@ -81,6 +81,7 @@ func main() {
 			SetDoneFunc(func(buttonIndex int, buttonLabel string) {
 				if buttonLabel == "Quit" {
 					app.Stop()
+					native.Close()
 				}
 			})
 
@@ -102,7 +103,7 @@ func main() {
 		conn := mux.New(ws)
 		srv := &rpc.Server{
 			Handler: methods,
-			Codec:   codec.JSONCodec{},
+			Codec:   codec.CBORCodec{},
 		}
 		go srv.Respond(conn, context.Background())
 		conn.Wait()

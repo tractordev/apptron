@@ -1,9 +1,6 @@
 package window
 
 import (
-	"context"
-
-	"github.com/progrium/qtalk-go/rpc"
 	"tractor.dev/apptron/bridge/misc"
 	"tractor.dev/apptron/bridge/resource"
 )
@@ -61,7 +58,6 @@ type Options struct {
 	Visible     bool
 	Hidden      bool
 	Center      bool
-	IconSel     string
 	Icon        []byte
 	URL         string
 	HTML        string
@@ -99,15 +95,7 @@ type Position = misc.Position
 // 	return result
 // }
 
-func (m *module) New(options Options, call *rpc.Call) (*Window, error) {
-	if options.IconSel != "" {
-		var err error
-		options.Icon, err = misc.FetchData(context.Background(), call, options.IconSel)
-		if err != nil {
-			return nil, err
-		}
-	}
-
+func (m *module) New(options Options) (*Window, error) {
 	return New(options)
 }
 

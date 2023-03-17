@@ -6,9 +6,9 @@ import (
 
 	_ "embed"
 
-	"github.com/progrium/qtalk-go/codec"
 	"github.com/progrium/qtalk-go/mux"
 	"github.com/progrium/qtalk-go/rpc"
+	"github.com/progrium/qtalk-go/x/cbor/codec"
 	"golang.org/x/net/websocket"
 	"tractor.dev/apptron/chrome"
 	"tractor.dev/apptron/client"
@@ -21,9 +21,9 @@ var loader []byte
 // BackendServer returns an http.Handler that responds to builtin endpoints,
 // all hardcoded with /-/ path prefix:
 //
-// 	/-/ws: 						the WebSocket endpoint
-// 	/-/client.js: 		the JavaScript client module
-// 	/-/apptron.js:		the JavaScript loader
+//	/-/ws: 						the WebSocket endpoint
+//	/-/client.js: 		the JavaScript client module
+//	/-/apptron.js:		the JavaScript loader
 //	/-/chrome:				the builtin chrome pages dir
 //
 // The WebSocket endpoint establishes a qtalk session that will proxy to the provided
@@ -65,7 +65,7 @@ func (b *backend) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			// that proxies to this session (for callbacks)
 			proxyToMux := b.proxyTo.Peer.RespondMux
 			proxyToMux.Remove("")
-			proxyToMux.Handle("", rpc.ProxyHandler(rpc.NewClient(sess, codec.JSONCodec{})))
+			proxyToMux.Handle("", rpc.ProxyHandler(rpc.NewClient(sess, codec.CBORCodec{})))
 
 			// create a server to proxy calls to proxyTo
 			handler := rpc.NewRespondMux()
@@ -74,7 +74,7 @@ func (b *backend) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				b.muxExt(handler)
 			}
 			srv := &rpc.Server{
-				Codec:   codec.JSONCodec{},
+				Codec:   codec.CBORCodec{},
 				Handler: handler,
 			}
 			srv.Respond(sess, nil)

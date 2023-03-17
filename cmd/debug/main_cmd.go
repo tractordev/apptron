@@ -6,7 +6,7 @@ import (
 	"context"
 	"fmt"
 	"log"
-	//	"os"
+	"os"
 
 	"tractor.dev/apptron"
 	"tractor.dev/apptron/bridge/misc"
@@ -14,7 +14,7 @@ import (
 )
 
 func main() {
-	//os.Setenv("BRIDGECMD", "./apptron")
+	os.Setenv("APPTRON_CMD", "./dist/apptron")
 	ctx := context.Background()
 	c, err := apptron.Run(ctx, client.AppOptions{})
 	if err != nil {

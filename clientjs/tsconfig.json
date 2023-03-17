@@ -1,6 +1,5 @@
 {
   "compilerOptions": {
-      "target": "es6",
       "lib": ["dom", "es6"],
       "noImplicitAny": true
   }

@@ -27,7 +27,7 @@
   terminal.loadAddon(fitAddon)
   terminal.open(document.querySelector("main"))
 
-  const rpc = await qtalk.connect(`ws://${window.location.host}/rpc`, new qtalk.JSONCodec())
+  const rpc = await qtalk.connect(`ws://${window.location.host}/rpc`, new qtalk.CBORCodec())
   const resp = await rpc.call("terminal", {Term: "xterm-256color", Rows: 20, Cols: 80})
   const ch = resp.channel
   let enc = new TextEncoder()

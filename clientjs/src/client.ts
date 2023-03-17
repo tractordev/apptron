@@ -3,7 +3,7 @@ import * as qtalk from "../lib/qtalk.min.js";
 
 
 export async function connect(url: string): Promise<Client> {
-  return new Client(await qtalk.connect(url, new qtalk.JSONCodec()))
+  return new Client(await qtalk.connect(url, new qtalk.CBORCodec()))
 }
 
 export class Client {
@@ -32,21 +32,6 @@ export class Client {
     this.peer.respond()
   }
 
-  async serveData(d: ArrayBuffer): Promise<string> {
-    const selector = toHexString(new Uint8Array(await crypto.subtle.digest("SHA-1", d)))
-    if (selector in this.data) {
-      return selector
-    }
-    this.data[selector] = d
-    this.peer.handle(selector, {respondRPC: async (resp: any, call: any) => {
-      await call.receive()
-      const ch = await resp.continue()
-      const data = new Uint8Array(this.data[selector])
-      await ch.write(data)
-      await ch.close()
-    }})
-    return selector
-  }
 
   async handleEvents(peer: qtalk.Peer) {
     const resp = await peer.call("Listen")
@@ -127,8 +112,7 @@ class AppModule {
   }
 
   async NewIndicator(icon: ArrayBuffer, items: MenuItem[]): Promise<void> {
-    const selector = await this.client.serveData(icon)
-    this.rpc.app.NewIndicator(selector, items)
+    this.rpc.app.NewIndicator(icon, items)
   }
 }
 
@@ -432,7 +416,7 @@ export interface WindowOptions {
 	Visible:     boolean
   Hidden:      boolean
 	Center:      boolean
-	IconSel:     string // TODO
+	Icon:        ArrayBuffer // TODO
 	URL:         string
 	HTML:        string
 	Script:      string
