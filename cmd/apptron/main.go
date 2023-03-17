@@ -44,8 +44,13 @@ func main() {
 	root := &cli.Command{
 		Version: Version,
 		Usage:   "apptron",
-		Long: `Apptron is a tool for scriptable native app functionality and webview
-windows. Running without a subcommand starts the API service over STDIO.`,
+		Long:    `Apptron is a tool for scriptable native app functionality and webview windows.`,
+	}
+	root.Flags().BoolVar(&flagDebug, "debug", false, "debug mode")
+
+	root.AddCommand(&cli.Command{
+		Usage: "bridge",
+		Short: "run bridge API service over STDIO",
 		Run: func(ctx context.Context, args []string) {
 			log.SetOutput(os.Stderr)
 			sess, err := mux.DialIO(os.Stdout, os.Stdin)
@@ -60,8 +65,7 @@ windows. Running without a subcommand starts the API service over STDIO.`,
 			}()
 			platform.Main()
 		},
-	}
-	root.Flags().BoolVar(&flagDebug, "debug", false, "debug mode")
+	})
 
 	root.AddCommand(&cli.Command{
 		Usage: "run",

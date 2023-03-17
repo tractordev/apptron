@@ -42,10 +42,10 @@ $ apptron -h
 Usage:
 apptron [command]
 
-Apptron is a tool for scriptable native app functionality and webview
-windows. Running without a subcommand starts the API service over STDIO.
+Apptron is a tool for scriptable native app functionality and webview windows.
 
 Available Commands:
+	bridge					 run bridge API service over STDIO
   run              launch a webview window from HTML
   build            compile webview app from HTML
   clean            remove webview app build cache files

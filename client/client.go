@@ -142,7 +142,7 @@ func findCmd() string {
 }
 
 func Spawn() (*Client, error) {
-	cmd := exec.Command(findCmd())
+	cmd := exec.Command(findCmd(), "bridge")
 	cmd.Stderr = os.Stderr
 	wc, err := cmd.StdinPipe()
 	if err != nil {
