@@ -75,7 +75,7 @@ func windowCallback(hwnd HWND, message uint32, wParam WPARAM, lParam LPARAM) LRE
 		event.Emit(event.Event{
 			Type:   event.Resized,
 			Window: w.Handle,
-			Size:   w.GetOuterSize(),
+			Size:   w.GetInnerSize(),
 		})
 
 	case WM_ACTIVATE:
@@ -461,13 +461,14 @@ func (w *Window) SetFullscreen(fullscreen bool) {
 	}
 }
 
+// NOTE(nick): "inner" size
 func (w *Window) SetSize(size Size) {
 	size = mulSize(size, w.scale)
 
 	style := DWORD(GetWindowLongW(w.hwnd, GWL_STYLE))
 	size = windowSizeForClientSize(style, size, w.hasMenu)
 
-	SetWindowPos(w.hwnd, HWND_TOP, int(size.Width), int(size.Height), 0, 0, SWP_NOMOVE)
+	SetWindowPos(w.hwnd, HWND_TOP, 0, 0, int(size.Width), int(size.Height), SWP_NOMOVE|SWP_NOOWNERZORDER)
 }
 
 func (w *Window) SetMinSize(size Size) {
@@ -524,10 +525,40 @@ func (w *Window) GetOuterPosition() Position {
 func (w *Window) GetOuterSize() Size {
 	result := Size{Width: 0, Height: 0}
 
+	scale := windowGetPixelScale(w.hwnd)
+
+	var rect RECT
+	if GetWindowRect(w.hwnd, &rect) {
+		result.Width = float64(rect.Right-rect.Left) / float64(scale.Width)
+		result.Height = float64(rect.Bottom-rect.Top) / float64(scale.Height)
+	}
+
+	return result
+}
+
+func (w *Window) GetInnerSize() Size {
+	result := Size{Width: 0, Height: 0}
+
+	scale := windowGetPixelScale(w.hwnd)
+
 	var rect RECT
 	if GetWindowRect(w.hwnd, &rect) {
 		result.Width = float64(rect.Right - rect.Left)
 		result.Height = float64(rect.Bottom - rect.Top)
+
+		// NOTE(nick): unadjust client rect
+		style := DWORD(GetWindowLongW(w.hwnd, GWL_STYLE))
+		wr := RECT{0, 0, 0, 0}
+		AdjustWindowRect(&wr, style, w.hasMenu)
+
+		width := wr.Right - wr.Left
+		height := wr.Bottom - wr.Top
+
+		result.Width -= float64(width)
+		result.Height -= float64(height)
+
+		result.Width /= float64(scale.Width)
+		result.Height /= float64(scale.Height)
 	}
 
 	return result
