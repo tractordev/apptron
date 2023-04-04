@@ -45,7 +45,7 @@ func windowCallback(hwnd HWND, message uint32, wParam WPARAM, lParam LPARAM) LRE
 			Window: w.Handle,
 		})
 
-		// NOTE(nick): should this still close the window or should that be up to the user?
+		// @Incomplete: should this still close the window or should that be up to the user?
 		// Return 0 to "consume" the close event and prevent the window from closing.
 		//return 0
 
@@ -240,9 +240,23 @@ func New(options Options) (*Window, error) {
 
 	// NOTE(nick): resize window based on pixel scale
 	scale := windowGetPixelScale(hwnd)
-	s := mulSize(options.Size, scale)
-	s = windowSizeForClientSize(style, s, hasMenu)
-	SetWindowPos(hwnd, HWND_TOP, 0, 0, int(s.Width), int(s.Height), SWP_NOMOVE|SWP_NOOWNERZORDER)
+	size := mulSize(options.Size, scale)
+
+	// NOTE(nick): set default size
+	if size.Width == 0 && size.Height == 0 {
+		info := MONITORINFOEX{}
+		if GetMonitorInfoW(MonitorFromWindow(hwnd, MONITOR_DEFAULTTOPRIMARY), &info) {
+			monitorWidth := info.RcMonitor.Right - info.RcMonitor.Left
+			monitorHeight := info.RcMonitor.Bottom - info.RcMonitor.Top
+
+			size.Width = float64(int64(float64(monitorWidth) * 0.8))
+			size.Height = float64(int64(float64(monitorHeight) * 0.8))
+		}
+	}
+
+	// size window
+	size = windowSizeForClientSize(style, size, hasMenu)
+	SetWindowPos(hwnd, HWND_TOP, 0, 0, int(size.Width), int(size.Height), SWP_NOMOVE|SWP_NOOWNERZORDER)
 
 	chromium := edge.NewChromium()
 	//chromium.DataPath = options.DataPath

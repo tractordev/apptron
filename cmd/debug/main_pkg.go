@@ -131,8 +131,6 @@ func run() {
 		Frameless:   false,
 		Visible:     true,
 		Resizable:   true,
-		Position:    window.Position{X: 10, Y: 10},
-		Size:        window.Size{Width: 640, Height: 480},
 		Center:      true,
 		Icon:        iconData,
 		HTML: `

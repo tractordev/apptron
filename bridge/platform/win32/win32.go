@@ -758,8 +758,10 @@ func AppendSubmenu(submenu HMENU, mii *MENUITEMINFO) {
 	mii.HSubMenu = submenu
 }
 
-// NOTE(nick): system tray menu
-// @Robustness: add support for multiple tray icons?
+//
+// System Tray Menu
+//
+
 var didInitTrayWindowClass = false
 
 type Win32_Tray struct {
