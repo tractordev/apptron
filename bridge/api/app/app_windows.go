@@ -60,7 +60,7 @@ func Run(options Options) error {
 	if options.Agent == false {
 		var windowCount int64
 
-		event.Listen("__APPTRON_Platform_listener2__", func(e event.Event) error {
+		event.Listen("__APPTRON_Platform_listener__", func(e event.Event) error {
 			if e.Type == event.Created {
 				atomic.AddInt64(&windowCount, 1)
 			}
