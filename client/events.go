@@ -12,6 +12,7 @@ type EventType int
 const (
 	EventNone EventType = iota
 	EventClose
+	EventCreated
 	EventDestroyed
 	EventFocused
 	EventBlurred
@@ -22,7 +23,7 @@ const (
 )
 
 func (e EventType) String() string {
-	return []string{"", "close", "destroy", "focus", "blur", "resize", "move", "menu", "shortcut"}[e]
+	return []string{"", "close", "create", "destroy", "focus", "blur", "resize", "move", "menu", "shortcut"}[e]
 }
 
 type Event struct {

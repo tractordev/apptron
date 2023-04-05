@@ -179,8 +179,14 @@ func init() {
 }
 
 func New(options Options) (*Window, error) {
+	screenRect := cocoa.NSScreen_Main().Frame()
+
 	size := options.Size
-	frame := mac.Rect(options.Position.X, options.Position.Y, size.Width, size.Height)
+	position := options.Position
+	// NOTE(nick): Y is inverted on MacOS
+	position.Y = screenRect.Size.Height - options.Position.Y
+
+	frame := mac.Rect(position.X, position.Y-size.Height, size.Width, size.Height)
 
 	nswin := cocoa.NSWindow_Init(
 		frame,
@@ -192,23 +198,20 @@ func New(options Options) (*Window, error) {
 	nswin.MakeKeyAndOrderFront(nil)
 
 	if size.Width == 0 && size.Height == 0 {
-		screenRect := cocoa.NSScreen_Main().Frame()
-
 		size.Width = screenRect.Size.Width * 0.8
 		size.Height = screenRect.Size.Height * 0.8
 
-		frame = mac.Rect(options.Position.X, options.Position.Y, size.Width, size.Height)
+		frame = mac.Rect(position.X, position.Y-size.Height, size.Width, size.Height)
 	}
 
 	if options.Center {
-		screenRect := cocoa.NSScreen_Main().Frame()
-		options.Position.X = (screenRect.Size.Width / 2) - (size.Width / 2)
-		options.Position.Y = (screenRect.Size.Height / 2) - (size.Height / 2)
-		frame = mac.Rect(options.Position.X, options.Position.Y, size.Width, size.Height)
+		position.X = (screenRect.Size.Width / 2) - (size.Width / 2)
+		position.Y = (screenRect.Size.Height / 2) - (size.Height / 2)
+		frame = mac.Rect(position.X, position.Y, size.Width, size.Height)
 	}
 
 	if options.Hidden {
-		frame = mac.Rect(options.Position.X, options.Position.Y, 0, 0)
+		frame = mac.Rect(position.X, position.Y, 0, 0)
 	}
 
 	delegate := objc.Get("WindowDelegate").Alloc().Init()
@@ -380,6 +383,10 @@ func (w *Window) SetAlwaysOnTop(always bool) {
 }
 
 func (w *Window) SetPosition(position Position) {
+	screenRect := w.Screen().Frame()
+	// NOTE(nick): Y is inverted on MacOS
+	position.Y = screenRect.Size.Height - position.Y
+
 	w.SetFrameTopLeftPoint_(mac.Point(position.X, position.Y))
 }
 
@@ -389,9 +396,10 @@ func (w *Window) SetTitle(title string) {
 
 func (w *Window) GetOuterPosition() Position {
 	frame := w.Frame()
+	screenRect := w.Screen().Frame()
 	return Position{
 		X: frame.Origin.X,
-		Y: frame.Origin.Y + frame.Size.Height,
+		Y: screenRect.Size.Height - (frame.Origin.Y + frame.Size.Height),
 	}
 }
 
