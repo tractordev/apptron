@@ -48,6 +48,8 @@ type Window struct {
 	window
 	moveOffset     mac.NSPoint
 	cocoa.NSWindow `json:"-"`
+
+	ID string
 }
 
 var ptrLookup sync.Map
@@ -301,6 +303,7 @@ func New(options Options) (*Window, error) {
 			Handle: resource.NewHandle(),
 		},
 		NSWindow: nswin,
+		ID:       options.ID,
 	}
 	resource.Retain(win.Handle, win)
 
@@ -409,4 +412,9 @@ func (w *Window) GetOuterSize() Size {
 		Width:  frame.Size.Width,
 		Height: frame.Size.Height,
 	}
+}
+
+func (w *Window) GetInnerSize() Size {
+	// TODO(nick): adjust window rect
+	return w.GetOuterSize()
 }

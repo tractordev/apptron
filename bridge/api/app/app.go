@@ -20,10 +20,6 @@ type Options struct {
 	DisableAutoSave bool // disable window position saving and restoring
 }
 
-func SetMenu(m *menu.Menu) error {
-	return menu.SetMenu(m)
-}
-
 func (m *module) Menu() *menu.Menu {
 	return menu.GetMenu()
 }

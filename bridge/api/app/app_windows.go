@@ -35,6 +35,10 @@ func init() {
 	}
 }
 
+func SetMenu(m *menu.Menu) error {
+	return menu.SetMenu(m)
+}
+
 func NewIndicator(icon []byte, items []menu.Item) {
 	menu := menu.New(items)
 	onClick := func(id int32) {

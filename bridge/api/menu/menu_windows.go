@@ -5,19 +5,6 @@ import (
 	"tractor.dev/apptron/bridge/resource"
 )
 
-var (
-	mainMenu *Menu
-)
-
-func GetMenu() *Menu {
-	return mainMenu
-}
-
-func SetMenu(menu *Menu) error {
-	mainMenu = menu
-	return nil
-}
-
 type Menu struct {
 	menu
 
