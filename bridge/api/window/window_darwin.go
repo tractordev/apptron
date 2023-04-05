@@ -307,6 +307,13 @@ func New(options Options) (*Window, error) {
 	}
 	resource.Retain(win.Handle, win)
 
+	event.Emit(event.Event{
+		Type:     event.Created,
+		Window:   win.Handle,
+		Size:     win.GetInnerSize(),
+		Position: win.GetOuterPosition(),
+	})
+
 	return win, nil
 }
 

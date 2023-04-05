@@ -93,15 +93,14 @@ func setupWindowRestoreListener(identifier string) {
 		if e.Type == event.Created {
 			win, _ := window.Get(e.Window)
 			if win != nil && len(win.ID) > 0 {
-				log.Println("win ID", win.ID)
 				RestoreWindowSettings(win, identifier, win.ID)
 			}
 		}
 
-		if e.Type == event.Close {
+		// TODO: event.Close is not fired on MacOS
+		if e.Type == event.Close || e.Type == event.Destroyed {
 			win, _ := window.Get(e.Window)
 			if win != nil && len(win.ID) > 0 {
-				log.Println("win ID", win.ID)
 				SaveWindowSettings(win, identifier, win.ID)
 			}
 		}

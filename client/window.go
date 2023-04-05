@@ -39,6 +39,8 @@ type WindowOptions struct {
 	HTML        string
 	Script      string
 	ChromeURL   string
+	ChromeHTML  string // TODO
+	ID          string
 }
 
 type WindowModule struct {
