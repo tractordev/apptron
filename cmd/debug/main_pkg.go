@@ -127,6 +127,7 @@ func run() {
 
 	options := window.Options{
 		Title:       "Demo window",
+		ID:          "w1",
 		Transparent: true,
 		Frameless:   false,
 		Visible:     true,
@@ -159,9 +160,6 @@ func run() {
 
 		w1.SetTitle("Hello, Sailor!")
 		fmt.Println("[main] window position", w1.GetOuterPosition())
-
-		app.RestoreWindowSettings(w1, "com.progrium.Apptron", "w1")
-		app.SaveWindowSettings(w1, "com.progrium.Apptron", "w1")
 
 		//w1.SetMinSize(window.Size{Width: 100, Height: 100})
 	})

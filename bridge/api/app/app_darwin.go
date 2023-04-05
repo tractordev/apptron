@@ -81,6 +81,10 @@ func Run(options Options) error {
 
 	app.SetDelegate(objc.Get("AppDelegate").Alloc().Init())
 
+	if options.DisableAutoSave != true {
+		setupWindowRestoreListener(options.Identifier)
+	}
+
 	platform.Start()
 	return nil
 }

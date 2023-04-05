@@ -52,7 +52,7 @@ func NewIndicator(icon []byte, items []menu.Item) {
 }
 
 func Run(options Options) error {
-	if options.DisableAutoSave != false {
+	if options.DisableAutoSave != true {
 		setupWindowRestoreListener(options.Identifier)
 	}
 

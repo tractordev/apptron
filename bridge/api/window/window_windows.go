@@ -326,6 +326,7 @@ func New(options Options) (*Window, error) {
 	win.minSize = POINT{X: LONG(options.MinSize.Width), Y: LONG(options.MinSize.Height)}
 	win.maxSize = POINT{X: LONG(options.MaxSize.Width), Y: LONG(options.MaxSize.Height)}
 	win.isTransparent = options.Transparent
+	win.ID = options.ID
 
 	chromium.MessageCallback = win.messageCallback
 	//chromium.Eval("window.chrome.webview.postMessage('Hello, sir!');")
