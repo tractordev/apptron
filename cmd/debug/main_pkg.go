@@ -41,7 +41,7 @@ func run() {
 		log.Println(e)
 
 		if e.Type == event.MenuItem && e.MenuItem == QUIT_ID {
-			platform.Terminate()
+			platform.Terminate(true)
 		}
 
 		if e.Type == event.MenuItem && e.MenuItem == 123 {
