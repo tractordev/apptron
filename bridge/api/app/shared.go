@@ -89,7 +89,7 @@ func RestoreWindowSettings(win *window.Window, identifier string, key string) bo
 }
 
 func setupWindowRestoreListener(identifier string) {
-	event.Listen("__APPTRON_Platform_listener1__", func(e event.Event) error {
+	event.Listen("__APPTRON_Platform_listener__WindowRestore__", func(e event.Event) error {
 		if e.Type == event.Created {
 			win, _ := window.Get(e.Window)
 			if win != nil && len(win.ID) > 0 {
