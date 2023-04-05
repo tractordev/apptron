@@ -46,9 +46,9 @@ func main() {
 		Frameless:   false,
 		Resizable:   true,
 		Visible:     true,
-		//Position: window.Position{X: 10, Y: 10},
-		//Size:   client.Size{Width: 360, Height: 240},
-		Center: true,
+		Position:    client.Position{X: 100, Y: 100},
+		//Size:        client.Size{Width: 360, Height: 240},
+		Center: false,
 		HTML: `
 			<!doctype html>
 			<html>
@@ -66,6 +66,8 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+
+	w1.SetPosition(ctx, client.Position{X: 100, Y: 100})
 
 	fmt.Println("[main] window", w1)
 
