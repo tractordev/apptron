@@ -10,8 +10,7 @@ import (
 )
 
 var (
-	mainMenu *menu.Menu
-	app      cocoa.NSApplication
+	app cocoa.NSApplication
 )
 
 func init() {
@@ -19,13 +18,16 @@ func init() {
 }
 
 func Menu() *menu.Menu {
-	return mainMenu
+	return menu.GetMenu()
 }
 
 func SetMenu(menu *menu.Menu) error {
 	app.SetMainMenu(menu.NSMenu)
-	mainMenu = menu
-	return nil
+	menu.SetMenu(menu)
+}
+
+func (m *module) SetMenu(handle resource.Handle) error {
+	return menu.SetMenuHandle(handle)
 }
 
 func NewIndicator(icon []byte, items []menu.Item) {

@@ -19,17 +19,16 @@ type Options struct {
 	Accessory  bool // app should not be task switchable
 }
 
+func SetMenu(m *menu.Menu) error {
+	return menu.SetMenu(m)
+}
+
 func (m *module) Menu() *menu.Menu {
-	return Menu()
+	return menu.GetMenu()
 }
 
 func (m *module) SetMenu(handle resource.Handle) error {
-	mm, err := menu.Get(handle)
-	if err != nil {
-		return err
-	}
-	SetMenu(mm)
-	return nil
+	return menu.Set(handle)
 }
 
 func (m *module) NewIndicator(icon []byte, items []menu.Item) error {

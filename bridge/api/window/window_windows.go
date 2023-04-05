@@ -7,7 +7,7 @@ import (
 
 	"github.com/jchv/go-webview2/pkg/edge"
 
-	"tractor.dev/apptron/bridge/api/app"
+	"tractor.dev/apptron/bridge/api/menu"
 	"tractor.dev/apptron/bridge/event"
 	. "tractor.dev/apptron/bridge/platform/win32"
 	"tractor.dev/apptron/bridge/resource"
@@ -232,9 +232,9 @@ func New(options Options) (*Window, error) {
 	}
 
 	var hasMenu BOOL = FALSE
-	menu := app.Menu()
-	if menu != nil {
-		SetMenu(hwnd, menu.Menu)
+	m := menu.GetMenu()
+	if m != nil {
+		SetMenu(hwnd, m.Menu)
 		hasMenu = TRUE
 	}
 
