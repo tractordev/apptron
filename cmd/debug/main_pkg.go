@@ -7,11 +7,6 @@ import (
 	"log"
 	"runtime"
 
-	"encoding/json"
-	"io/ioutil"
-	"os"
-	"path/filepath"
-
 	"tractor.dev/apptron/bridge/api/app"
 	"tractor.dev/apptron/bridge/api/menu"
 	"tractor.dev/apptron/bridge/api/shell"
@@ -21,100 +16,6 @@ import (
 	"tractor.dev/apptron/bridge/misc"
 	"tractor.dev/apptron/bridge/platform"
 )
-
-type WindowSettings struct {
-	Key      string
-	Position misc.Position
-	Size     misc.Size
-}
-
-/*
-func LoadAllWindowSettings() []WindowSettings {
-	identifier := "com.progrium.Apptron"
-
-	dir, err := os.UserCacheDir()
-	if err != nil {
-		log.Println("[WindowSettings] Failed to get user cache dir")
-		return []WindowSettings{}
-	}
-
-	path := filepath.Join(dir, identifier, "windows.json")
-}
-*/
-
-func SaveWindowSettings(win *window.Window, key string) bool {
-	identifier := "com.progrium.Apptron"
-
-	dir, err := os.UserCacheDir()
-	if err != nil {
-		log.Println("[WindowSettings] Failed to get user cache dir")
-		return false
-	}
-
-	dirpath := filepath.Join(dir, identifier)
-
-	// create directory if not exists
-	if _, err = os.Stat(dirpath); os.IsNotExist(err) {
-		err = os.Mkdir(dirpath, os.ModePerm)
-		if err != nil {
-			log.Println("[WindowSettings] Failed to create save directory:", dirpath, err)
-			return false
-		}
-	}
-
-	if _, err := os.Stat(dirpath); os.IsNotExist(err) {
-		log.Println("[WindowSettings] Directory doesn't exist:", dirpath, err)
-		return false
-	}
-
-	settings := WindowSettings{Key: key, Position: win.GetOuterPosition(), Size: win.GetInnerSize()}
-
-	data, _ := json.MarshalIndent(settings, "", " ")
-
-	fname := "window_" + key + ".json"
-	path := filepath.Join(dirpath, fname)
-
-	err = ioutil.WriteFile(path, data, 0644)
-	if err != nil {
-		log.Println("[WindowSettings] Did not write file:", path, err)
-		return false
-	}
-
-	return true
-}
-
-func RestoreWindowSettings(win *window.Window, key string) bool {
-	identifier := "com.progrium.Apptron"
-
-	dir, err := os.UserCacheDir()
-	if err != nil {
-		log.Println("[WindowSettings] Failed to get user cache dir")
-		return false
-	}
-
-	dirpath := filepath.Join(dir, identifier)
-
-	fname := "window_" + key + ".json"
-	path := filepath.Join(dirpath, fname)
-
-	content, err := ioutil.ReadFile(path)
-	if err != nil {
-		log.Println("[WindowSettings] Failed to read file:", path, err)
-		return false
-	}
-
-	settings := WindowSettings{}
-	err = json.Unmarshal(content, &settings)
-	if err != nil {
-		log.Println("[WindowSettings] Failed to parse JSON:", path, err)
-		return false
-	}
-
-	win.SetPosition(settings.Position)
-	win.SetSize(settings.Size)
-
-	return true
-}
 
 const QUIT_ID = 1
 
@@ -259,8 +160,8 @@ func run() {
 		w1.SetTitle("Hello, Sailor!")
 		fmt.Println("[main] window position", w1.GetOuterPosition())
 
-		RestoreWindowSettings(w1, "w1")
-		SaveWindowSettings(w1, "w1")
+		app.RestoreWindowSettings(w1, "com.progrium.Apptron", "w1")
+		app.SaveWindowSettings(w1, "com.progrium.Apptron", "w1")
 
 		//w1.SetMinSize(window.Size{Width: 100, Height: 100})
 	})

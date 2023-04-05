@@ -14,9 +14,10 @@ func init() {
 }
 
 type Options struct {
-	Identifier string
-	Agent      bool // app should not terminate when last window closes
-	Accessory  bool // app should not be task switchable
+	Identifier      string
+	Agent           bool // app should not terminate when last window closes
+	Accessory       bool // app should not be task switchable
+	DisableAutoSave bool // disable window position saving and restoring
 }
 
 func SetMenu(m *menu.Menu) error {
