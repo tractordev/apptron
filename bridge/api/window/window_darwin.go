@@ -179,7 +179,8 @@ func init() {
 }
 
 func New(options Options) (*Window, error) {
-	frame := mac.Rect(options.Position.X, options.Position.Y, options.Size.Width, options.Size.Height)
+	size := options.Size
+	frame := mac.Rect(options.Position.X, options.Position.Y, size.Width, size.Height)
 
 	nswin := cocoa.NSWindow_Init(
 		frame,
@@ -190,11 +191,20 @@ func New(options Options) (*Window, error) {
 	nswin.Retain()
 	nswin.MakeKeyAndOrderFront(nil)
 
+	if size.Width == 0 && size.Height == 0 {
+		screenRect := cocoa.NSScreen_Main().Frame()
+
+		size.Width = screenRect.Size.Width * 0.8
+		size.Height = screenRect.Size.Height * 0.8
+
+		frame = mac.Rect(options.Position.X, options.Position.Y, size.Width, size.Height)
+	}
+
 	if options.Center {
 		screenRect := cocoa.NSScreen_Main().Frame()
-		options.Position.X = (screenRect.Size.Width / 2) - (options.Size.Width / 2)
-		options.Position.Y = (screenRect.Size.Height / 2) - (options.Size.Height / 2)
-		frame = mac.Rect(options.Position.X, options.Position.Y, options.Size.Width, options.Size.Height)
+		options.Position.X = (screenRect.Size.Width / 2) - (size.Width / 2)
+		options.Position.Y = (screenRect.Size.Height / 2) - (size.Height / 2)
+		frame = mac.Rect(options.Position.X, options.Position.Y, size.Width, size.Height)
 	}
 
 	if options.Hidden {

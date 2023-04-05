@@ -47,7 +47,7 @@ func main() {
 		Resizable:   true,
 		Visible:     true,
 		//Position: window.Position{X: 10, Y: 10},
-		Size:   client.Size{Width: 360, Height: 240},
+		//Size:   client.Size{Width: 360, Height: 240},
 		Center: true,
 		HTML: `
 			<!doctype html>
