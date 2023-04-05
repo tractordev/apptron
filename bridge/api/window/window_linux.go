@@ -212,8 +212,10 @@ func New(options Options) (*Window, error) {
   win.callbackId = callbackId
 
   event.Emit(event.Event{
-    Type:   event.Created,
-    Window: win.Handle,
+    Type:     event.Created,
+    Window:   win.Handle,
+    Size:     win.GetInnerSize(),
+    Position: win.GetOuterPosition(),
   })
 
   return win, nil

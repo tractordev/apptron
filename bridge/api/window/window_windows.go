@@ -43,10 +43,8 @@ func windowCallback(hwnd HWND, message uint32, wParam WPARAM, lParam LPARAM) LRE
 	switch message {
 	case WM_CLOSE:
 		event.Emit(event.Event{
-			Type:     event.Close,
-			Window:   w.Handle,
-			Size:     w.GetInnerSize(),
-			Position: w.GetOuterPosition(),
+			Type:   event.Close,
+			Window: w.Handle,
 		})
 
 		// @Incomplete: should this still close the window or should that be up to the user?
@@ -55,26 +53,20 @@ func windowCallback(hwnd HWND, message uint32, wParam WPARAM, lParam LPARAM) LRE
 
 	case WM_DESTROY:
 		event.Emit(event.Event{
-			Type:     event.Destroyed,
-			Window:   w.Handle,
-			Size:     w.GetInnerSize(),
-			Position: w.GetOuterPosition(),
+			Type:   event.Destroyed,
+			Window: w.Handle,
 		})
 
 	case WM_SETFOCUS:
 		event.Emit(event.Event{
-			Type:     event.Focused,
-			Window:   w.Handle,
-			Size:     w.GetInnerSize(),
-			Position: w.GetOuterPosition(),
+			Type:   event.Focused,
+			Window: w.Handle,
 		})
 
 	case WM_KILLFOCUS:
 		event.Emit(event.Event{
-			Type:     event.Blurred,
-			Window:   w.Handle,
-			Size:     w.GetInnerSize(),
-			Position: w.GetOuterPosition(),
+			Type:   event.Blurred,
+			Window: w.Handle,
 		})
 
 	case WM_SIZE:
@@ -83,10 +75,9 @@ func windowCallback(hwnd HWND, message uint32, wParam WPARAM, lParam LPARAM) LRE
 		}
 
 		event.Emit(event.Event{
-			Type:     event.Resized,
-			Window:   w.Handle,
-			Size:     w.GetInnerSize(),
-			Position: w.GetOuterPosition(),
+			Type:   event.Resized,
+			Window: w.Handle,
+			Size:   w.GetInnerSize(),
 		})
 
 	case WM_ACTIVATE:
@@ -122,7 +113,6 @@ func windowCallback(hwnd HWND, message uint32, wParam WPARAM, lParam LPARAM) LRE
 		event.Emit(event.Event{
 			Type:     event.Moved,
 			Window:   w.Handle,
-			Size:     w.GetInnerSize(),
 			Position: w.GetOuterPosition(),
 		})
 
