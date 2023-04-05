@@ -77,7 +77,7 @@ func Run(options Options) error {
 
       if e.Type == event.Destroyed {
         if atomic.AddInt64(&windowCount, -1) == 0 {
-          platform.Terminate()
+          platform.Terminate(true)
         }
       }
 

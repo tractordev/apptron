@@ -37,6 +37,6 @@ loop:
 
 }
 
-func Terminate() {
+func Terminate(_dispatch bool) {
 	shouldQuit = true
 }

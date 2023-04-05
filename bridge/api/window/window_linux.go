@@ -114,7 +114,21 @@ func New(options Options) (*Window, error) {
 
   window := linux.Window_New()
 
-  window.SetSize(int(options.Size.Width), int(options.Size.Height))
+  size := options.Size
+
+  // NOTE(nick): set default size
+  if size.Width == 0 && size.Height == 0 {
+    monitors := linux.Monitors()
+    if len(monitors) > 0 {
+      m := monitors[0]
+
+      geom := m.Geometry()
+      size.Width = float64(geom.Size.Width) * 0.8
+      size.Height = float64(geom.Size.Height) * 0.8
+    }
+  }
+
+  window.SetSize(int(size.Width), int(size.Height))
 
   if options.MinSize.Width != 0 || options.MinSize.Height != 0 {
     window.SetMinSize(int(options.MinSize.Width), int(options.MinSize.Height))

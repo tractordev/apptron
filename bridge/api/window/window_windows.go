@@ -45,7 +45,7 @@ func windowCallback(hwnd HWND, message uint32, wParam WPARAM, lParam LPARAM) LRE
 			Window: w.Handle,
 		})
 
-		// NOTE(nick): should this still close the window or should that be up to the user?
+		// @Incomplete: should this still close the window or should that be up to the user?
 		// Return 0 to "consume" the close event and prevent the window from closing.
 		//return 0
 
@@ -75,7 +75,7 @@ func windowCallback(hwnd HWND, message uint32, wParam WPARAM, lParam LPARAM) LRE
 		event.Emit(event.Event{
 			Type:   event.Resized,
 			Window: w.Handle,
-			Size:   w.GetOuterSize(),
+			Size:   w.GetInnerSize(),
 		})
 
 	case WM_ACTIVATE:
@@ -240,9 +240,23 @@ func New(options Options) (*Window, error) {
 
 	// NOTE(nick): resize window based on pixel scale
 	scale := windowGetPixelScale(hwnd)
-	s := mulSize(options.Size, scale)
-	s = windowSizeForClientSize(style, s, hasMenu)
-	SetWindowPos(hwnd, HWND_TOP, 0, 0, int(s.Width), int(s.Height), SWP_NOMOVE|SWP_NOOWNERZORDER)
+	size := mulSize(options.Size, scale)
+
+	// NOTE(nick): set default size
+	if size.Width == 0 && size.Height == 0 {
+		info := MONITORINFOEX{}
+		if GetMonitorInfoW(MonitorFromWindow(hwnd, MONITOR_DEFAULTTOPRIMARY), &info) {
+			monitorWidth := info.RcMonitor.Right - info.RcMonitor.Left
+			monitorHeight := info.RcMonitor.Bottom - info.RcMonitor.Top
+
+			size.Width = float64(int64(float64(monitorWidth) * 0.8))
+			size.Height = float64(int64(float64(monitorHeight) * 0.8))
+		}
+	}
+
+	// size window
+	size = windowSizeForClientSize(style, size, hasMenu)
+	SetWindowPos(hwnd, HWND_TOP, 0, 0, int(size.Width), int(size.Height), SWP_NOMOVE|SWP_NOOWNERZORDER)
 
 	chromium := edge.NewChromium()
 	//chromium.DataPath = options.DataPath
@@ -447,13 +461,14 @@ func (w *Window) SetFullscreen(fullscreen bool) {
 	}
 }
 
+// NOTE(nick): "inner" size
 func (w *Window) SetSize(size Size) {
 	size = mulSize(size, w.scale)
 
 	style := DWORD(GetWindowLongW(w.hwnd, GWL_STYLE))
 	size = windowSizeForClientSize(style, size, w.hasMenu)
 
-	SetWindowPos(w.hwnd, HWND_TOP, int(size.Width), int(size.Height), 0, 0, SWP_NOMOVE)
+	SetWindowPos(w.hwnd, HWND_TOP, 0, 0, int(size.Width), int(size.Height), SWP_NOMOVE|SWP_NOOWNERZORDER)
 }
 
 func (w *Window) SetMinSize(size Size) {
@@ -510,10 +525,40 @@ func (w *Window) GetOuterPosition() Position {
 func (w *Window) GetOuterSize() Size {
 	result := Size{Width: 0, Height: 0}
 
+	scale := windowGetPixelScale(w.hwnd)
+
+	var rect RECT
+	if GetWindowRect(w.hwnd, &rect) {
+		result.Width = float64(rect.Right-rect.Left) / float64(scale.Width)
+		result.Height = float64(rect.Bottom-rect.Top) / float64(scale.Height)
+	}
+
+	return result
+}
+
+func (w *Window) GetInnerSize() Size {
+	result := Size{Width: 0, Height: 0}
+
+	scale := windowGetPixelScale(w.hwnd)
+
 	var rect RECT
 	if GetWindowRect(w.hwnd, &rect) {
 		result.Width = float64(rect.Right - rect.Left)
 		result.Height = float64(rect.Bottom - rect.Top)
+
+		// NOTE(nick): unadjust client rect
+		style := DWORD(GetWindowLongW(w.hwnd, GWL_STYLE))
+		wr := RECT{0, 0, 0, 0}
+		AdjustWindowRect(&wr, style, w.hasMenu)
+
+		width := wr.Right - wr.Left
+		height := wr.Bottom - wr.Top
+
+		result.Width -= float64(width)
+		result.Height -= float64(height)
+
+		result.Width /= float64(scale.Width)
+		result.Height /= float64(scale.Height)
 	}
 
 	return result
