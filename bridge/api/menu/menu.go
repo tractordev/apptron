@@ -17,21 +17,12 @@ var (
 	mainMenu *Menu
 )
 
-func GetMenu() *Menu {
+func Main() *Menu {
 	return mainMenu
 }
 
-func SetMenu(menu *Menu) error {
+func SetMain(menu *Menu) error {
 	mainMenu = menu
-	return nil
-}
-
-func Set(handle resource.Handle) error {
-	mm, err := Get(handle)
-	if err != nil {
-		return err
-	}
-	SetMenu(mm)
 	return nil
 }
 

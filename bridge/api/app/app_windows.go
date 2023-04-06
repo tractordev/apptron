@@ -36,7 +36,7 @@ func init() {
 }
 
 func SetMenu(m *menu.Menu) error {
-	return menu.SetMenu(m)
+	return menu.SetMain(m)
 }
 
 func NewIndicator(icon []byte, items []menu.Item) {

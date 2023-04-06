@@ -2,7 +2,6 @@ package app
 
 import (
 	"tractor.dev/apptron/bridge/api/menu"
-	"tractor.dev/apptron/bridge/resource"
 )
 
 var Module *module
@@ -21,11 +20,7 @@ type Options struct {
 }
 
 func (m *module) Menu() *menu.Menu {
-	return menu.GetMenu()
-}
-
-func (m *module) SetMenu(handle resource.Handle) error {
-	return menu.Set(handle)
+	return menu.Main()
 }
 
 func (m *module) NewIndicator(icon []byte, items []menu.Item) error {

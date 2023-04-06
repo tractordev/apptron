@@ -234,7 +234,7 @@ func New(options Options) (*Window, error) {
 	}
 
 	var hasMenu BOOL = FALSE
-	m := menu.GetMenu()
+	m := menu.Main()
 	if m != nil {
 		SetMenu(hwnd, m.Menu)
 		hasMenu = TRUE
