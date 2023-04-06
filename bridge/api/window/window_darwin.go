@@ -397,6 +397,7 @@ func (w *Window) SetPosition(position Position) {
 	// NOTE(nick): Y is inverted on MacOS
 	position.Y = screenRect.Size.Height - position.Y
 
+	// @Robustness: this implicitly relies on the frame size now that Y is inverted
 	w.SetFrameTopLeftPoint_(mac.Point(position.X, position.Y))
 }
 

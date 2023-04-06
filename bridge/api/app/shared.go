@@ -43,6 +43,8 @@ func SaveWindowSettings(win *window.Window, identifier string, key string) bool 
 
 	settings := WindowSettings{Key: key, Position: win.GetOuterPosition(), Size: win.GetInnerSize()}
 
+	log.Println("SAVE settings", settings)
+
 	data, _ := json.MarshalIndent(settings, "", " ")
 
 	fname := "window_" + key + ".json"
@@ -82,8 +84,12 @@ func RestoreWindowSettings(win *window.Window, identifier string, key string) bo
 		return false
 	}
 
-	win.SetPosition(settings.Position)
+	log.Println("LOAD settings", settings)
+
+	// @Incomplete @Robustness: there's a bug where if you set the position before the size on macos
+	// the position will be wrong because the position uses the frame rect size implicitly
 	win.SetSize(settings.Size)
+	win.SetPosition(settings.Position)
 
 	return true
 }
@@ -98,7 +104,7 @@ func setupWindowRestoreListener(identifier string) {
 		}
 
 		// TODO: event.Close is not fired on MacOS
-		if e.Type == event.Close || e.Type == event.Destroyed {
+		if e.Type == event.Destroyed {
 			win, _ := window.Get(e.Window)
 			if win != nil && len(win.ID) > 0 {
 				SaveWindowSettings(win, identifier, win.ID)
