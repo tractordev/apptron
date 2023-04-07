@@ -11,9 +11,10 @@ type AppModule struct {
 }
 
 type AppOptions struct {
-	Identifier string
-	Agent      bool
-	Accessory  bool
+	Identifier      string
+	Agent           bool
+	Accessory       bool
+	DisableAutoSave bool
 }
 
 // Run

@@ -13,6 +13,19 @@ func init() {
 	Module = &module{}
 }
 
+var (
+	mainMenu *Menu
+)
+
+func Main() *Menu {
+	return mainMenu
+}
+
+func SetMain(menu *Menu) error {
+	mainMenu = menu
+	return nil
+}
+
 func Get(handle resource.Handle) (*Menu, error) {
 	v, err := resource.Lookup(handle)
 	if err != nil {

@@ -7,7 +7,7 @@ import (
 
 	"github.com/jchv/go-webview2/pkg/edge"
 
-	"tractor.dev/apptron/bridge/api/app"
+	"tractor.dev/apptron/bridge/api/menu"
 	"tractor.dev/apptron/bridge/event"
 	. "tractor.dev/apptron/bridge/platform/win32"
 	"tractor.dev/apptron/bridge/resource"
@@ -26,6 +26,8 @@ type Window struct {
 	hasMenu       BOOL
 	scale         Size
 	isTransparent bool
+
+	ID string
 }
 
 func init() {
@@ -232,9 +234,9 @@ func New(options Options) (*Window, error) {
 	}
 
 	var hasMenu BOOL = FALSE
-	menu := app.Menu()
-	if menu != nil {
-		SetMenu(hwnd, menu.Menu)
+	m := menu.Main()
+	if m != nil {
+		SetMenu(hwnd, m.Menu)
 		hasMenu = TRUE
 	}
 
@@ -314,6 +316,7 @@ func New(options Options) (*Window, error) {
 	win.minSize = POINT{X: LONG(options.MinSize.Width), Y: LONG(options.MinSize.Height)}
 	win.maxSize = POINT{X: LONG(options.MaxSize.Width), Y: LONG(options.MaxSize.Height)}
 	win.isTransparent = options.Transparent
+	win.ID = options.ID
 
 	chromium.MessageCallback = win.messageCallback
 	//chromium.Eval("window.chrome.webview.postMessage('Hello, sir!');")
@@ -365,8 +368,10 @@ func New(options Options) (*Window, error) {
 	}
 
 	event.Emit(event.Event{
-		Type:   event.Created,
-		Window: win.Handle,
+		Type:     event.Created,
+		Window:   win.Handle,
+		Size:     win.GetInnerSize(),
+		Position: win.GetOuterPosition(),
 	})
 
 	return win, nil

@@ -9,10 +9,6 @@ import (
 	"tractor.dev/apptron/bridge/platform/win32"
 )
 
-var (
-	mainMenu *menu.Menu
-)
-
 func init() {
 	// @see https://github.com/glfw/glfw/blob/master/src/win32_init.c#L692
 
@@ -39,13 +35,8 @@ func init() {
 	}
 }
 
-func Menu() *menu.Menu {
-	return mainMenu
-}
-
-func SetMenu(menu *menu.Menu) error {
-	mainMenu = menu
-	return nil
+func SetMenu(m *menu.Menu) error {
+	return menu.SetMain(m)
 }
 
 func NewIndicator(icon []byte, items []menu.Item) {
@@ -61,6 +52,10 @@ func NewIndicator(icon []byte, items []menu.Item) {
 }
 
 func Run(options Options) error {
+	if options.DisableAutoSave != true {
+		setupWindowRestoreListener(options.Identifier)
+	}
+
 	// NOTE(nick): MacOS-style window behavior
 	if options.Agent == false {
 		var windowCount int64
@@ -72,7 +67,7 @@ func Run(options Options) error {
 
 			if e.Type == event.Destroyed {
 				if atomic.AddInt64(&windowCount, -1) == 0 {
-					platform.Terminate()
+					platform.Terminate(true)
 				}
 			}
 

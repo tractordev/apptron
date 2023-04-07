@@ -10,22 +10,16 @@ import (
 )
 
 var (
-	mainMenu *menu.Menu
-	app      cocoa.NSApplication
+	app cocoa.NSApplication
 )
 
 func init() {
 	app = cocoa.NSApp()
 }
 
-func Menu() *menu.Menu {
-	return mainMenu
-}
-
-func SetMenu(menu *menu.Menu) error {
-	app.SetMainMenu(menu.NSMenu)
-	mainMenu = menu
-	return nil
+func SetMenu(m *menu.Menu) error {
+	app.SetMainMenu(m.NSMenu)
+	return menu.SetMain(m)
 }
 
 func NewIndicator(icon []byte, items []menu.Item) {
@@ -61,8 +55,11 @@ func Run(options Options) error {
 		return !options.Agent
 	})
 	DelegateClass.AddMethod("applicationWillFinishLaunching:", func(notification objc.Object) {
+		mainMenu := menu.Main()
 		if mainMenu == nil {
-			mainMenu = menu.New([]menu.Item{})
+			menu.SetMain(menu.New([]menu.Item{}))
+			mainMenu = menu.Main()
+			app.SetMainMenu(mainMenu.NSMenu)
 		}
 		if options.Accessory {
 			app.SetActivationPolicy(cocoa.NSApplicationActivationPolicyAccessory)
@@ -83,6 +80,10 @@ func Run(options Options) error {
 	objc.RegisterClass(DelegateClass)
 
 	app.SetDelegate(objc.Get("AppDelegate").Alloc().Init())
+
+	if options.DisableAutoSave != true {
+		setupWindowRestoreListener(options.Identifier)
+	}
 
 	platform.Start()
 	return nil

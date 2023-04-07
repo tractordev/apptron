@@ -19,6 +19,8 @@ type Window struct {
 
   prevPosition linux.Position
   prevSize     linux.Size
+
+  ID string
 }
 
 var ptrLookup sync.Map
@@ -109,6 +111,7 @@ func New(options Options) (*Window, error) {
     window: window{
       Handle: resource.NewHandle(),
     },
+    ID: options.ID,
   }
   resource.Retain(win.Handle, win)
 
@@ -209,8 +212,10 @@ func New(options Options) (*Window, error) {
   win.callbackId = callbackId
 
   event.Emit(event.Event{
-    Type:   event.Created,
-    Window: win.Handle,
+    Type:     event.Created,
+    Window:   win.Handle,
+    Size:     win.GetInnerSize(),
+    Position: win.GetOuterPosition(),
   })
 
   return win, nil
@@ -296,4 +301,9 @@ func (w *Window) GetOuterSize() Size {
     Width:  float64(size.Width),
     Height: float64(size.Height),
   }
+}
+
+func (w *Window) GetInnerSize() Size {
+  // TODO(nick): implement me
+  return w.GetOuterSize()
 }

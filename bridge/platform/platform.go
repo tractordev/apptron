@@ -1,6 +1,8 @@
 package platform
 
-import "sync"
+import (
+	"sync"
+)
 
 var (
 	isRunning bool

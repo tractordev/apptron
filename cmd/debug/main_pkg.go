@@ -127,11 +127,13 @@ func run() {
 
 	options := window.Options{
 		Title:       "Demo window",
+		ID:          "w1",
 		Transparent: true,
 		Frameless:   false,
 		Visible:     true,
 		Resizable:   true,
-		Center:      true,
+		Center:      false,
+		Size:        misc.Size{Width: 400, Height: 320},
 		Icon:        iconData,
 		HTML: `
 			<!doctype html>

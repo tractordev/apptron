@@ -38,6 +38,6 @@ loop:
 	win32.ExitProcess(0)
 }
 
-func Terminate() {
+func Terminate(_dispatch bool) {
 	shouldQuit = true
 }

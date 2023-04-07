@@ -41,6 +41,7 @@ func main() {
 
 	options := client.WindowOptions{
 		Title: "Demo window",
+		ID:    "demo",
 		// NOTE(nick): resizing a transparent window on MacOS seems really slow?
 		Transparent: true,
 		Frameless:   false,
@@ -67,7 +68,7 @@ func main() {
 		panic(err)
 	}
 
-	w1.SetPosition(ctx, client.Position{X: 100, Y: 100})
+	//w1.SetPosition(ctx, client.Position{X: 100, Y: 100})
 
 	fmt.Println("[main] window", w1)
 

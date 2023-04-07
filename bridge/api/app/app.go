@@ -2,7 +2,6 @@ package app
 
 import (
 	"tractor.dev/apptron/bridge/api/menu"
-	"tractor.dev/apptron/bridge/resource"
 )
 
 var Module *module
@@ -14,22 +13,14 @@ func init() {
 }
 
 type Options struct {
-	Identifier string
-	Agent      bool // app should not terminate when last window closes
-	Accessory  bool // app should not be task switchable
+	Identifier      string
+	Agent           bool // app should not terminate when last window closes
+	Accessory       bool // app should not be task switchable
+	DisableAutoSave bool // disable window position saving and restoring
 }
 
 func (m *module) Menu() *menu.Menu {
-	return Menu()
-}
-
-func (m *module) SetMenu(handle resource.Handle) error {
-	mm, err := menu.Get(handle)
-	if err != nil {
-		return err
-	}
-	SetMenu(mm)
-	return nil
+	return menu.Main()
 }
 
 func (m *module) NewIndicator(icon []byte, items []menu.Item) error {

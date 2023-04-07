@@ -48,6 +48,8 @@ type Window struct {
 	window
 	moveOffset     mac.NSPoint
 	cocoa.NSWindow `json:"-"`
+
+	ID string
 }
 
 var ptrLookup sync.Map
@@ -301,8 +303,16 @@ func New(options Options) (*Window, error) {
 			Handle: resource.NewHandle(),
 		},
 		NSWindow: nswin,
+		ID:       options.ID,
 	}
 	resource.Retain(win.Handle, win)
+
+	event.Emit(event.Event{
+		Type:     event.Created,
+		Window:   win.Handle,
+		Size:     win.GetInnerSize(),
+		Position: win.GetOuterPosition(),
+	})
 
 	return win, nil
 }
@@ -387,6 +397,7 @@ func (w *Window) SetPosition(position Position) {
 	// NOTE(nick): Y is inverted on MacOS
 	position.Y = screenRect.Size.Height - position.Y
 
+	// @Robustness: this implicitly relies on the frame size now that Y is inverted
 	w.SetFrameTopLeftPoint_(mac.Point(position.X, position.Y))
 }
 
@@ -409,4 +420,9 @@ func (w *Window) GetOuterSize() Size {
 		Width:  frame.Size.Width,
 		Height: frame.Size.Height,
 	}
+}
+
+func (w *Window) GetInnerSize() Size {
+	// TODO(nick): adjust window rect
+	return w.GetOuterSize()
 }
