@@ -25,6 +25,8 @@ var (
 	pGlobalAlloc   = kernel32.NewProc("GlobalAlloc")
 	pGlobalFree    = kernel32.NewProc("GlobalFree")
 	pRtlMoveMemory = kernel32.NewProc("RtlMoveMemory")
+
+	pGetSystemPowerStatus = kernel32.NewProc("GetSystemPowerStatus")
 )
 
 func GetModuleHandle() HINSTANCE {
@@ -39,6 +41,11 @@ func ExitProcess(exitCode UINT) {
 func GetLastError() DWORD {
 	ret, _, _ := pGetLastError.Call()
 	return DWORD(ret)
+}
+
+func GetSystemPowerStatus(powerStatus *SYSTEM_POWER_STATUS) bool {
+	ret, _, _ := pGetSystemPowerStatus.Call(uintptr(unsafe.Pointer(powerStatus)))
+	return ret != 0
 }
 
 var (

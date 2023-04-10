@@ -287,6 +287,7 @@ type SIZE struct {
 	Cx LONG
 	Cy LONG
 }
+
 // https://docs.microsoft.com/en-us/windows/win32/api/windef/ns-windef-rect
 type RECT struct {
 	Left   LONG
@@ -457,4 +458,13 @@ type PAINTSTRUCT struct {
 	FRestore    BOOL
 	FIncUpdate  BOOL
 	RgbReserved [32]BYTE
+}
+
+type SYSTEM_POWER_STATUS struct {
+	ACLineStatus        BYTE
+	BatteryFlag         BYTE
+	BatteryLifePercent  BYTE
+	SystemStatusFlag    BYTE
+	BatteryLifeTime     DWORD
+	BatteryFullLifeTime DWORD
 }

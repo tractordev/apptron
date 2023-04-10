@@ -53,3 +53,30 @@ func Displays() (displays []Display) {
 
 	return
 }
+
+func Power() PowerInfo {
+	result := PowerInfo{}
+
+	status := win32.SYSTEM_POWER_STATUS{}
+	if win32.GetSystemPowerStatus(&status) {
+		//
+		// NOTE(nick): 255 indicates "unknown status" / failed to read battery information
+		//
+		// https://learn.microsoft.com/en-us/windows/win32/api/winbase/ns-winbase-system_power_status
+		//
+
+		if status.BatteryLifePercent != 255 {
+			result.BatteryPercent = float64(status.BatteryLifePercent) / 100.0
+		}
+
+		if status.ACLineStatus != 255 {
+			result.IsOnBattery = status.ACLineStatus != 1
+		}
+
+		if status.BatteryFlag != 255 {
+			result.IsCharging = status.BatteryFlag&8 > 0
+		}
+	}
+
+	return result
+}
