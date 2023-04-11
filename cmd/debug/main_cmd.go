@@ -9,7 +9,6 @@ import (
 	"os"
 
 	"tractor.dev/apptron"
-	"tractor.dev/apptron/bridge/api/system"
 	"tractor.dev/apptron/bridge/misc"
 	"tractor.dev/apptron/client"
 )
@@ -114,7 +113,10 @@ func main() {
 		log.Fatal(err)
 	}
 
-	power := system.Power()
+	power, err := c.System.Power(ctx)
+	if err != nil {
+		log.Fatal("Error getting power info:", err)
+	}
 	log.Println("[main] Power Info:", power)
 
 	c.Wait()
