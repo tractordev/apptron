@@ -113,5 +113,11 @@ func main() {
 		log.Fatal(err)
 	}
 
+	power, err := c.System.Power(ctx)
+	if err != nil {
+		log.Fatal("Error getting power info:", err)
+	}
+	log.Println("[main] Power Info:", power)
+
 	c.Wait()
 }

@@ -17,10 +17,20 @@ type Display struct {
 	ScaleFactor float64
 }
 
+type PowerInfo struct {
+	IsOnBattery    bool
+	IsCharging     bool
+	BatteryPercent float64
+}
+
 type Position = misc.Position
 
 type Size = misc.Size
 
 func (m module) Displays() []Display {
 	return Displays()
+}
+
+func (m module) Power() PowerInfo {
+	return Power()
 }

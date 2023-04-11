@@ -13,6 +13,12 @@ type Display struct {
 	ScaleFactor float64
 }
 
+type PowerInfo struct {
+	IsOnBattery    bool
+	IsCharging     bool
+	BatteryPercent float64
+}
+
 type SystemModule struct {
 	client *Client
 }
@@ -20,5 +26,11 @@ type SystemModule struct {
 // Displays
 func (m *SystemModule) Displays(ctx context.Context) (ret []Display, err error) {
 	_, err = m.client.Call(ctx, "system.Displays", fn.Args{}, &ret)
+	return
+}
+
+// Power
+func (m *SystemModule) Power(ctx context.Context) (ret PowerInfo, err error) {
+	_, err = m.client.Call(ctx, "system.Power", fn.Args{}, &ret)
 	return
 }

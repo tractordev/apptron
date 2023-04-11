@@ -165,6 +165,11 @@ func run() {
 	})
 
 	platform.Dispatch(func() {
+		power := system.Power()
+		fmt.Println("[main] Power Info:", power)
+	})
+
+	platform.Dispatch(func() {
 		shell.ShowNotification(shell.Notification{
 			Title:    "Title: Hello, world",
 			Subtitle: "Subtitle: MacOS only",
