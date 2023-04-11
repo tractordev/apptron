@@ -9,6 +9,7 @@ import (
 	"os"
 
 	"tractor.dev/apptron"
+	"tractor.dev/apptron/bridge/api/system"
 	"tractor.dev/apptron/bridge/misc"
 	"tractor.dev/apptron/client"
 )
@@ -112,6 +113,9 @@ func main() {
 	if err := c.App.NewIndicator(ctx, iconData, trayTemplate); err != nil {
 		log.Fatal(err)
 	}
+
+	power := system.Power()
+	log.Println("[main] Power Info:", power)
 
 	c.Wait()
 }

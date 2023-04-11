@@ -21,3 +21,8 @@ func Displays() (displays []Display) {
   }
   return
 }
+
+func Power() PowerInfo {
+  result := PowerInfo{}
+  return result
+}

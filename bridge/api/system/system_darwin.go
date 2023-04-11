@@ -1,6 +1,12 @@
 package system
 
-import "github.com/progrium/macdriver/cocoa"
+import (
+	"os/exec"
+	"strconv"
+	"strings"
+
+	"github.com/progrium/macdriver/cocoa"
+)
 
 func Displays() (displays []Display) {
 	for _, screen := range cocoa.NSScreen_Screens() {
@@ -19,4 +25,46 @@ func Displays() (displays []Display) {
 		})
 	}
 	return
+}
+
+func Power() PowerInfo {
+	result := PowerInfo{}
+
+	// TODO: use native battery API with IOPowerSources.h from IOKit
+	out, err := exec.Command("pmset", "-g", "batt").Output()
+	if err != nil {
+		return result
+	}
+
+	// @Robustness: handle multiple batteries?
+	lines := strings.Split(string(out), "\n")
+	if len(lines) >= 1 {
+		line := lines[1]
+
+		endIndex := strings.Index(line, "%;")
+		if endIndex >= 0 {
+			startIndex := endIndex
+
+			for startIndex >= 0 {
+				if line[startIndex] == ' ' || line[startIndex] == '\t' {
+					break
+				}
+
+				startIndex -= 1
+			}
+
+			if startIndex >= 0 {
+				percentStr := line[startIndex+1 : endIndex]
+				percent, err := strconv.Atoi(percentStr)
+				if err == nil {
+					result.BatteryPercent = float64(percent) / 100.0
+				}
+			}
+		}
+
+		result.IsOnBattery = !strings.Contains(line, " AC attached;") || strings.Contains(line, " discharging;")
+		result.IsCharging = strings.Contains(line, " charging;")
+	}
+
+	return result
 }
