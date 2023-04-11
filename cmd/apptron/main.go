@@ -157,6 +157,7 @@ func main() {
 		Short: "system related API commands",
 	}
 	system.AddCommand(systemDisplays())
+	system.AddCommand(systemPower())
 	root.AddCommand(system)
 
 	shell := &cli.Command{
@@ -312,6 +313,21 @@ func systemDisplays() *cli.Command {
 				fmt.Fprintf(w, "Position:\t%.fx%.f\n", d.Position.X, d.Position.Y)
 				fmt.Fprintln(w, "")
 			}
+			w.Flush()
+		},
+	}
+}
+
+func systemPower() *cli.Command {
+	return &cli.Command{
+		Usage: "power",
+		Short: "show power / battery information",
+		Run: func(ctx context.Context, args []string) {
+			w := tabwriter.NewWriter(os.Stdout, 0, 0, 1, ' ', 0)
+			p := system.Module.Power()
+			fmt.Fprintf(w, "IsOnBattery:\t%t\n", p.IsOnBattery)
+			fmt.Fprintf(w, "IsCharging:\t%t\n", p.IsCharging)
+			fmt.Fprintf(w, "BatteryPercent:\t%.f\n", p.BatteryPercent*100)
 			w.Flush()
 		},
 	}
