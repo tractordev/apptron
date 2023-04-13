@@ -143,13 +143,9 @@ github.com/pkg/errors v0.8.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINE
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/posener/complete v1.1.1/go.mod h1:em0nMJCgc9GFtwrmVmEMR/ZL6WyhyjMBndrE9hABlRI=
-github.com/progrium/macdriver v0.2.1-0.20211201224913-0c111bf46c68 h1:/gR4OcChr6Z38DIj2JUodJSD8hJfcKL4APqPix1KBx0=
-github.com/progrium/macdriver v0.2.1-0.20211201224913-0c111bf46c68/go.mod h1:QkZLlOeMkYF92euEWqUBpry7/tXrZuM575xZRwnuiig=
-github.com/progrium/macdriver v0.2.1-0.20230312220715-f94fcc89de07 h1:CyIY2Z1Mf8NGxcSNIOVwNR3SQhaOljD8UGC+WmVco9o=
-github.com/progrium/macdriver v0.2.1-0.20230312220715-f94fcc89de07/go.mod h1:QkZLlOeMkYF92euEWqUBpry7/tXrZuM575xZRwnuiig=
+github.com/progrium/macdriver v0.2.1-0.20230314201002-9bcf7627fef8 h1:vrW8Yaqgkjbk8gcpbaJosYc1ouPJjx4SnUgK9NFJGjM=
+github.com/progrium/macdriver v0.2.1-0.20230314201002-9bcf7627fef8/go.mod h1:QkZLlOeMkYF92euEWqUBpry7/tXrZuM575xZRwnuiig=
 github.com/progrium/macschema v0.1.0/go.mod h1:XzxlqYAo4vKozoZd837LBMjPcfJNlvwB5yBn5Nu+RDE=
-github.com/progrium/qtalk-go v0.5.1-0.20221129183950-4751754126a4 h1:pUfsAosuDKak9BhkBNPeEIH2661eBnuTNd3Qe8VrA3E=
-github.com/progrium/qtalk-go v0.5.1-0.20221129183950-4751754126a4/go.mod h1:0DOqGiaKmQpyRYKkOxkzkkgGOiiik8obeE/luvBU9es=
 github.com/progrium/qtalk-go v0.5.1-0.20230306002123-cb3ad0c2cc62 h1:j+ShR1AWBd8qf/dwjZqW5F0xL78em5IPDZxAwb139pQ=
 github.com/progrium/qtalk-go v0.5.1-0.20230306002123-cb3ad0c2cc62/go.mod h1:7iMU7mMkvX9OE6OW0wSIhS8kG2T8ODnFPJnj7IB4h6Q=
 github.com/progrium/qtalk-go/x/cbor v0.0.0-20230306002123-cb3ad0c2cc62 h1:rXpaOdDKnTEQYdC0PpCifB95DSaoWGNI7vImVnj8urw=
@@ -241,8 +237,6 @@ golang.org/x/net v0.0.0-20190501004415-9ce7a6920f09/go.mod h1:t9HGtf8HONx5eT2rtn
 golang.org/x/net v0.0.0-20190503192946-f4e77d36d62c/go.mod h1:t9HGtf8HONx5eT2rtn7q6eTqICYqUVnKs3thJo3Qplg=
 golang.org/x/net v0.0.0-20190603091049-60506f45cf65/go.mod h1:HSz+uSET+XFnRR8LxR5pz3Of3rY3CfYBVs4xY44aLks=
 golang.org/x/net v0.0.0-20190620200207-3b0461eec859/go.mod h1:z5CRVTTTmAJ677TzLLGU+0bjPO0LkuOLi4/5GtJWs/s=
-golang.org/x/net v0.2.0 h1:sZfSu1wtKLGlWI4ZZayP0ck9Y73K1ynO6gqzTdBVdPU=
-golang.org/x/net v0.2.0/go.mod h1:KqCZLdyyvdV855qA2rE3GC2aiw5xGR5TEjj8smXukLY=
 golang.org/x/net v0.8.0 h1:Zrh2ngAOFYneWTAIAPethzeaQLuHwhuBkuV6ZiRnUaQ=
 golang.org/x/net v0.8.0/go.mod h1:QVkue5JL9kW//ek3r6jTKnTFis1tRmNAW2P1shuFdJc=
 golang.org/x/oauth2 v0.0.0-20180821212333-d2e6202438be/go.mod h1:N/0e6XlmueqKjAGxoOufVs8QHGRruUQn6yWY3a++T0U=
@@ -270,8 +264,6 @@ golang.org/x/sys v0.0.0-20200810151505-1b9f1253b3ed/go.mod h1:h1NjWce9XRLGQEsW7w
 golang.org/x/sys v0.0.0-20201022201747-fb209a7c41cd/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/sys v0.0.0-20210218145245-beda7e5e158e/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/sys v0.0.0-20210320140829-1e4c9ba3b0c4/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
-golang.org/x/sys v0.2.0 h1:ljd4t30dBnAvMZaQCevtY0xLLD0A+bRZXbgLMLU1F/A=
-golang.org/x/sys v0.2.0/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
 golang.org/x/sys v0.6.0 h1:MVltZSvRTcU2ljQOhs94SXPftV6DCNnZViHeQps87pQ=
 golang.org/x/sys v0.6.0/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
 golang.org/x/text v0.3.0/go.mod h1:NqM8EUOU14njkJ3fqMW+pc6Ldnwhi/IjpwHt7yyuwOQ=
