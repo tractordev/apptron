@@ -23,6 +23,10 @@ func (m *module) Menu() *menu.Menu {
 	return menu.Main()
 }
 
+func (m *module) SetMenu(men *menu.Menu) {
+	menu.SetMain(men)
+}
+
 func (m *module) NewIndicator(icon []byte, items []menu.Item) error {
 	NewIndicator(icon, items)
 	return nil

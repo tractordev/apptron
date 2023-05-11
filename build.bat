@@ -18,7 +18,9 @@ set PATH=%PATH%;%gcc_path%
 ::set GOARCH=386
 
 pushd %project_root%
-  %go_path%\go.exe build -tags pkg -o ./debug-pkg.exe ./cmd/debug
+  ::%go_path%\go.exe build -tags pkg -o ./debug-pkg.exe ./cmd/debug
+  ::%go_path%\go.exe build -tags schema -o ./debug-pkg.exe ./schema
+  %go_path%\go.exe run ./schema/main/main.go
 
   IF %errorlevel% NEQ 0 (popd && goto end)
 
