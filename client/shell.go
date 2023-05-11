@@ -2,90 +2,39 @@ package client
 
 import (
 	"context"
-
-	"github.com/progrium/qtalk-go/fn"
 )
-
-type Notification struct {
-	Title    string
-	Subtitle string // for MacOS only
-	Body     string
-	/*
-		Silent   bool
-	*/
-}
-
-type FileDialog struct {
-	Title     string
-	Directory string
-	Filename  string
-	Mode      string   // pickfile, pickfiles, pickfolder, savefile
-	Filters   []string // each string is comma delimited (go,rs,toml) with optional label prefix (text:go,txt)
-}
-
-type MessageDialog struct {
-	Title   string
-	Body    string
-	Level   string // info, warning, error
-	Buttons string // ok, okcancel, yesno
-}
 
 type ShellModule struct {
 	client *Client
-
-	OnShortcut func(event Event)
+	ShowNotification func (ctx context.Context, n Notification) error
+	ShowMessage func (ctx context.Context, msg MessageDialog) (bool, error)
+	ShowFilePicker func (ctx context.Context, fd FileDialog) ([]string, error)
+	ReadClipboard func (ctx context.Context) (string, error)
+	WriteClipboard func (ctx context.Context, text string) (bool, error)
+	RegisterShortcut func (ctx context.Context, accelerator string) error
+	IsShortcutRegistered func (ctx context.Context, accelerator string) (bool, error)
+	UnregisterShortcut func (ctx context.Context, accelerator string) (bool, error)
+	UnregisterAllShortcuts func (ctx context.Context) error
 }
 
-// ShowNotification
-func (m *ShellModule) ShowNotification(ctx context.Context, n Notification) (err error) {
-	_, err = m.client.Call(ctx, "shell.ShowNotification", fn.Args{n}, nil)
-	return
+type Notification struct {
+	Title string
+	Subtitle string
+	Body string
 }
 
-// ShowMessage
-func (m *ShellModule) ShowMessage(ctx context.Context, msg MessageDialog) (ret bool, err error) {
-	_, err = m.client.Call(ctx, "shell.ShowMessage", fn.Args{msg}, &ret)
-	return
+type FileDialog struct {
+	Title string
+	Directory string
+	Filename string
+	Mode string
+	Filters []string
 }
 
-// ShowFilePicker
-func (m *ShellModule) ShowFilePicker(ctx context.Context, fd FileDialog) (ret []string, err error) {
-	_, err = m.client.Call(ctx, "shell.ShowFilePicker", fn.Args{fd}, &ret)
-	return
+type MessageDialog struct {
+	Title string
+	Body string
+	Level string
+	Buttons string
 }
 
-// ReadClipboard
-func (m *ShellModule) ReadClipboard(ctx context.Context) (ret string, err error) {
-	_, err = m.client.Call(ctx, "shell.ReadClipboard", fn.Args{}, &ret)
-	return
-}
-
-// WriteClipboard
-func (m *ShellModule) WriteClipboard(ctx context.Context, text string) (ret bool, err error) {
-	_, err = m.client.Call(ctx, "shell.WriteClipboard", fn.Args{text}, &ret)
-	return
-}
-
-// RegisterShortcut
-func (m *ShellModule) RegisterShortcut(ctx context.Context, accelerator string) (err error) {
-	_, err = m.client.Call(ctx, "shell.RegisterShortcut", fn.Args{accelerator}, nil)
-	return
-}
-
-// IsShortcutRegistered
-func (m *ShellModule) IsShortcutRegistered(ctx context.Context, accelerator string) (ret bool, err error) {
-	_, err = m.client.Call(ctx, "shell.IsShortcutRegistered", fn.Args{accelerator}, &ret)
-	return
-}
-
-// UnregisterShortcut
-func (m *ShellModule) UnregisterShortcut(ctx context.Context, accelerator string) (ret bool, err error) {
-	_, err = m.client.Call(ctx, "shell.UnregisterShortcut", fn.Args{accelerator}, &ret)
-	return
-}
-
-// UnregisterAllShortcuts
-func (m *ShellModule) UnregisterAllShortcuts(ctx context.Context) (err error) {
-	_, err = m.client.Call(ctx, "shell.UnregisterAllShortcuts", fn.Args{}, nil)
-	return
-}

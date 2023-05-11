@@ -10,11 +10,13 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"reflect"
 	"runtime"
 	"strings"
 	"sync"
 	"syscall"
 
+	"github.com/progrium/qtalk-go/fn"
 	"github.com/progrium/qtalk-go/mux"
 	"github.com/progrium/qtalk-go/talk"
 	"github.com/progrium/qtalk-go/x/cbor/codec"
@@ -63,6 +65,15 @@ func (c *Client) Wait() error {
 	return c.cmd.Wait()
 }
 
+func Bind(client *Client, name string, p interface{}) {
+	f := reflect.ValueOf(p).Elem()
+	f.Set(reflect.MakeFunc(f.Type(), func(args []reflect.Value) (result []reflect.Value) {
+		ctx, _ := reflect.ValueOf(args[0]).Interface().(context.Context)
+		_, err := client.Call(ctx, name, fn.Args{args[1]}, nil)
+		return []reflect.Value{reflect.ValueOf(err).Elem()}
+	}))
+}
+
 func New(peer *talk.Peer) *Client {
 	client := &Client{Peer: peer}
 	client.Window = &WindowModule{client: client, windows: make(map[Handle]*Window)}
@@ -70,6 +81,20 @@ func New(peer *talk.Peer) *Client {
 	client.App = &AppModule{client: client}
 	client.Menu = &MenuModule{client: client}
 	client.Shell = &ShellModule{client: client}
+
+	values := reflect.ValueOf(*client.Shell)
+	types := values.Type()
+	for i := 0; i < values.NumField(); i++ {
+		field := types.Field(i)
+		log.Println(field.Index[0], field.Name, reflect.TypeOf(field.Type).Kind() == reflect.Func)
+	}
+
+	Bind(client, "shell.ShowNotification", &client.Shell.ShowNotification)
+	Bind(client, "shell.ShowMessage", &client.Shell.ShowMessage)
+
+	//client.Shell.ShowNotification(context.Background(), Notification{})
+	//client.Shell.ShowMessage(context.Background(), MessageDialog{})
+
 	resp, err := client.Call(context.Background(), "Listen", nil, nil)
 	if err == nil {
 		go dispatchEvents(client, resp)

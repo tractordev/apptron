@@ -15,12 +15,10 @@ func GenerateClientCode(file string, modPrefix string) string {
 
 	/*
 		fmt.Println("---")
-
 		for _, t := range s.All {
 			fmt.Println(t.String())
 			fmt.Println()
 		}
-
 		fmt.Println("---")
 	*/
 
@@ -54,25 +52,37 @@ func GenerateClientCode(file string, modPrefix string) string {
 		for i := 0; i < len(s.All); i += 1 {
 			t := s.All[i]
 
-			if t.Kind == "function" && t.Self != nil && t.Self.Kind == "pointer" && t.Self.Elem.Name == "module" {
+			if t.Kind == "function" && t.Self != nil && (t.Self.Kind == "type" && t.Self.Name == "module" || t.Self.Kind == "pointer" && t.Self.Elem.Name == "module") {
 
 				name := t.Name
 				t.Self = nil
 				t.Name = ""
+
+				at := Type{}
+				at.Kind = "type"
+				at.Name = "context.Context"
+				a := Argument{}
+				a.Name = "ctx"
+				a.Type = at
+				t.Ins = append([]Argument{a}, t.Ins...)
+
+				err := Type{}
+				err.Kind = "type"
+				err.Name = "error"
+				t.Outs = append(t.Outs, err)
 
 				f := Field{}
 				f.Name = name
 				f.Type = t
 				f.Offset = 0
 				f.Anonymous = false
+				mod.Fields = append(mod.Fields, f)
 
 				for idx, arg := range t.Ins {
 					if arg.Type.Name == "Options" {
 						t.Ins[idx].Type.Name = modPrefix + "Options"
 					}
 				}
-
-				mod.Fields = append(mod.Fields, f)
 
 				s.All = append(s.All[:i], s.All[i+1:]...)
 				i -= 1

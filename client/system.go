@@ -2,14 +2,12 @@ package client
 
 import (
 	"context"
-
-	"github.com/progrium/qtalk-go/fn"
 )
 
 type SystemModule struct {
 	client *Client
-	Displays func () []Display
-	Power func () PowerInfo
+	Displays func (ctx context.Context) ([]Display, error)
+	Power func (ctx context.Context) (PowerInfo, error)
 }
 
 type Display struct {

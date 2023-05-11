@@ -80,9 +80,11 @@ func dispatchEvents(client *Client, resp *rpc.Response) {
 				w.OnBlurred(e)
 			}
 		case EventShortcut:
-			if client.Shell.OnShortcut != nil {
-				client.Shell.OnShortcut(e)
-			}
+			/*
+				if client.Shell.OnShortcut != nil {
+					client.Shell.OnShortcut(e)
+				}
+			*/
 		case EventMenuItem:
 			if client.Menu.OnClick != nil {
 				client.Menu.OnClick(e)

@@ -21,16 +21,27 @@ func main() {
 	*/
 
 	gens := []gen{
+		// @Incomplete:
+		// - menu.Menu needs to be replaced with "Menu"
 		//{"bridge/api/app/app.go", "client/app.go", "App"},
+		// @Incomplete:
+		// - lowercase "menu" needs to be replaced with uppercase "Menu"
+		// - OnClick func(event Event) missing
+		// - resource.Handle gets replaced with Handle
+		//{"bridge/api/menu/menu.go", "client/menu.go", "Menu"},
+
+		// @Incomplete:
+		// ShellModule is missing: OnShortcut func(event Event)
+		{"bridge/api/shell/shell.go", "client/shell.go", "Shell"},
 		{"bridge/api/system/system.go", "client/system.go", "System"},
+
+		//{"bridge/api/window/window.go", "client/window.go", "Window"},
 	}
 
 	filePrefix := `package client
 
 import (
 	"context"
-
-	"github.com/progrium/qtalk-go/fn"
 )
 `
 
@@ -49,5 +60,6 @@ import (
 		}
 
 		log.Println("Wrote", gen.OutputPath)
+		log.Println(result)
 	}
 }
