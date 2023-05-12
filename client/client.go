@@ -70,7 +70,6 @@ func New(peer *talk.Peer) *Client {
 	client.App = &AppModule{client: client}
 	client.Menu = &MenuModule{client: client}
 	client.Shell = &ShellModule{client: client}
-
 	resp, err := client.Call(context.Background(), "Listen", nil, nil)
 	if err == nil {
 		go dispatchEvents(client, resp)
