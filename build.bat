@@ -20,7 +20,7 @@ set PATH=%PATH%;%gcc_path%
 pushd %project_root%
   ::%go_path%\go.exe build -tags pkg -o ./debug-pkg.exe ./cmd/debug
 
-  ::%go_path%\go.exe run ./schema/main/main.go
+  %go_path%\go.exe run ./schema/main/main.go
   %go_path%\go.exe build -tags cmd -o ./debug-cmd.exe ./cmd/debug
 
   IF %errorlevel% NEQ 0 (popd && goto end)

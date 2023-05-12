@@ -70,7 +70,7 @@ func Bind(client *Client, name string, p interface{}) {
 	f.Set(reflect.MakeFunc(f.Type(), func(args []reflect.Value) (result []reflect.Value) {
 		ctx, _ := reflect.ValueOf(args[0]).Interface().(context.Context)
 		_, err := client.Call(ctx, name, fn.Args{args[1]}, nil)
-		return []reflect.Value{reflect.ValueOf(err).Elem()}
+		return []reflect.Value{reflect.ValueOf(&err).Elem()}
 	}))
 }
 
