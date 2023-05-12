@@ -1,26 +1,11 @@
 package schema
 
-/*
-import (
-	"fmt"
-)
-*/
-
 func GenerateClientCode(file string, modPrefix string) string {
 	s, err := GenerateFromFile(file)
 
 	if err != nil {
 		return ""
 	}
-
-	/*
-		fmt.Println("---")
-		for _, t := range s.All {
-			fmt.Println(t.String())
-			fmt.Println()
-		}
-		fmt.Println("---")
-	*/
 
 	var mod *Type
 	for i, t := range s.All {
