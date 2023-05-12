@@ -10,13 +10,11 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"reflect"
 	"runtime"
 	"strings"
 	"sync"
 	"syscall"
 
-	"github.com/progrium/qtalk-go/fn"
 	"github.com/progrium/qtalk-go/mux"
 	"github.com/progrium/qtalk-go/talk"
 	"github.com/progrium/qtalk-go/x/cbor/codec"
@@ -65,40 +63,13 @@ func (c *Client) Wait() error {
 	return c.cmd.Wait()
 }
 
-func Bind(client *Client, name string, f reflect.Value) {
-	f.Set(reflect.MakeFunc(f.Type(), func(args []reflect.Value) (result []reflect.Value) {
-		ctx, _ := reflect.ValueOf(args[0]).Interface().(context.Context)
-		_, err := client.Call(ctx, name, fn.Args{args[1]}, nil)
-		return []reflect.Value{reflect.ValueOf(&err).Elem()}
-	}))
-}
-
-func BindAll(client *Client, name string, p interface{}) {
-	value := reflect.ValueOf(p).Elem()
-	for i := 0; i < value.NumField(); i++ {
-		field := value.Type().Field(i)
-
-		if field.Type.Kind() == reflect.Func && !strings.HasPrefix(field.Name, "On") {
-			fullName := name + "." + field.Name
-			log.Println(field.Index[0], field.Name, fullName)
-			Bind(client, fullName, value.Field(i))
-		}
-	}
-}
-
 func New(peer *talk.Peer) *Client {
 	client := &Client{Peer: peer}
-
 	client.Window = &WindowModule{client: client, windows: make(map[Handle]*Window)}
-	BindAll(client, "window", client.Window)
 	client.System = &SystemModule{client: client}
-	BindAll(client, "system", client.System)
 	client.App = &AppModule{client: client}
-	BindAll(client, "app", client.App)
 	client.Menu = &MenuModule{client: client}
-	BindAll(client, "menu", client.Menu)
 	client.Shell = &ShellModule{client: client}
-	BindAll(client, "shell", client.Shell)
 
 	resp, err := client.Call(context.Background(), "Listen", nil, nil)
 	if err == nil {
