@@ -18,20 +18,6 @@ func GenerateClientCode(file string, modPrefix string) string {
 	if mod != nil {
 		mod.Name = modPrefix + "Module"
 
-		p := Type{}
-		p.Kind = "type"
-		p.Name = "Client"
-		t := Type{}
-		t.Kind = "pointer"
-		t.Elem = &p
-
-		f := Field{}
-		f.Name = "client"
-		f.Type = t
-		f.Offset = 0
-		f.Anonymous = false
-		mod.Fields = append([]Field{f}, mod.Fields...)
-
 		for i := 0; i < len(s.All); i += 1 {
 			t := s.All[i]
 

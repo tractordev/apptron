@@ -27,10 +27,10 @@ type Position = misc.Position
 
 type Size = misc.Size
 
-func (m *module) Displays() []Display {
+func (m module) Displays() []Display {
 	return Displays()
 }
 
-func (m *module) Power() PowerInfo {
+func (m module) Power() PowerInfo {
 	return Power()
 }

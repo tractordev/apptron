@@ -6,9 +6,7 @@ func init() {
 	Module = &module{}
 }
 
-type module struct {
-	OnShortcut func(event Event)
-}
+type module struct{}
 
 type Notification struct {
 	Title    string

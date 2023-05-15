@@ -5,8 +5,6 @@ import (
 )
 
 type ShellModule struct {
-	client *Client
-	OnShortcut func (event Event)
 	ShowNotification func (ctx context.Context, n Notification) error
 	ShowMessage func (ctx context.Context, msg MessageDialog) (bool, error)
 	ShowFilePicker func (ctx context.Context, fd FileDialog) ([]string, error)

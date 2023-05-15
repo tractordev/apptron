@@ -14,7 +14,8 @@ import (
 )
 
 func main() {
-	os.Setenv("APPTRON_CMD", "./dist/apptron")
+	os.Setenv("APPTRON_CMD", "C:/dev/_projects/apptron/apptron.exe")
+
 	ctx := context.Background()
 	c, err := apptron.Run(ctx, client.AppOptions{})
 	if err != nil {

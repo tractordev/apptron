@@ -5,7 +5,6 @@ import (
 )
 
 type SystemModule struct {
-	client *Client
 	Displays func (ctx context.Context) ([]Display, error)
 	Power func (ctx context.Context) (PowerInfo, error)
 }
