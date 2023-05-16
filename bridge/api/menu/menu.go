@@ -7,9 +7,7 @@ import (
 
 var Module *module
 
-type module struct {
-	OnClick func(event Event)
-}
+type module struct{}
 
 func init() {
 	Module = &module{}
