@@ -9,7 +9,12 @@ import (
 )
 
 func Displays() (displays []Display) {
-	for _, screen := range cocoa.NSScreen_Screens() {
+	cs := cocoa.NSScreen_Screens()
+	var screens []cocoa.NSScreen
+	for i := uint64(0); i < cs.Count(); i++ {
+		screens = append(screens, cocoa.NSScreen_FromRef(cs.ObjectAtIndex(i)))
+	}
+	for _, screen := range screens {
 		frame := screen.Frame()
 		displays = append(displays, Display{
 			Name: screen.LocalizedName().String(),

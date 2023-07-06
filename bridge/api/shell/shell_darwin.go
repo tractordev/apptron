@@ -67,7 +67,7 @@ func ShowFilePicker(fd FileDialog) []string {
 		picker.Set("nameFieldStringValue:", core.String(fd.Filename))
 	}
 	if fd.Directory != "" {
-		url := core.NSURL_fileURLWithPath_isDirectory_(core.String(fd.Directory), true)
+		url := core.NSURL_FileURLWithPathIsDirectory(core.String(fd.Directory), true)
 		picker.Set("directoryURL:", url)
 	}
 	if fd.Filters != nil {
@@ -87,7 +87,7 @@ func ShowFilePicker(fd FileDialog) []string {
 	picker.Set("title:", core.String(fd.Title))
 	ret := picker.Send("runModal")
 	if ret.Int() == 1 {
-		urls := core.NSArray_fromRef(picker.Send("URLs"))
+		urls := core.NSArray_FromRef(picker.Send("URLs"))
 		count := int(urls.Count())
 		paths := make([]string, count)
 		for i := 0; i < count; i++ {
