@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/progrium/macdriver/cocoa"
+	"github.com/progrium/macdriver/core"
 	mac "github.com/progrium/macdriver/core"
 	"github.com/progrium/macdriver/objc"
 	"tractor.dev/apptron/bridge/event"
@@ -46,7 +47,7 @@ func (m *Menu) Popup() int {
 		}
 		return io.EOF
 	})
-	if m.NSMenu.PopUpMenuPositioningItem_atLocation_inView_(nil, cocoa.NSEvent_mouseLocation(), nil) {
+	if m.NSMenu.PopUpMenuPositioningItemAtLocationInView(nil, cocoa.NSEvent_MouseLocation(), nil) {
 		return <-ch
 	}
 	return 0
@@ -59,7 +60,7 @@ func newMenuItem(i Item) cocoa.NSMenuItem {
 
 	item := cocoa.NSMenuItem_New()
 	item.SetTitle(i.Title)
-	item.SetTag_(mac.NSInteger(int(i.ID)))
+	item.SetTag(mac.NSInteger(int(i.ID)))
 	item.SetEnabled(!i.Disabled)
 	// item.SetToolTip(i.Tooltip)
 
@@ -92,7 +93,7 @@ func newMenuItem(i Item) cocoa.NSMenuItem {
 
 	if len(i.SubMenu) > 0 {
 		sub := cocoa.NSMenu_New()
-		sub.SetTitle(i.Title)
+		sub.SetTitle(core.String(i.Title))
 		sub.SetAutoenablesItems(true)
 		for _, i := range i.SubMenu {
 			sub.AddItem(newMenuItem(i))

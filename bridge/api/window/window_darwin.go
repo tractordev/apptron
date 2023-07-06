@@ -145,7 +145,7 @@ func init() {
 		}
 	})
 	DelegateClass.AddMethod("userContentController:didReceiveScriptMessage:", func(self, cc, msg objc.Object) {
-		msgDict := mac.NSDictionary_fromRef(msg.Get("body"))
+		msgDict := mac.NSDictionary_FromRef(msg.Get("body"))
 		win := findWindow(msg.Get("webView").Get("window"))
 		if win == nil {
 			return
@@ -163,13 +163,13 @@ func init() {
 			win.Destroy()
 		case "move":
 			pos := win.GetOuterPosition()
-			mouseLoc := cocoa.NSEvent_mouseLocation()
+			mouseLoc := cocoa.NSEvent_MouseLocation()
 			win.moveOffset = mac.NSPoint{
 				X: mouseLoc.X - pos.X,
 				Y: mouseLoc.Y - pos.Y,
 			}
 		case "moving":
-			mouseLoc := cocoa.NSEvent_mouseLocation()
+			mouseLoc := cocoa.NSEvent_MouseLocation()
 			win.SetPosition(misc.Position{
 				X: mouseLoc.X - win.moveOffset.X,
 				Y: mouseLoc.Y - win.moveOffset.Y,
@@ -250,8 +250,8 @@ func New(options Options) (*Window, error) {
 		wv.LoadRequest(req)
 	} else {
 		if options.HTML != "" {
-			url := mac.NSURL_URLWithString_(mac.String("http://localhost"))
-			wv.LoadHTMLString_baseURL_(mac.String(options.HTML), url)
+			url := mac.NSURL_URLWithString(mac.String("http://localhost"))
+			wv.LoadHTMLStringBaseURL(mac.String(options.HTML), url)
 		}
 		if options.URL != "" {
 			req := mac.NSURLRequest_Init(mac.URL(options.URL))
@@ -296,7 +296,7 @@ func New(options Options) (*Window, error) {
 	}
 
 	nswin.SetFrameDisplay(frame, true)
-	nswin.SetDelegate_(delegate)
+	nswin.SetDelegate(delegate)
 
 	win := &Window{
 		window: window{
@@ -351,9 +351,9 @@ func (w *Window) SetMinimized(minimized bool) {
 		return
 	}
 	if minimized {
-		w.Miniaturize_(nil)
+		w.Miniaturize(nil)
 	} else {
-		w.Deminiaturize_(nil)
+		w.Deminiaturize(nil)
 	}
 }
 
@@ -362,15 +362,15 @@ func (w *Window) SetFullscreen(fullscreen bool) {
 }
 
 func (w *Window) SetSize(size Size) {
-	w.SetContentSize_(mac.NSSize{Width: size.Width, Height: size.Height})
+	w.SetContentSize(mac.NSSize{Width: size.Width, Height: size.Height})
 }
 
 func (w *Window) SetMinSize(size Size) {
-	w.SetContentMinSize_(mac.NSSize{Width: size.Width, Height: size.Height})
+	w.SetContentMinSize(mac.NSSize{Width: size.Width, Height: size.Height})
 }
 
 func (w *Window) SetMaxSize(size Size) {
-	w.SetContentMaxSize_(mac.NSSize{Width: size.Width, Height: size.Height})
+	w.SetContentMaxSize(mac.NSSize{Width: size.Width, Height: size.Height})
 }
 
 func (w *Window) SetResizable(resizable bool) {
@@ -398,7 +398,7 @@ func (w *Window) SetPosition(position Position) {
 	position.Y = screenRect.Size.Height - position.Y
 
 	// @Robustness: this implicitly relies on the frame size now that Y is inverted
-	w.SetFrameTopLeftPoint_(mac.Point(position.X, position.Y))
+	w.SetFrameTopLeftPoint(mac.Point(position.X, position.Y))
 }
 
 func (w *Window) SetTitle(title string) {
