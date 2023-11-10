@@ -69,7 +69,7 @@ The `build` subcommand depends on Go, which shouldn't be an issue since we build
 
 ## Using Apptron API
 
-Apptron exposes a [qtalk](https://github.com/tractordev/qtalk) API over STDIO. We currently have a Go client that makes using this API easy. There is a JavaScript wrapper for once you have a channel established (over STDIO or sometimes WebSocket). Any other language will need at the very least a qtalk implementation. Submit or upvote an issue to prioritize support for your language if you can't contribute it yourself.
+Apptron exposes a [qtalk](https://github.com/manifold/qtalk) API over STDIO. We currently have a Go client that makes using this API easy. There is a JavaScript wrapper for once you have a channel established (over STDIO or sometimes WebSocket). Any other language will need at the very least a qtalk implementation. Submit or upvote an issue to prioritize support for your language if you can't contribute it yourself.
 
 In the meantime, you can shell out and use the CLI commands, or you can use the API from HTML/JavaScript using `apptron build` or `apptron run`, or you can use Go.
 
