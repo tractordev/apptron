@@ -1,0 +1,4 @@
+#!/sbin/openrc-run
+command="/bin/guest86"
+command_background="yes"
+pidfile="/var/run/guest86.pid"
