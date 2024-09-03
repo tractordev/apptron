@@ -8,10 +8,13 @@ RUN apk add openrc \
             alpine-base \
             agetty \
             alpine-conf \
-            github-cli \
             git \
-            go \
             openssh
+
+RUN wget https://go.dev/dl/go1.23.0.linux-386.tar.gz \
+    && tar -C /usr/local -xzf go1.23.0.linux-386.tar.gz \
+    && rm go1.23.0.linux-386.tar.gz \
+    && ln -s /usr/local/go/bin/go /usr/bin/go
 
 # Install mkinitfs from edge (todo: remove this when 3.19+ has worked properly with 9pfs)
 RUN apk add mkinitfs --no-cache --allow-untrusted --repository https://dl-cdn.alpinelinux.org/alpine/edge/main/ 
@@ -38,6 +41,7 @@ RUN echo "root:$PASSWORD" | chpasswd
 COPY ./guest86.service /etc/init.d/guest86
 # there is a bug where it always crashes on first run
 RUN echo "rc-service guest86 start && rc-service guest86 stop && rc-service guest86 start" > /root/.profile
+
 
 # https://wiki.alpinelinux.org/wiki/Alpine_Linux_in_a_chroot#Preparing_init_services
 RUN for i in devfs dmesg mdev hwdrivers; do rc-update add $i sysinit; done
