@@ -7,7 +7,11 @@ ENV PASSWORD='root'
 RUN apk add openrc \ 
             alpine-base \
             agetty \
-            alpine-conf
+            alpine-conf \
+            github-cli \
+            git \
+            go \
+            openssh
 
 # Install mkinitfs from edge (todo: remove this when 3.19+ has worked properly with 9pfs)
 RUN apk add mkinitfs --no-cache --allow-untrusted --repository https://dl-cdn.alpinelinux.org/alpine/edge/main/ 
