@@ -37,6 +37,8 @@ RUN sed -i 's/getty 38400 tty1/agetty --autologin root tty1 linux/' /etc/inittab
 RUN echo 'ttyS0::once:/sbin/agetty --autologin root -s ttyS0 115200 vt100' >> /etc/inittab 
 RUN echo "root:$PASSWORD" | chpasswd
 
+# add docs
+COPY ./README.md ./CHANGELOG.md /root/
 # assume env86 will add /bin/guest86
 COPY ./guest86.service /etc/init.d/guest86
 # there is a bug where it always crashes on first run
