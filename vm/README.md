@@ -18,3 +18,6 @@ More details will be put online soon, but in the meantime you can ask questions
 or just stay up to date by sponsoring me on GitHub:
 
 https://github.com/sponsors/progrium
+
+Twitter: @progrium
+Mastodon: @progrium@mas.to

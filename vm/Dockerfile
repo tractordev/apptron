@@ -42,7 +42,7 @@ COPY ./README.md ./CHANGELOG.md /root/
 # assume env86 will add /bin/guest86
 COPY ./guest86.service /etc/init.d/guest86
 # there is a bug where it always crashes on first run
-RUN echo "rc-service guest86 start && rc-service guest86 stop && rc-service guest86 start" > /root/.profile
+RUN echo "rc-service guest86 start && rc-service guest86 stop && rc-service guest86 start; rm /root/.profile" > /root/.profile
 
 
 # https://wiki.alpinelinux.org/wiki/Alpine_Linux_in_a_chroot#Preparing_init_services
