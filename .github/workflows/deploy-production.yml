@@ -41,20 +41,21 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          wranglerVersion: 4.32.0
           command: deploy
           
-      - name: Update deployment status (success)
+      - name: Deployment success
         if: success()
-        uses: chrnorm/deployment-action@v2
+        uses: chrnorm/deployment-status@v2
         with:
           token: '${{ secrets.GITHUB_TOKEN }}'
           deployment-id: ${{ steps.deployment.outputs.deployment-id }}
           state: success
           environment-url: ${{ steps.deploy.outputs.deployment-url }}
           
-      - name: Update deployment status (failure)
+      - name: Deployment failure
         if: failure()
-        uses: chrnorm/deployment-action@v2
+        uses: chrnorm/deployment-status@v2
         with:
           token: '${{ secrets.GITHUB_TOKEN }}'
           deployment-id: ${{ steps.deployment.outputs.deployment-id }}
