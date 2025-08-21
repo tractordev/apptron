@@ -1,0 +1,61 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches:
+      - release
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    name: Deploy to Cloudflare Workers
+    environment: production
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: router/package-lock.json
+          
+      - name: Install dependencies
+        run: |
+          cd router
+          npm ci
+          
+      - name: Create GitHub deployment
+        uses: chrnorm/deployment-action@v2
+        id: deployment
+        with:
+          token: '${{ secrets.GITHUB_TOKEN }}'
+          environment: production
+          initial-status: pending
+          
+      - name: Deploy to Cloudflare Workers
+        uses: cloudflare/wrangler-action@v3
+        id: deploy
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: deploy
+          
+      - name: Update deployment status (success)
+        if: success()
+        uses: chrnorm/deployment-action@v2
+        with:
+          token: '${{ secrets.GITHUB_TOKEN }}'
+          deployment-id: ${{ steps.deployment.outputs.deployment-id }}
+          state: success
+          environment-url: ${{ steps.deploy.outputs.deployment-url }}
+          
+      - name: Update deployment status (failure)
+        if: failure()
+        uses: chrnorm/deployment-action@v2
+        with:
+          token: '${{ secrets.GITHUB_TOKEN }}'
+          deployment-id: ${{ steps.deployment.outputs.deployment-id }}
+          state: failure

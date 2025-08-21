@@ -1,0 +1,23 @@
+name = "apptron"
+compatibility_date = "2025-08-21"
+main = "./router/worker.ts"
+
+[assets]
+directory = "./assets"
+binding = "assets"
+
+[observability.logs]
+enabled = true
+
+[[containers]]
+class_name = "Session"
+image = "./session/Dockerfile"
+max_instances = 1
+
+[[durable_objects.bindings]]
+class_name = "Session"
+name = "session"
+
+[[migrations]]
+new_sqlite_classes = [ "Session" ]
+tag = "v1"

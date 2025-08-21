@@ -1,2 +1,4 @@
-/vm/image
-/dist
+.DS_Store
+/.local
+.wrangler
+node_modules
