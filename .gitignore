@@ -2,3 +2,4 @@
 /.local
 .wrangler
 node_modules
+/assets/vscode

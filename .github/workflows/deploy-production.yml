@@ -25,10 +25,9 @@ jobs:
           cache: 'npm'
           cache-dependency-path: router/package-lock.json
           
-      - name: Install dependencies
+      - name: Build project
         run: |
-          cd router
-          npm ci
+          make all
           
       - name: Deploy to Cloudflare Workers
         uses: cloudflare/wrangler-action@v3
