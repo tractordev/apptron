@@ -8,8 +8,10 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    name: Deploy to Cloudflare Workers
-    environment: production
+    name: Deploy to Cloudflare
+    environment:
+      name: 'production'
+      url: https://apptron.dev
     
     steps:
       - name: Checkout
