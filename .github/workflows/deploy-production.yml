@@ -33,6 +33,7 @@ jobs:
         id: deployment
         with:
           token: '${{ secrets.GITHUB_TOKEN }}'
+          environment-url: https://apptron.dev
           environment: production
           initial-status: pending
           
@@ -44,20 +45,3 @@ jobs:
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           wranglerVersion: 4.32.0
           command: deploy
-          
-      - name: Deployment success
-        if: success()
-        uses: chrnorm/deployment-status@v2
-        with:
-          token: '${{ secrets.GITHUB_TOKEN }}'
-          deployment-id: ${{ steps.deployment.outputs.deployment_id }}
-          state: success
-          environment-url: ${{ steps.deploy.outputs.deployment-url }}
-          
-      - name: Deployment failure
-        if: failure()
-        uses: chrnorm/deployment-status@v2
-        with:
-          token: '${{ secrets.GITHUB_TOKEN }}'
-          deployment-id: ${{ steps.deployment.outputs.deployment_id }}
-          state: failure
