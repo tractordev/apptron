@@ -5,5 +5,12 @@
 		"applicationName": "apptron",
 		"dataFolderName": ".apptron",
 		"version": "1.92.1-patched"
-	}
+	},
+    "configurationDefaults": {
+        "workbench.colorTheme": "Tractor Dark",
+        "workbench.startupEditor": "none"
+    },
+    "developmentOptions": {
+        "logLevel": 1
+    }
 }

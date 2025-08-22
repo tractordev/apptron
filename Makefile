@@ -1,6 +1,6 @@
 VSCODE_URL=https://github.com/progrium/vsclone/releases/download/v0.2/vscode-web.zip
 
-all: assets/vscode router/node_modules
+all: assets/vscode router/node_modules extension/dist
 .PHONY: all
 
 deploy: all
@@ -17,6 +17,12 @@ assets/vscode:
 	curl -sL $(VSCODE_URL) -o assets/vscode.zip
 	unzip assets/vscode.zip -d assets
 	rm assets/vscode.zip
+
+extension/dist: extension/node_modules
+	cd extension && npm run compile-web
+
+extension/node_modules:
+	cd extension && npm ci
 
 router/node_modules:
 	cd router && npm ci

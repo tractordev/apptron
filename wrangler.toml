@@ -5,6 +5,7 @@ main = "./router/worker.ts"
 [assets]
 directory = "./assets"
 binding = "assets"
+run_worker_first = [ "/workbench.json" ]
 
 [observability.logs]
 enabled = true
