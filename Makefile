@@ -11,6 +11,8 @@ clean:
 	rm -rf assets/vscode
 	rm -rf router/node_modules
 	rm -rf node_modules
+	rm -rf extension/dist
+	rm -rf extension/node_modules
 .PHONY: clean
 
 assets/vscode:
