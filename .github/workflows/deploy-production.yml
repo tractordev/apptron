@@ -30,15 +30,6 @@ jobs:
           cd router
           npm ci
           
-      - name: Create GitHub deployment
-        uses: chrnorm/deployment-action@v2
-        id: deployment
-        with:
-          token: '${{ secrets.GITHUB_TOKEN }}'
-          environment-url: https://apptron.dev
-          environment: production
-          initial-status: pending
-          
       - name: Deploy to Cloudflare Workers
         uses: cloudflare/wrangler-action@v3
         id: deploy
