@@ -15,7 +15,7 @@ clean:
 
 assets/vscode:
 	curl -sL $(VSCODE_URL) -o assets/vscode.zip
-	unzip assets/vscode.zip -d assets/vscode
+	unzip assets/vscode.zip -d assets
 	rm assets/vscode.zip
 
 router/node_modules:
