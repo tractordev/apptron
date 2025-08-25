@@ -22,7 +22,7 @@ export default {
             const workbench = await resp.json();
             workbench.additionalBuiltinExtensions = [{
                 scheme: url.protocol.replace(":", ""),
-                authority: url.host,
+                authority: (env.LOCAL) ? "localhost:8787" : url.host,
                 path: "/system"
             }];
             workbench.profile = {
