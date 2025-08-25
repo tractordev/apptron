@@ -14,7 +14,9 @@ export default {
         if (url.pathname.startsWith("/x/local")) {
             return new Response("OK", { status: 200 });
         }
-        if (url.pathname.startsWith("/x/net")) {
+        if (url.pathname.startsWith("/x/net") || 
+            url.host.startsWith("_") ||
+            url.pathname === "/bundle.tgz") {
             return getContainer(env.session).fetch(req);
         }
         if (url.pathname === "/workbench.json") {
