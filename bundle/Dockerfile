@@ -3,4 +3,3 @@ RUN apk add -u e2fsprogs podman netavark
 COPY ./bin/init /bin/init
 COPY ./bin/post-dhcp /bin/post-dhcp
 COPY ./etc/containers.conf /etc/containers/containers.conf
-COPY ./bin/httpdebug /bin/httpdebug
