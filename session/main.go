@@ -1,11 +1,17 @@
 package main
 
 import (
+	"context"
+	"embed"
 	"encoding/binary"
+	"encoding/hex"
 	"fmt"
 	"log"
 	"net"
 	"net/http"
+	"net/http/httputil"
+	"net/url"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -13,6 +19,9 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/progrium/go-netstack/vnet"
 )
+
+//go:embed bundle.tgz
+var bundle embed.FS
 
 func main() {
 	vn, err := vnet.New(&vnet.Configuration{
@@ -34,10 +43,41 @@ func main() {
 
 func handler(vn *vnet.VirtualNetwork) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/bundle.tgz" {
+			http.ServeFileFS(w, r, bundle, "bundle.tgz")
+			return
+		}
+
 		if vn == nil {
 			http.Error(w, "network not available", http.StatusNotFound)
 			return
 		}
+
+		if strings.HasPrefix(r.Host, "_") {
+			parts := strings.Split(r.Host, ".")
+			host, err := DecodeAddr(parts[0][1:])
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+			conn, err := vn.Dial("tcp", host)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+			defer conn.Close()
+
+			u, err := url.Parse(fmt.Sprintf("http://%s", host))
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+
+			proxy := CreateProxyWithConn(u, conn)
+			proxy.ServeHTTP(w, r)
+			return
+		}
+
 		if !websocket.IsWebSocketUpgrade(r) {
 			http.Error(w, "expecting websocket upgrade", http.StatusBadRequest)
 			return
@@ -140,4 +180,58 @@ func (c *qemuAdapter) SetReadDeadline(t time.Time) error {
 }
 func (c *qemuAdapter) SetWriteDeadline(t time.Time) error {
 	return nil
+}
+
+// DecodeAddr converts "HHHHHHHH-PPPP" back to "IP:port"
+func DecodeAddr(encoded string) (string, error) {
+	parts := strings.Split(encoded, "-")
+	if len(parts) != 2 {
+		return "", fmt.Errorf("invalid format: expected HHHHHHHH-PPPP")
+	}
+
+	// Decode IP
+	ipBytes, err := hex.DecodeString(parts[0])
+	if err != nil || len(ipBytes) != 4 {
+		return "", fmt.Errorf("invalid IP hex")
+	}
+
+	// Decode port
+	port, err := strconv.ParseUint(parts[1], 16, 16)
+	if err != nil {
+		return "", fmt.Errorf("invalid port hex")
+	}
+
+	ip := net.IPv4(ipBytes[0], ipBytes[1], ipBytes[2], ipBytes[3])
+	return fmt.Sprintf("%s:%d", ip.String(), port), nil
+}
+
+// CustomDialer wraps a specific net.Conn to be used by the HTTP transport
+type CustomDialer struct {
+	conn net.Conn
+}
+
+func (d *CustomDialer) DialContext(ctx context.Context, network, addr string) (net.Conn, error) {
+	// Return the pre-established connection
+	// Note: This simple implementation returns the same conn every time
+	// You may want to handle connection reuse/pooling differently
+	return d.conn, nil
+}
+
+// CreateProxyWithConn creates a reverse proxy that uses a specific net.Conn
+func CreateProxyWithConn(targetURL *url.URL, conn net.Conn) *httputil.ReverseProxy {
+	proxy := httputil.NewSingleHostReverseProxy(targetURL)
+
+	// Create a custom transport that uses our specific connection
+	transport := &http.Transport{
+		DialContext: (&CustomDialer{conn: conn}).DialContext,
+		// Disable connection pooling since we're managing the connection manually
+		MaxIdleConns:        1,
+		MaxIdleConnsPerHost: 1,
+		DisableKeepAlives:   false,
+		IdleConnTimeout:     90 * time.Second,
+	}
+
+	proxy.Transport = transport
+
+	return proxy
 }
