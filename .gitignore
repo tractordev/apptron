@@ -3,3 +3,4 @@
 .wrangler
 node_modules
 /assets/vscode
+/session/bundle.tgz

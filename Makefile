@@ -1,6 +1,6 @@
 VSCODE_URL=https://github.com/progrium/vsclone/releases/download/v0.2/vscode-web.zip
 
-all: assets/vscode router/node_modules extension/dist
+all: assets/vscode router/node_modules extension/dist session/bundle.tgz
 .PHONY: all
 
 deploy: all
@@ -13,6 +13,7 @@ clean:
 	rm -rf node_modules
 	rm -rf extension/dist
 	rm -rf extension/node_modules
+	make -C bundle clean
 .PHONY: clean
 
 assets/vscode:
@@ -29,3 +30,5 @@ extension/node_modules:
 router/node_modules:
 	cd router && npm ci
 
+session/bundle.tgz:
+	cd bundle && make
