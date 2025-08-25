@@ -1,0 +1,10 @@
+#!/bin/sh
+case "$1" in
+  bound|renew)
+    # Configure interface with IP from DHCP
+    ifconfig $interface $ip netmask $subnet
+
+    # Set up routing
+    route add default gw $router
+    ;;
+esac
