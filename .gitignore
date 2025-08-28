@@ -5,3 +5,4 @@ node_modules
 /assets/vscode
 /session/bundle.tgz
 /assets/wanix*
+kernel/bzImage
