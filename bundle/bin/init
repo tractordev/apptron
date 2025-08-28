@@ -8,10 +8,9 @@ mount -t devpts devpts /dev/pts
 
 
 # configure networking
-echo "nameserver 8.8.8.8" > /etc/resolv.conf
 ifconfig eth0 up
 udhcpc -i eth0 -s /bin/post-dhcp
-
+echo "nameserver 8.8.8.8" >> /etc/resolv.conf
 
 # this is all for podman/containers
 mkdir -p /mnt/ram /var/lib/containers
