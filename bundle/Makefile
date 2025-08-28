@@ -6,9 +6,8 @@ bundle.tgz: bundle
 
 bundle:
 	$(DOCKER_CMD) build -t apptron-build --platform linux/386 -f Dockerfile .
-	$(DOCKER_CMD) rm -f apptron-export
+	$(DOCKER_CMD) rm -f apptron-export && mkdir -p bundle
 	$(DOCKER_CMD) create --name apptron-export --platform linux/386 apptron-build
-	mkdir -p bundle
 	$(DOCKER_CMD) export apptron-export | tar -C bundle -xf -
 
 clean:
