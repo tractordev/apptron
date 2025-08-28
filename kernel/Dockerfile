@@ -1,7 +1,5 @@
-ARG BUILDPLATFORM
-ARG TARGETPLATFORM
 
-FROM --platform=$BUILDPLATFORM ghcr.io/progrium/linux-build:latest AS build
+FROM ghcr.io/progrium/linux-build:latest AS build
 COPY kernel.config .config
 RUN make ARCH=i386 CROSS_COMPILE=i686-linux-gnu- oldconfig < /dev/null && \
     make ARCH=i386 CROSS_COMPILE=i686-linux-gnu- bzImage -j$(nproc)
