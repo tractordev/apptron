@@ -1,4 +1,3 @@
-
 FROM ghcr.io/progrium/linux-build:latest AS build
 COPY kernel.config .config
 RUN make ARCH=i386 CROSS_COMPILE=i686-linux-gnu- oldconfig < /dev/null && \
