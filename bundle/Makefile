@@ -5,9 +5,9 @@ bundle.tgz: bundle
 	cp bundle.tgz ../session/bundle.tgz
 
 bundle:
-	$(DOCKER_CMD) build -t apptron-build -f Dockerfile .
+	$(DOCKER_CMD) build -t apptron-build --platform linux/386 -f Dockerfile .
 	$(DOCKER_CMD) rm -f apptron-export && mkdir -p bundle
-	$(DOCKER_CMD) create --name apptron-export apptron-build
+	$(DOCKER_CMD) create --name apptron-export --platform linux/386 apptron-build
 	$(DOCKER_CMD) export apptron-export | tar -C bundle -xf -
 
 clean:

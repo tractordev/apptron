@@ -2,10 +2,10 @@ ARG BUILDPLATFORM
 ARG TARGETPLATFORM
 ARG LINUX_386=linux/386
 
-FROM ghcr.io/tractordev/apptron:kernel AS kernel
-FROM ghcr.io/progrium/v86:latest AS v86
+FROM --platform=$BUILDPLATFORM ghcr.io/tractordev/apptron:kernel AS kernel
+FROM --platform=$BUILDPLATFORM ghcr.io/progrium/v86:latest AS v86
 
-FROM --platform=$LINUX_386 docker.io/i386/alpine:latest AS rootfs
+FROM --platform=$TARGETPLATFORM docker.io/i386/alpine:latest AS rootfs
 RUN apk add -u e2fsprogs podman netavark
 COPY ./bin/* /bin/
 COPY ./etc/* /etc/
