@@ -1,6 +1,7 @@
-VSCODE_URL=https://github.com/progrium/vsclone/releases/download/v0.2/vscode-web.zip
+VSCODE_URL	?= https://github.com/progrium/vsclone/releases/download/v0.2/vscode-web.zip
+DOCKER_CMD 	?= $(shell command -v podman || command -v docker)
 
-all: assets/vscode router/node_modules extension/dist session/bundle.tgz
+all: assets/vscode router/node_modules extension/dist session/bundle.tgz assets/wanix.wasm
 .PHONY: all
 
 deploy: all
@@ -13,6 +14,10 @@ clean:
 	rm -rf node_modules
 	rm -rf extension/dist
 	rm -rf extension/node_modules
+	rm -f assets/wanix.wasm
+	rm -f assets/wanix.debug.wasm
+	rm -f assets/wanix.js
+	rm -f assets/wanix.min.js
 	make -C bundle clean
 .PHONY: clean
 
@@ -32,3 +37,9 @@ router/node_modules:
 
 session/bundle.tgz:
 	cd bundle && make
+
+assets/wanix.wasm:
+	$(DOCKER_CMD) rm -f apptron-wanix
+	$(DOCKER_CMD) pull --platform linux/amd64 ghcr.io/tractordev/wanix:runtime
+	$(DOCKER_CMD) create --name apptron-wanix --platform linux/amd64 ghcr.io/tractordev/wanix:runtime
+	$(DOCKER_CMD) cp apptron-wanix:/ assets/
