@@ -1,0 +1,87 @@
+<html>
+<head>
+    <meta charset="utf-8"/>
+    <title>Apptron Debug Shell</title>
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            position: relative;
+            box-sizing: border-box;
+        }
+
+        .wanix-terminal {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        iframe {
+            border: 8px solid #b0eced;
+            position: absolute;
+            background-color: rgba(190, 190, 190, 0.8);
+            z-index: 1000;
+        }
+
+        /* Make sure the xterm canvas elements fill the container */
+        .xterm {
+            height: 100%;
+            width: 100%;
+        }
+
+        .xterm-viewport,
+        .xterm-screen {
+            width: 100%;
+            height: 100%;
+        }
+
+        #screen {
+            z-index: 1;
+            position: absolute;
+            bottom: 0;
+            right: 0;
+        }
+        #screen > div {
+            white-space: pre;
+            font: 14px monospace;
+            line-height: 14px;
+        }
+    </style>
+</head>
+<body>
+<script type="module">
+    import { Wanix } from "/wanix.js";
+    
+    const queryParams = new URLSearchParams(window.location.search);
+    const w = new Wanix({ 
+        helpers: true, 
+        bundle: queryParams.get('bundle') || "/bundle.tgz",
+        wasm: queryParams.get('wasm') || "/wanix.debug.wasm",
+        network: queryParams.get('network') || "wss://apptron.dev/x/net"
+    });
+    
+    const url = queryParams.get("tty");
+    if (url) {
+        // websocket tty mode 
+        const wid = (await w.readText("cap/new/ws")).trim();
+        await w.writeFile("cap/1/ctl", `mount ${url}`);            
+        await w.writeFile("task/1/ctl", `bind #console/data cap/${wid}/data`); // todo: make this work
+    } else {
+        // xterm.js mode 
+        const xid = (await w.readText("web/dom/new/xterm")).trim();
+        await w.writeFile("task/1/ctl", `bind #console/data web/dom/${xid}/data`);
+        await w.writeFile("web/dom/body/ctl", `append-child ${xid}`);
+    }
+    
+    try {
+        (new Function(await w.readText("#bundle/init.js")))();
+    } catch (e) {
+        console.log("No bundle init.js found");
+    }
+</script>
+</body>
+</html>
