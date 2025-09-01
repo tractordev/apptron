@@ -15,8 +15,6 @@
 
   <!-- Workbench Icon/Manifest/CSS -->
   <link rel="icon" href="/vscode/favicon.ico" type="image/x-icon" />
-  <link rel="manifest" href="/vscode/manifest.json">
-  <link data-name="vs/workbench/workbench.web.main" rel="stylesheet" href="/vscode/out/vs/workbench/workbench.web.main.css">
 
   <style>
     :root {
@@ -29,12 +27,11 @@
     body {
         margin: 0;
         font-size: 0.8rem;
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
     }
     #header-bar {
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
         height: 35px;
         box-sizing: border-box;
         z-index: 1000;
@@ -44,6 +41,7 @@
         align-items: center;
         padding: 0.5rem 1rem;
         color: #c5c5c5;
+        flex-shrink: 0;
     }
     #header-bar #logo {
         color: var(--yellow);
@@ -63,8 +61,11 @@
         all: unset;
         cursor: pointer;
     }
-    .quick-input-widget {
-        top: 35px !important;
+    iframe {
+        border: 0;
+        flex: 1;
+        pointer-events: auto !important;
+        user-select: none;
     }
   </style>
 
@@ -89,43 +90,40 @@
         </div>
 
     </div>
-
-    <!-- Startup (do not modify order of script tags!) -->
-    <script>
-        var xhr = new XMLHttpRequest();
-        xhr.open("GET", "/workbench.json", false);
-        xhr.send(null);
-
-        if (xhr.status === 200) {
-            var meta = document.createElement('meta');
-            meta.id = "vscode-workbench-web-configuration";
-            meta.setAttribute("data-settings", xhr.responseText);
-            document.head.appendChild(meta);
-        } else {
-            console.error("Fetching workbench config failed:", xhr.statusText);
-        }
+    <iframe src="/vscode" 
+        allow="clipboard-read; clipboard-write; cross-origin-isolated"
+        sandbox="allow-scripts allow-same-origin allow-forms allow-modals allow-popups allow-presentation allow-popups-to-escape-sandbox"></iframe>
+    <script type="module">
+        import { Wanix } from "/wanix.js";
+        
+        const queryParams = new URLSearchParams(window.location.search);
+        const w = new Wanix({ 
+            helpers: true, 
+            bundle: queryParams.get('bundle') || "/bundle.tgz",
+            wasm: queryParams.get('wasm') || "/wanix.debug.wasm",
+            network: queryParams.get('network') || "wss://apptron.dev/x/net"
+        });
+        
+        window.addEventListener("message", async (event) => {
+            if (event.data.port) {
+                await w.ready;
+                // xterm.js mode 
+                // const xid = (await w.readText("web/dom/new/xterm")).trim();
+                // await w.writeFile("task/1/ctl", `bind #console/data web/dom/${xid}/data`);
+                // await w.writeFile("web/dom/body/ctl", `append-child ${xid}`);
+                
+                const port = window.wanix.connect();
+                event.data.port.postMessage({wanix: port}, [port]); 
+                try {
+                    (new Function(await w.readText("#bundle/init.js")))();
+                } catch (e) {
+                    console.log(e);
+                    console.log("No bundle init.js found");
+                }   
+            }
+        });
+        
     </script>
 
-    <script src="/vscode/out/vs/loader.js"></script>
-    <script src="/vscode/out/vs/webPackagePaths.js"></script>
-    <script>
-        Object.keys(self.webPackagePaths).map(function (key, index) {
-            self.webPackagePaths[key] = `${window.location.origin}/vscode/modules/${key}/${self.webPackagePaths[key]}`;
-        });
-        require.config({
-            baseUrl: `${window.location.origin}/vscode/out`,
-            recordStats: true,
-            trustedTypesPolicy: window.trustedTypes?.createPolicy('amdLoader', {
-                createScriptURL(value) {
-                    return value;
-                }
-            }),
-            paths: self.webPackagePaths
-        });
-    </script>
-
-    <script src="/vscode/out/nls.messages.js"></script>
-    <script src="/vscode/out/vs/workbench/workbench.web.main.js"></script>
-    <script src="/vscode/out/vs/code/browser/workbench/workbench.js"></script>
 </body>
 </html>
