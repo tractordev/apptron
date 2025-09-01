@@ -11,6 +11,10 @@
         "workbench.startupEditor": "none"
     },
     "developmentOptions": {
-        "logLevel": 1
+        "logLevel": 3
+    },
+    "folderUri": {
+        "scheme": "wanix",
+        "path": "/"
     }
 }

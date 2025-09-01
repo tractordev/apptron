@@ -1,6 +1,6 @@
 
 import * as vscode from 'vscode';
-// import { HostFS } from './hostfs.js';
+import { WanixBridge } from './bridge.js';
 
 //@ts-ignore
 import * as duplex from "../duplex/duplex.min.js";
@@ -8,28 +8,26 @@ import * as duplex from "../duplex/duplex.min.js";
 declare const navigator: unknown;
 
 export async function activate(context: vscode.ExtensionContext) {
-	console.log('Apptron System extension activated');
-	// if (typeof navigator !== 'object') {	// do not run under node.js
-	// 	console.error("not running in browser");
-	// 	return;
-	// }
+	if (typeof navigator !== 'object') {	// do not run under node.js
+		console.error("not running in browser");
+		return;
+	}
+	console.log('Apptron system extension activated');
 
-	// const channel = new MessageChannel();
-	// self.postMessage({type: "_port", port: channel.port2}, [channel.port2]);
+	const channel = new MessageChannel();
+	self.postMessage({type: "_port", port: channel.port1}, [channel.port1]);
 
-	// const sess = new duplex.Session(new duplex.PortConn(channel.port1));
-	// const peer = new duplex.Peer(sess, new duplex.CBORCodec());
-	// peer.respond();
+	const bridge = new WanixBridge(channel.port2, "vm/1/fsys");
+	context.subscriptions.push(bridge);
 
-	// const fs = new HostFS(peer);
-	// context.subscriptions.push(fs);
-
-	// const terminal = createTerminal(peer);
-	// terminal.show();
-
+	bridge.ready.then((wfsys) => {
+		const terminal = createTerminal(wfsys);
+		context.subscriptions.push(terminal);
+		terminal.show();
+	});
 }
 
-function createTerminal(peer: any) {
+function createTerminal(wx: any) {
 	const writeEmitter = new vscode.EventEmitter<string>();
 	let channel: any = undefined;
 	const dec = new TextDecoder();
@@ -38,29 +36,19 @@ function createTerminal(peer: any) {
 		onDidWrite: writeEmitter.event,
 		open: () => {
 			(async () => {
-				const resp = await peer.call("vscode.Terminal");
-				channel = resp.channel;
-				const b = new Uint8Array(1024);
-				let gotEOF = false;
-				while (gotEOF === false) {
-				  const n = await channel.read(b);
-				  if (n === null) {
-					gotEOF = true;
-				  } else {
-					writeEmitter.fire(dec.decode(b.subarray(0, n)));
-				  }
+				const stream = await wx.openReadable("#console/data");
+				for await (const chunk of stream) {
+					writeEmitter.fire(dec.decode(chunk));
 				}
 			})();
 		},
 		close: () => {
-			if (channel) {
-				channel.close();
-			}
+			// if (channel) {
+			// 	channel.close();
+			// }
 		},
 		handleInput: (data: string) => {
-			if (channel) {
-				channel.write(enc.encode(data));
-			}
+			wx.appendFile("#console/data", data);
 		}
 	};
 	return vscode.window.createTerminal({ name: `Shell`, pty });
