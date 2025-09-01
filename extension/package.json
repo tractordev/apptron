@@ -11,7 +11,7 @@
     "Other", "Themes"
   ],
   "activationEvents": [
-    "*"
+    "onFileSystem:wanix"
   ],
   "browser": "./dist/web/extension.js",
   "scripts": {
