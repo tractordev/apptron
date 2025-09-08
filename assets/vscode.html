@@ -2,73 +2,117 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title></title>
-
-  <!-- Mobile tweaks -->
-  <meta name="mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-title" content="Code">
-  <link rel="apple-touch-icon" href="/vscode/code-192.png" />
-
-  <!-- Disable pinch zooming -->
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no">
-
-  <!-- Workbench Icon/Manifest/CSS -->
-  <link rel="icon" href="/vscode/favicon.ico" type="image/x-icon" />
-  <link rel="manifest" href="/vscode/manifest.json">
-  <link data-name="vs/workbench/workbench.web.main" rel="stylesheet" href="/vscode/out/vs/workbench/workbench.web.main.css">
-
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="./vscode/out/vs/workbench/workbench.web.main.css" />
   <style>
-    .quick-input-widget {
-        top: 35px !important;
+    #workbench\.parts\.sidebar > div.composite.title > div.title-actions > div > div > ul > li:last-child {
+        display: none;
+    }
+    /* use tab outline to connect to content area, box-shadow to add back right border */
+    div.tabs-container > div.tab.active.selected {
+        position:relative !important; 
+        z-index: 100 !important;
+        outline: 1px solid var(--vscode-tab-activeBackground) !important;
+        outline-offset: -1px !important;
+        box-shadow: 1px 0px 0 var(--tabs-border-bottom-color);
+    }
+    /* make vertical sash over the tab outline */
+    div.monaco-sash.vertical {
+        z-index: 101 !important;
+    }
+    /* hide "EXPLORER" label, takes up too much room */
+    #workbench\.parts\.sidebar > div.composite.title > div.title-label > h2 {
+      overflow: hidden;
+      margin-left: -4.5rem;
     }
   </style>
-
 </head>
-<body>
-    <!-- Startup (do not modify order of script tags!) -->
-    <script>
-        var xhr = new XMLHttpRequest();
-        xhr.open("GET", "/workbench.json", false);
-        xhr.send(null);
-
-        if (xhr.status === 200) {
-            var meta = document.createElement('meta');
-            meta.id = "vscode-workbench-web-configuration";
-            meta.setAttribute("data-settings", xhr.responseText);
-            document.head.appendChild(meta);
-        } else {
-            console.error("Fetching workbench config failed:", xhr.statusText);
-        }
-
-        window.addEventListener("message", (event) => {
-            if (event.data.port) {
-                console.log("port message:", event.data);
-                window.parent.postMessage(event.data, "*", [event.data.port]);
-            }
-        });
-    </script>
-
+<body style="margin:0;overflow:hidden;">
     <script src="/vscode/out/vs/loader.js"></script>
-    <script src="/vscode/out/vs/webPackagePaths.js"></script>
     <script>
-        Object.keys(self.webPackagePaths).map(function (key, index) {
-            self.webPackagePaths[key] = `${window.location.origin}/vscode/modules/${key}/${self.webPackagePaths[key]}`;
-        });
-        require.config({
-            baseUrl: `${window.location.origin}/vscode/out`,
-            recordStats: true,
-            trustedTypesPolicy: window.trustedTypes?.createPolicy('amdLoader', {
-                createScriptURL(value) {
-                    return value;
-                }
-            }),
-            paths: self.webPackagePaths
-        });
+        require.config({baseUrl: `${window.location.origin}/vscode/out`});
     </script>
-
     <script src="/vscode/out/nls.messages.js"></script>
     <script src="/vscode/out/vs/workbench/workbench.web.main.js"></script>
-    <script src="/vscode/out/vs/code/browser/workbench/workbench.js"></script>
+    <script>
+        const ch = new MessageChannel();
+        ch.port2.onmessage = (event) => {
+            if (event.data.port) {
+                console.log("port passed to parent:", event.data);
+                window.parent.postMessage(event.data, "*", [event.data.port]);
+            }
+        };
+        const url = new URL(window.location.href);
+        const scheme = url.protocol.replace(":", "");
+        require(['vs/workbench/workbench.web.main'], function (wb) {
+            const config = {
+                messagePorts: new Map([["progrium.apptron-system", ch.port1]]),
+                productConfiguration: {
+                    extensionEnabledApiProposals: {"progrium.apptron-system": ["ipc"]}
+                },
+                configurationDefaults: {
+                    "workbench.colorTheme": "Tractor Dark",
+                    "workbench.secondarySideBar.defaultVisibility": "hidden",
+                    "workbench.statusBar.visible": false,
+                    "workbench.layoutControl.enabled": false,
+                    "window.commandCenter": false,
+                    "workbench.startupEditor": "none",
+                    // "workbench.activityBar.location": "hidden",
+                    "workbench.tips.enabled": false,
+                    "workbench.welcomePage.walkthroughs.openOnInstall": false,
+                    "workbench.colorTheme": "Tractor Dark",
+                    "problems.visibility": false,
+                    "editor.minimap.enabled": false,
+                    "terminal.integrated.tabs.showActions": false
+                },
+                developmentOptions: {
+                    logLevel: 0
+                },
+                additionalBuiltinExtensions: [
+                    {
+                        scheme: scheme,
+                        authority: url.host,
+                        path: "/system"
+                    },{
+                        scheme: scheme,
+                        authority: url.host,
+                        path: "/preview"
+                    }
+                ],
+                profile: {
+                    name: "Default",
+                    contents: JSON.stringify({
+                        globalState: JSON.stringify({
+                            storage: {
+                                "workbench.explorer.views.state.hidden": "[{\"id\":\"outline\",\"isHidden\":true},{\"id\":\"timeline\",\"isHidden\":true},{\"id\":\"workbench.explorer.openEditorsView\",\"isHidden\":true},{\"id\":\"workbench.explorer.emptyView\",\"isHidden\":false},{\"id\":\"npm\",\"isHidden\":true}]",
+                                "workbench.panel.pinnedPanels": "[{\"id\":\"workbench.panel.markers\",\"pinned\":false,\"visible\":false,\"order\":0},{\"id\":\"workbench.panel.output\",\"pinned\":false,\"visible\":false,\"order\":1},{\"id\":\"workbench.panel.repl\",\"pinned\":true,\"visible\":false,\"order\":2},{\"id\":\"terminal\",\"pinned\":true,\"visible\":false,\"order\":3},{\"id\":\"workbench.panel.testResults\",\"pinned\":true,\"visible\":false,\"order\":3},{\"id\":\"refactorPreview\",\"pinned\":true,\"visible\":false}]",
+                                "workbench.activity.pinnedViewlets2": JSON.stringify([
+                                    { "id": "workbench.view.explorer", "pinned": true, "visible": true, "order": 0 },
+                                    { "id": "workbench.view.search", "pinned": true, "visible": true, "order": 1 },
+                                    { "id": "workbench.view.scm", "pinned": false, "visible": false, "order": 2 },
+                                    { "id": "workbench.view.debug", "pinned": false, "visible": false, "order": 3 },
+                                    { "id": "workbench.view.extensions", "pinned": false, "visible": false, "order": 4 }
+                                ])
+                            }
+                        })
+                    })
+                },
+                folderUri: { scheme: "wanix", path: "/" },
+            };
+
+            wb.create(window.document.body, {
+                ...config,
+                workspaceProvider: {
+                    trusted: true,
+                    workspace: { folderUri: wb.URI.revive(config.folderUri) },
+                    async open(workspace, options) {
+                        console.log("openFolder requested", workspace);
+                        return true;
+                    }
+                }
+            });
+        });
+    </script>
+
 </body>
 </html>

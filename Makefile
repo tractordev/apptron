@@ -1,4 +1,4 @@
-VSCODE_URL	?= https://github.com/progrium/vsclone/releases/download/v0.2/vscode-web.zip
+VSCODE_URL	?= https://github.com/progrium/vscode-web/releases/download/v1/vscode-web-1.103.2.zip
 DOCKER_CMD 	?= $(shell command -v podman || command -v docker)
 
 all: assets/vscode router/node_modules extension/dist session/bundle.tgz assets/wanix.wasm
@@ -23,7 +23,10 @@ clean:
 
 assets/vscode:
 	curl -sL $(VSCODE_URL) -o assets/vscode.zip
-	unzip assets/vscode.zip -d assets
+	mkdir -p .tmp
+	unzip assets/vscode.zip -d .tmp
+	mv .tmp/dist/vscode assets/vscode
+	rm -rf .tmp
 	rm assets/vscode.zip
 
 extension/dist: extension/node_modules
