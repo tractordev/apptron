@@ -2,7 +2,7 @@
 
 mount -t proc proc /proc
 mount -t sysfs sysfs /sys
-mount -t cgroup2 cgroup2 /sys/fs/cgroup
+#mount -t cgroup2 cgroup2 /sys/fs/cgroup
 mkdir -p /dev/pts
 mount -t devpts devpts /dev/pts
 
@@ -13,18 +13,18 @@ udhcpc -i eth0 -s /bin/post-dhcp
 echo "nameserver 8.8.8.8" >> /etc/resolv.conf
 
 # this is all for podman/containers
-mkdir -p /mnt/ram /var/lib/containers
-mount -t tmpfs -o size=4G tmpfs /mnt/ram
-dd if=/dev/zero of=/mnt/ram/containers.img bs=1M count=0 seek=3072 > /dev/null 2>&1
-mkfs.ext4 -F -L containers /mnt/ram/containers.img > /dev/null 2>&1
-losetup -fP /mnt/ram/containers.img
-mount /dev/loop0 /var/lib/containers
-mount -t tmpfs -o mode=0755,size=64M tmpfs /run
-mkdir -p /dev/shm
-mount -t tmpfs -o mode=1777,size=64M tmpfs /dev/shm 2>/dev/null
-truncate -s 8M /dev/shm/podman.locks
-mount -t tmpfs -o mode=1777,size=4G tmpfs /tmp
-mount -o bind /tmp /var/tmp
+# mkdir -p /mnt/ram /var/lib/containers
+# mount -t tmpfs -o size=4G tmpfs /mnt/ram
+# dd if=/dev/zero of=/mnt/ram/containers.img bs=1M count=0 seek=3072 > /dev/null 2>&1
+# mkfs.ext4 -F -L containers /mnt/ram/containers.img > /dev/null 2>&1
+# losetup -fP /mnt/ram/containers.img
+# mount /dev/loop0 /var/lib/containers
+# mount -t tmpfs -o mode=0755,size=64M tmpfs /run
+# mkdir -p /dev/shm
+# mount -t tmpfs -o mode=1777,size=64M tmpfs /dev/shm 2>/dev/null
+# truncate -s 8M /dev/shm/podman.locks
+# mount -t tmpfs -o mode=1777,size=4G tmpfs /tmp
+# mount -o bind /tmp /var/tmp
 
 
 echo "Welcome to Apptron!"
