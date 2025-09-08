@@ -1,5 +1,4 @@
 import {
-	CancellationToken,
 	Disposable,
 	Event,
 	EventEmitter,
@@ -102,8 +101,6 @@ export class WanixBridge implements FileSystemProvider, /*FileSearchProvider, Te
 		this.disposable?.dispose();
 	}
 
-	// root = new Directory(Uri.parse('memfs:/'), '');
-
 	// --- manage file metadata
 
 	stat(uri: Uri): Thenable<FileStat> {
@@ -113,7 +110,15 @@ export class WanixBridge implements FileSystemProvider, /*FileSearchProvider, Te
 	async _stat(uri: Uri): Promise<FileStat> {
 		if (!this.wfsys) {
 			if (uri.path !== "/") {
-				throw FileSystemError.FileNotFound(uri);
+				if (uri.path.includes(".vscode")) {
+					throw FileSystemError.FileNotFound(uri);
+				}
+				return new File(uri, {
+					IsDir: false,
+					Name: this._basename(uri.path),
+					ModTime: 0,
+					Size: 0,
+				});
 			}
 			// todo: watch root to force reload?
 			return new Directory(uri, {
