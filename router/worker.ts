@@ -19,36 +19,6 @@ export default {
             url.pathname === "/bundle.tgz") {
             return getContainer(env.session).fetch(req);
         }
-        if (url.pathname === "/workbench.json") {
-            const resp = await env.assets.fetch(req);
-            const workbench = await resp.json();
-            workbench.additionalBuiltinExtensions = [{
-                scheme: url.protocol.replace(":", ""),
-                authority: (env.LOCAL) ? "localhost:8787" : url.host,
-                path: "/system"
-            }];
-            workbench.profile = {
-                name: "Default",
-                contents: JSON.stringify({
-                    "globalState": JSON.stringify({
-                        "storage": {
-                            "workbench.activity.pinnedViewlets2": JSON.stringify([
-                                { "id": "workbench.view.explorer", "pinned": true, "visible": true, "order": 0 },
-                                { "id": "workbench.view.search", "pinned": false, "visible": false, "order": 1 },
-                                { "id": "workbench.view.scm", "pinned": false, "visible": false, "order": 2 },
-                                { "id": "workbench.view.debug", "pinned": true, "visible": true, "order": 3 },
-                                { "id": "workbench.view.extensions", "pinned": false, "visible": false, "order": 4 }
-                            ])
-                        }
-                    })
-                })
-            };
-            return new Response(JSON.stringify(workbench), {
-                headers: {
-                    "content-type": "application/json",
-                },
-            });
-        }
         return env.assets.fetch(req);
     },
 };
