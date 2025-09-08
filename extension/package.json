@@ -8,10 +8,17 @@
     "vscode": "^1.66.0"
   },
   "categories": [
-    "Other", "Themes"
+    "Other",
+    "Themes"
+  ],
+  "enabledApiProposals": [
+    "ipc"
   ],
   "activationEvents": [
     "onFileSystem:wanix"
+  ],
+  "extensionKind": [
+    "web"
   ],
   "browser": "./dist/web/extension.js",
   "scripts": {
@@ -22,7 +29,7 @@
   "devDependencies": {
     "@types/vscode": "^1.90.0",
     "@vscode/test-web": "^0.0.54",
-    "esbuild": "^0.21.5",
+    "esbuild": "^0.25.9",
     "typescript": "^5.4.5"
   },
   "contributes": {
@@ -33,5 +40,8 @@
         "path": "./themes/Tractor-color-theme.json"
       }
     ]
+  },
+  "dependencies": {
+    "@progrium/duplex": "^0.2.1"
   }
 }

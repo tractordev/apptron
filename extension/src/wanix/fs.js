@@ -1,5 +1,4 @@
-//@ts-ignore
-import * as duplex from "../duplex/duplex.min.js";
+import * as duplex from "@progrium/duplex";
 
 export class WanixFS {
     constructor(port) {

@@ -14,7 +14,7 @@ async function main() {
 		sourcesContent: false,
 		platform: 'browser',
 		outdir: 'dist/web',
-		external: ['vscode'],
+		external: ['vscode', 'util', 'worker_threads'],
 		logLevel: 'silent',
 		// Node.js global to browser globalThis
 		define: {
