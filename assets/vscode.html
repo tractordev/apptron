@@ -5,9 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="./vscode/out/vs/workbench/workbench.web.main.css" />
   <style>
-    #workbench\.parts\.sidebar > div.composite.title > div.title-actions > div > div > ul > li:last-child {
+    /* hide "..." in explorer because its not needed and takes up too much room */
+    /* #workbench\.parts\.sidebar > div.composite.title > div.title-actions > div > div > ul > li:last-child {
         display: none;
-    }
+    } */
     /* use tab outline to connect to content area, box-shadow to add back right border */
     div.tabs-container > div.tab.active.selected {
         position:relative !important; 
@@ -21,10 +22,10 @@
         z-index: 101 !important;
     }
     /* hide "EXPLORER" label, takes up too much room */
-    #workbench\.parts\.sidebar > div.composite.title > div.title-label > h2 {
+    /* #workbench\.parts\.sidebar > div.composite.title > div.title-label > h2 {
       overflow: hidden;
       margin-left: -4.5rem;
-    }
+    } */
   </style>
 </head>
 <body style="margin:0;overflow:hidden;">
