@@ -4,6 +4,10 @@ DOCKER_CMD 	?= $(shell command -v podman || command -v docker)
 all: assets/vscode router/node_modules extension/dist session/bundle.tgz assets/wanix.wasm
 .PHONY: all
 
+dev: all
+	wrangler dev
+.PHONY: dev
+
 deploy: all
 	wrangler deploy
 .PHONY: deploy
