@@ -49,4 +49,7 @@ assets/wanix.wasm:
 	$(DOCKER_CMD) rm -f apptron-wanix
 	$(DOCKER_CMD) pull --platform linux/amd64 ghcr.io/tractordev/wanix:runtime
 	$(DOCKER_CMD) create --name apptron-wanix --platform linux/amd64 ghcr.io/tractordev/wanix:runtime
-	$(DOCKER_CMD) cp apptron-wanix:/ assets/
+	$(DOCKER_CMD) cp apptron-wanix:/wanix.min.js assets/wanix.min.js
+	$(DOCKER_CMD) cp apptron-wanix:/wanix.js assets/wanix.js
+	$(DOCKER_CMD) cp apptron-wanix:/wanix.debug.wasm assets/wanix.debug.wasm
+	$(DOCKER_CMD) cp apptron-wanix:/wanix.wasm assets/wanix.wasm
