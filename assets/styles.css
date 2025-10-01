@@ -1,0 +1,201 @@
+* {
+    box-sizing: border-box;
+}
+
+:root {
+    --yellow: #EFAE2D;
+
+    --gray-900: #191919;
+    --gray-800: #212121;
+    --gray-700: #262626;
+    --gray-600: #2D2D2D;
+    --gray-500: #3D3D3D;
+    --gray-400: #4D4D4D;
+    --gray-300: #666666;
+    --gray-200: #808080;
+    --gray-100: #A6A6A6;
+    --gray-000: #BDBDBD;
+
+    /* HANKO STYLES, DON'T RENAME ---------------------------*/
+    /* Color Scheme */
+    --color: #fff;
+    --color-shade-1: #6F6F6F;
+    --color-shade-2: #8C8C8C;
+
+    --brand-color: #EFAE2D;
+    --brand-color-shade-1: #D79D2A;
+    --brand-contrast-color: var(--gray-900);
+
+    --background-color: var(--gray-600);
+    --error-color: #EA6962;
+    --link-color: #20B574;
+
+    /* Font Styles */
+    --font-weight: 400;
+    --font-size: 13px;
+    --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Fira Sans", "Droid Sans", "Helvetica Neue", Arial, sans-serif;
+
+    /* Border Styles */
+    --border-radius: 2px;
+    --border-style: solid;
+    --border-width: 1px;
+
+    /* Item Styles */
+    --item-height: 34px;
+    --item-margin: 0.5rem 0;
+
+    /* Container Styles */
+    --container-padding: 30px;
+    --container-max-width: 410px;
+
+    /* Headline Styles */
+    --headline1-font-size: 24px;
+    --headline1-font-weight: 600;
+    --headline1-margin: 0 0 1rem;
+
+    --headline2-font-size: 16px;
+    --headline2-font-weight: 600;
+    --headline2-margin: 1rem 0 0.5rem;
+
+    /* Divider Styles */
+    --divider-padding: 0 42px;
+    --divider-visibility: visible;
+
+    /* Link Styles */
+    --link-text-decoration: none;
+    --link-text-decoration-hover: underline;
+
+    /* Input Styles */
+    --input-min-width: 14em;
+
+    /* Button Styles */
+    --button-min-width: max-content;
+    /* END HANKO STYLES ---------------------------*/
+}
+
+html, body {
+    font-family: var(--font-family);
+    color: #fff;
+    background-color: var(--gray-700);
+    font-size: var(--font-size);
+}
+
+/* DASHBOARD */
+
+body { margin: 0; }
+.container {
+  padding: 2rem;
+}
+
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+header h1 {
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+.create-btn {
+  background: #f6a623;
+  border: none;
+  padding: 0.6rem 1rem;
+  border-radius: var(--border-radius);
+  font-weight: bold;
+  cursor: pointer;
+  color: #000;
+  transition: background 0.2s ease;
+}
+.create-btn:hover {
+  background: #ffb733;
+}
+
+.projects-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+}
+
+.project-card {
+  background: var(--gray-600);
+  border: 1px solid var(--gray-500);
+  padding: 1.2rem;
+  border-radius: var(--border-radius);
+  flex: 0 1 calc((100% - 1.5rem) / 2); /* two-column layout */
+  min-width: 250px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.project-card .title {
+  margin: 0 0 0.3rem;
+  font-size: 1.1rem;
+}
+
+.project-card .desc {
+  margin: 0 0 0.8rem;
+  font-size: 0.9rem;
+  color: var(--gray-100);
+}
+
+.project-card .time {
+  font-size: 0.8rem;
+  color: var(--gray-100);
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.ellipsis-btn {
+  background: none;
+  border: none;
+  color: #aaa;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+
+.ellipsis-btn:hover {
+  color: #fff;
+}
+
+/* HEADER BAR */
+    #header-bar {
+        height: 35px;
+        box-sizing: border-box;
+        z-index: 1000;
+        background-color: #212121;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.5rem 1rem;
+        color: #c5c5c5;
+        flex-shrink: 0;
+    }
+    #header-bar #logo {
+        color: var(--yellow);
+    }
+    #header-bar svg {
+        height: 1.2rem;
+        width: auto;
+    }
+    #header-bar #nav-links {
+        display: flex;
+        gap: 2rem;
+    }
+    #header-bar a, #header-bar button {
+        color: #c5c5c5;
+    }
+    #header-bar #nav-links button {
+        all: unset;
+        cursor: pointer;
+    }
