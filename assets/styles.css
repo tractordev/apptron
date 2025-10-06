@@ -16,13 +16,13 @@
     --gray-100: #A6A6A6;
     --gray-000: #BDBDBD;
 
-    /* HANKO STYLES, DON'T RENAME ---------------------------*/
+    /* HANKO DEFAULT STYLES, DON'T RENAME ---------------------------*/
     /* Color Scheme */
     --color: #fff;
     --color-shade-1: #6F6F6F;
     --color-shade-2: #8C8C8C;
 
-    --brand-color: #EFAE2D;
+    --brand-color: var(--yellow);
     --brand-color-shade-1: #D79D2A;
     --brand-contrast-color: var(--gray-900);
 
@@ -70,7 +70,16 @@
 
     /* Button Styles */
     --button-min-width: max-content;
-    /* END HANKO STYLES ---------------------------*/
+    /* END HANKO DEFAULT STYLES ---------------------------*/
+}
+
+hanko-profile::part(headline1) {
+  font-size: 16px;
+  margin-bottom: 0px;
+  margin-top: 1.75rem;
+}
+.hanko_paragraph {
+  margin-top: 0px;
 }
 
 html, body {
@@ -100,7 +109,7 @@ header h1 {
 }
 
 .create-btn {
-  background: #f6a623;
+  background: var(--yellow);
   border: none;
   padding: 0.6rem 1rem;
   border-radius: var(--border-radius);
