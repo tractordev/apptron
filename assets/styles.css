@@ -3,7 +3,8 @@
 }
 
 :root {
-    --yellow: #EFAE2D;
+    --yellow: #F0B80E;
+    --yellow-shade: #D49B0D;
 
     --gray-900: #191919;
     --gray-800: #212121;
@@ -23,7 +24,7 @@
     --color-shade-2: #8C8C8C;
 
     --brand-color: var(--yellow);
-    --brand-color-shade-1: #D79D2A;
+    --brand-color-shade-1: var(--yellow-shade);
     --brand-contrast-color: var(--gray-900);
 
     --background-color: var(--gray-600);
@@ -119,7 +120,7 @@ header h1 {
   transition: background 0.2s ease;
 }
 .create-btn:hover {
-  background: #ffb733;
+  background: var(--yellow-shade);
 }
 
 .projects-grid {
