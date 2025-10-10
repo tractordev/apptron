@@ -179,33 +179,114 @@ header h1 {
 }
 
 /* HEADER BAR */
-    #header-bar {
-        height: 35px;
-        box-sizing: border-box;
-        z-index: 1000;
-        background-color: #212121;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 0.5rem 1rem;
-        color: #c5c5c5;
-        flex-shrink: 0;
-    }
-    #header-bar #logo {
-        color: var(--yellow);
-    }
-    #header-bar svg {
-        height: 1.2rem;
-        width: auto;
-    }
-    #header-bar #nav-links {
-        display: flex;
-        gap: 2rem;
-    }
-    #header-bar a, #header-bar button {
-        color: #c5c5c5;
-    }
-    #header-bar #nav-links button {
-        all: unset;
-        cursor: pointer;
-    }
+#header-bar {
+    height: 35px;
+    box-sizing: border-box;
+    z-index: 1000;
+    background-color: #212121;
+    display: flex !important; /* override the web component loading display: none */
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 1rem;
+    color: #c5c5c5;
+    flex-shrink: 0;
+}
+#header-bar #logo {
+    color: var(--yellow);
+}
+#header-bar svg {
+    height: 1.2rem;
+    width: auto;
+}
+#header-bar #nav-links {
+    display: flex;
+    gap: 2rem;
+}
+#header-bar a, #header-bar button {
+    color: #c5c5c5;
+}
+#header-bar #nav-links button {
+    all: unset;
+    cursor: pointer;
+}
+
+/* Dialog Styles */
+dialog {
+    background-color: var(--gray-600);
+    border: 1px solid var(--gray-500);
+    border-radius: var(--border-radius);
+    max-width: 500px;
+    width: 90%;
+    padding: 0;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    color: #fff;
+    z-index: 1000;
+    pointer-events: auto !important;
+}
+
+dialog::backdrop {
+    background-color: rgba(0, 0, 0, 0.6);
+}
+
+.dialog-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem;
+    border-bottom: 1px solid var(--gray-500);
+}
+
+.dialog-header h2 {
+    margin: 0;
+    font-size: 1.25rem;
+    color: #fff;
+}
+
+.dialog-close {
+    background: none;
+    border: none;
+    color: var(--gray-100);
+    font-size: 2rem;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.dialog-close:hover {
+    color: #fff;
+}
+
+.dialog-body {
+    padding: 1.5rem;
+}
+
+.dialog-body p {
+    margin-top: 0;
+    color: var(--gray-100);
+}
+
+.auth-container {
+    margin-top: 1.5rem;
+}
+
+
+#logout {
+  display: none !important;
+}
+#account {
+  display: none !important;
+}
+.signedin #account {
+  display: block !important;
+}
+.signedin #logout {
+  display: block !important;
+}
+.signedin #signin {
+  display: none !important;
+}
