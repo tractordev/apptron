@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Apptron</title>
   <link rel="stylesheet" href="styles.css" />
   <script src="topbar/topbar.js" type="module"></script>
@@ -11,17 +11,24 @@
   <div style="height: 35px;">
     <apptron-topbar></apptron-topbar>
   </div>
+
   <div class="container">
     <header>
       <h1>Projects</h1>
-      <button class="create-btn">Create Project</button>
+      <button class="create-btn" type="button">Create Project</button>
     </header>
 
     <div class="projects-grid">
       <div class="project-card">
         <div class="card-header">
-            <h2 class="title">taragen</h2>
-            <button class="ellipsis-btn">⋮</button>
+          <h2 class="title">taragen</h2>
+          <button class="ellipsis-btn" type="button"
+                  aria-haspopup="menu" aria-controls="menu-1"
+                  popovertarget="menu-1" popovertargetaction="toggle">⋮</button>
+          <div id="menu-1" class="card-menu" popover role="menu" aria-label="Project menu">
+            <button class="menu-item" role="menuitem" data-action="edit">Edit Project Settings</button>
+            <button class="menu-item danger" role="menuitem" data-action="delete">Delete Project</button>
+          </div>
         </div>
         <p class="desc">Static site generator written in Go</p>
         <span class="time">24 hours ago</span>
@@ -29,8 +36,14 @@
 
       <div class="project-card">
         <div class="card-header">
-            <h2 class="title">vsclone</h2>
-            <button class="ellipsis-btn">⋮</button>
+          <h2 class="title">vsclone</h2>
+          <button class="ellipsis-btn" type="button"
+                  aria-haspopup="menu" aria-controls="menu-2"
+                  popovertarget="menu-2" popovertargetaction="toggle">⋮</button>
+          <div id="menu-2" class="card-menu" popover role="menu" aria-label="Project menu">
+            <button class="menu-item" role="menuitem" data-action="edit">Edit Project Settings</button>
+            <button class="menu-item danger" role="menuitem" data-action="delete">Delete Project</button>
+          </div>
         </div>
         <p class="desc">Minimal VSCode clone starter using Go</p>
         <span class="time">1 week ago</span>
@@ -38,8 +51,14 @@
 
       <div class="project-card">
         <div class="card-header">
-            <h2 class="title">topframe</h2>
-            <button class="ellipsis-btn">⋮</button>
+          <h2 class="title">topframe</h2>
+          <button class="ellipsis-btn" type="button"
+                  aria-haspopup="menu" aria-controls="menu-3"
+                  popovertarget="menu-3" popovertargetaction="toggle">⋮</button>
+          <div id="menu-3" class="card-menu" popover role="menu" aria-label="Project menu">
+            <button class="menu-item" role="menuitem" data-action="edit">Edit Project Settings</button>
+            <button class="menu-item danger" role="menuitem" data-action="delete">Delete Project</button>
+          </div>
         </div>
         <p class="desc">Local webpage screen overlay for customizing your computing experience</p>
         <span class="time">2 days ago</span>
@@ -47,8 +66,14 @@
 
       <div class="project-card">
         <div class="card-header">
-            <h2 class="title">taragen</h2>
-            <button class="ellipsis-btn">⋮</button>
+          <h2 class="title">taragen</h2>
+          <button class="ellipsis-btn" type="button"
+                  aria-haspopup="menu" aria-controls="menu-4"
+                  popovertarget="menu-4" popovertargetaction="toggle">⋮</button>
+          <div id="menu-4" class="card-menu" popover role="menu" aria-label="Project menu">
+            <button class="menu-item" role="menuitem" data-action="edit">Edit Project Settings</button>
+            <button class="menu-item danger" role="menuitem" data-action="delete">Delete Project</button>
+          </div>
         </div>
         <p class="desc">Static site generator written in Go</p>
         <span class="time">Updated 24 hours ago</span>
@@ -56,8 +81,14 @@
 
       <div class="project-card">
         <div class="card-header">
-            <h2 class="title">progrium.xyz</h2>
-            <button class="ellipsis-btn">⋮</button>
+          <h2 class="title">progrium.xyz</h2>
+          <button class="ellipsis-btn" type="button"
+                  aria-haspopup="menu" aria-controls="menu-5"
+                  popovertarget="menu-5" popovertargetaction="toggle">⋮</button>
+          <div id="menu-5" class="card-menu" popover role="menu" aria-label="Project menu">
+            <button class="menu-item" role="menuitem" data-action="edit">Edit Project Settings</button>
+            <button class="menu-item danger" role="menuitem" data-action="delete">Delete Project</button>
+          </div>
         </div>
         <p class="desc">Static site generator written in Go</p>
         <span class="time">Updated 24 hours ago</span>
