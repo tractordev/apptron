@@ -290,3 +290,32 @@ dialog::backdrop {
 .signedin #signin {
   display: none !important;
 }
+
+/* Dashboard popover menu */
+.card-menu[popover] {
+  color: inherit;
+  font: inherit;
+  min-width: 220px;
+  padding: 0.5rem;
+  background: var(--gray-600);
+  border: 1px solid var(--gray-500);
+  border-radius: var(--border-radius);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.45);
+}
+
+/* Menu items */
+.card-menu .menu-item {
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 1rem;
+  background: transparent;
+  border: 0;
+  border-radius: var(--border-radius);
+}
+.card-menu .menu-item:hover { background: var(--gray-500); }
+.card-menu .menu-item.danger { color: #ffb4b4; }
+.card-menu .menu-item.danger:hover { background: rgba(255, 80, 80, 0.12); }
