@@ -183,13 +183,17 @@ header h1 {
     height: 35px;
     box-sizing: border-box;
     z-index: 1000;
-    background-color: #212121;
+    background-color: var(--gray-800);
     display: flex !important; /* override the web component loading display: none */
     justify-content: space-between;
     align-items: center;
     padding: 0.5rem 1rem;
-    color: #c5c5c5;
+    color: var(--gray-100);
     flex-shrink: 0;
+}
+#header-bar a {
+  text-decoration: none;
+  color: inherit;
 }
 #header-bar #logo {
     color: var(--yellow);
@@ -197,14 +201,14 @@ header h1 {
 #header-bar svg {
     height: 1.2rem;
     width: auto;
+    vertical-align: text-bottom;
+    color: inherit;
 }
 #header-bar #nav-links {
     display: flex;
     gap: 2rem;
 }
-#header-bar a, #header-bar button {
-    color: #c5c5c5;
-}
+
 #header-bar #nav-links button {
     all: unset;
     cursor: pointer;
@@ -215,9 +219,7 @@ dialog {
     background-color: var(--gray-600);
     border: 1px solid var(--gray-500);
     border-radius: var(--border-radius);
-    max-width: 500px;
-    width: 90%;
-    padding: 0;
+    padding: 1rem;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
     color: #fff;
     z-index: 1000;
@@ -232,14 +234,13 @@ dialog::backdrop {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 1.5rem;
-    border-bottom: 1px solid var(--gray-500);
+    padding: 1rem 1rem 0 1rem;
 }
 
+/* this should match the hanko h1 that is used in the sign in dialog header */
 .dialog-header h2 {
-    margin: 0;
-    font-size: 1.25rem;
-    color: #fff;
+  margin: 0;
+  font-size: 24px;
 }
 
 .dialog-close {
@@ -255,6 +256,7 @@ dialog::backdrop {
     display: flex;
     align-items: center;
     justify-content: center;
+    margin-left: auto;
 }
 
 .dialog-close:hover {
@@ -262,18 +264,17 @@ dialog::backdrop {
 }
 
 .dialog-body {
-    padding: 1.5rem;
+    padding: 0 1rem;
 }
 
 .dialog-body p {
     margin-top: 0;
     color: var(--gray-100);
 }
-
+/* otherwise there's too much space between the close button and the dialog contents... */
 .auth-container {
-    margin-top: 1.5rem;
+  margin-top: -1rem;
 }
-
 
 #logout {
   display: none !important;
