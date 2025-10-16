@@ -1,5 +1,9 @@
 {
   "dependencies": {
-    "@cloudflare/containers": "^0.0.25"
+    "@cloudflare/containers": "^0.0.25",
+    "modern-tar": "^0.5.4"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20251011.0"
   }
 }
