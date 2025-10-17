@@ -26,3 +26,7 @@ name = "session"
 [[migrations]]
 new_sqlite_classes = [ "Session" ]
 tag = "v1"
+
+[[r2_buckets]]
+binding = "bucket"
+bucket_name = "apptron-dev"

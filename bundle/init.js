@@ -1,7 +1,6 @@
-(async () => {
-    console.log("running apptron init.js");
-    window.makeScreen();
-    const w = window.wanix.instance;        
+export default async (w) => {
+    console.log("running new apptron init.js");
+    window.makeScreen();   
     const vm = (await w.readText("vm/new/default")).trim();
     await w.writeFile("task/1/ctl", `bind #console/data1 vm/${vm}/ttyS0`);
     await w.writeFile("task/1/ctl", `bind . vm/${vm}/fsys`);
@@ -17,9 +16,9 @@
         `rootflags=trans=virtio,version=9p2000.L,aname=vm/${vm}/fsys,cache=none`,
     ];
     const ctlcmd = ["start", "-append", `'${cmdline.join(" ")}'`];
-    if (window.wanix.config.network) {
+    if (w.config.network) {
         ctlcmd.push("-netdev");
-        ctlcmd.push(`user,type=virtio,relay_url=${window.wanix.config.network}`);
+        ctlcmd.push(`user,type=virtio,relay_url=${w.config.network}`);
     }
     await w.writeFile(`vm/${vm}/ctl`, ctlcmd.join(" "));
-})();
+}
