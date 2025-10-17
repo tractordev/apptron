@@ -19,6 +19,7 @@ export async function activate(context: vscode.ExtensionContext) {
 	port.postMessage({type: "_port", port: channel.port1}, [channel.port1]);
 
 	bridge.ready.then((wfsys) => {
+		console.log("bridge ready");
 		const terminal = createTerminal(wfsys);
 		context.subscriptions.push(terminal);
 		terminal.show();

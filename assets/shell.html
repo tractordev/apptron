@@ -54,13 +54,13 @@
 </head>
 <body>
 <script type="module">
-    import { Wanix } from "/wanix.js";
+    import { WanixRuntime } from "/wanix.js";
     
     const queryParams = new URLSearchParams(window.location.search);
-    const w = new Wanix({ 
+    const w = new WanixRuntime({ 
         helpers: true, 
         bundle: queryParams.get('bundle') || "/bundle.tgz",
-        wasm: queryParams.get('wasm') || "/wanix.debug.wasm",
+        wasm: queryParams.get('wasm') || "/wanix.wasm",
         network: queryParams.get('network') || "wss://apptron.dev/x/net"
     });
     

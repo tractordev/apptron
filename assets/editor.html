@@ -43,13 +43,13 @@
         allow="clipboard-read; clipboard-write; cross-origin-isolated"
         sandbox="allow-scripts allow-same-origin allow-forms allow-modals allow-popups allow-presentation allow-popups-to-escape-sandbox"></iframe>
     <script type="module">
-        import { Wanix } from "/wanix.js";
+        import { WanixRuntime } from "/wanix.js";
         
         const queryParams = new URLSearchParams(window.location.search);
-        const w = new Wanix({ 
+        const w = new WanixRuntime({ 
             helpers: true, 
             bundle: queryParams.get('bundle') || "/bundle.tgz",
-            wasm: queryParams.get('wasm') || "/wanix.debug.wasm",
+            wasm: queryParams.get('wasm') || "/wanix.wasm",
             network: queryParams.get('network') || "wss://apptron.dev/x/net"
         });
         
@@ -60,11 +60,18 @@
                 // const xid = (await w.readText("web/dom/new/xterm")).trim();
                 // await w.writeFile("task/1/ctl", `bind #console/data web/dom/${xid}/data`);
                 // await w.writeFile("web/dom/body/ctl", `append-child ${xid}`);
-                
-                const port = window.wanix.connect();
+                await new Promise(resolve => setTimeout(resolve, 1000));
+
+                const port = w.createPort();
+                console.log("port", port);
                 event.data.port.postMessage({wanix: port}, [port]); 
+                
                 try {
-                    (new Function(await w.readText("#bundle/init.js")))();
+                    const initJS = await w.readText("#bundle/init.js");
+                    const blob = new Blob([initJS], { type: 'text/javascript' });
+                    const initUrl = URL.createObjectURL(blob);
+                    const initModule = await import(initUrl);
+                    await initModule.default(w);
                 } catch (e) {
                     console.log(e);
                     console.log("No bundle init.js found");
