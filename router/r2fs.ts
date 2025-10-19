@@ -1,4 +1,3 @@
-import { R2Object } from '@cloudflare/workers-types';
 import { createTarDecoder } from 'modern-tar';
 
 const MAX_RETRY_DELAY = 1000; // Cap retry delay
@@ -46,6 +45,11 @@ export async function handle(req, env, basepath="") {
 }
 
 export async function handlePatch(req, env, key) {
+    if (isAttr(key)) {
+        //return new Response("Attributes cannot be patched\n", { status: 400 });
+        return new Response("NoOp\n", {status: 200});
+    }
+
     let customMetadata = {};
     
     if (req.headers.get("Content-Type")?.includes("application/x-tar")) {
@@ -144,6 +148,27 @@ export async function handlePatch(req, env, key) {
 
 export async function handlePut(req, env, key, path) {
     let customMetadata = {};
+    let attrKey = undefined;
+    if (isAttr(key)) {
+        [key, attrKey] = splitAttr(key);
+        const object = await env.bucket.get(key);
+        if (object === null) {
+            return new Response("Object Not Found\n", { status: 404 });
+        }
+        customMetadata = object.customMetadata || {};
+        customMetadata["Change-Timestamp"] = Math.floor(Date.now() / 1000).toString();
+        const attrValue = new TextDecoder().decode(await req.arrayBuffer());
+        console.log("Attribute Key: " + attrKey);
+        console.log("Attribute Value: " + attrValue);
+        customMetadata["Attribute-" + attrKey] = attrValue;
+        console.log("Writing metadata: " + JSON.stringify(customMetadata));
+        await env.bucket.put(key, object.body, {
+            httpMetadata: object.httpMetadata || {},
+            customMetadata,
+        });
+        return new Response("OK\n");
+    }
+
     headersToMetadata(req.headers, customMetadata);
 
     if (!await compareAndSwap(env.bucket, key, async (object) => {
@@ -184,6 +209,17 @@ export async function handlePut(req, env, key, path) {
 }
 
 export async function handleHead(req, env, key, basepath) {
+    let attrKey = undefined;
+    if (isAttr(key)) {
+        if (isAttrs(key)) {
+            return new Response(null, {
+                status: 200,
+                headers: {"Content-Type": "application/x-directory"},
+            });
+        }
+        [key, attrKey] = splitAttr(key);
+    }
+
     const object = await env.bucket.get(key, {
         onlyIf: req.headers,
         range: req.headers,
@@ -193,6 +229,18 @@ export async function handleHead(req, env, key, basepath) {
         return new Response("Object Not Found\n", { status: 404 });
     }
 
+    // ATTRIBUTES
+    if (attrKey) {
+        if (object.customMetadata["Attribute-" + attrKey] === undefined) {
+            console.log("Attribute Not Found: " + attrKey);
+            return new Response("Attribute Not Found\n", { status: 404 });
+        }
+        return new Response(null, {
+            status: 200,
+            headers: {"Content-Type": "plain/text"},
+        });
+    }
+
     return new Response(null, {
         status: 200,
         headers: headersFromObject(object, basepath),
@@ -200,6 +248,17 @@ export async function handleHead(req, env, key, basepath) {
 }
 
 export async function handleGet(req, env, key, basepath, wantsIndex) {
+    let attrKey = undefined;
+    let wantsAttrs = false;
+    if (isAttr(key)) {
+        if (isAttrs(key)) {
+            wantsAttrs = true;
+            key = key.slice(0, -6); // remove /:attr
+        } else {
+            [key, attrKey] = splitAttr(key);
+        }
+    }
+
     const object = await env.bucket.get(key, {
         onlyIf: req.headers,
         range: req.headers,
@@ -207,6 +266,26 @@ export async function handleGet(req, env, key, basepath, wantsIndex) {
 
     if (object === null) {
         return new Response("Object Not Found\n", { status: 404 });
+    }
+
+    // ATTRIBUTES
+    if (attrKey) {
+        const attr = object.customMetadata["Attribute-" + attrKey];
+        return new Response(attr, {
+            status: 200,
+            headers: {
+                "Content-Type": "plain/text",
+            },
+        });
+    }
+    if (wantsAttrs) {
+        const attrs = await attributeEntries(object);
+        return new Response(attrs, {
+            status: 200,
+            headers: {
+                "Content-Type": "application/x-directory",
+            },
+        });
     }
 
     // FILES
@@ -250,9 +329,25 @@ export async function handleGet(req, env, key, basepath, wantsIndex) {
 }
 
 export async function handleDelete(req, env, key) {
+    let attrKey = undefined;
+    if (isAttr(key)) {
+        [key, attrKey] = splitAttr(key);
+    }
+
     const object = await env.bucket.get(key);
     if (object === null) {
         return new Response("Object Not Found\n", { status: 404 });
+    }
+
+    if (attrKey) {
+        const customMetadata = object.customMetadata || {};
+        delete customMetadata["Attribute-" + attrKey];
+        customMetadata["Change-Timestamp"] = Math.floor(Date.now() / 1000).toString();
+        await env.bucket.put(key, object.body, {
+            httpMetadata: object.httpMetadata || {},
+            customMetadata,
+        });
+        return new Response("OK\n");
     }
 
     // If the object is a directory, recursively delete its contents
@@ -271,6 +366,10 @@ export async function handleDelete(req, env, key) {
 }
 
 export async function handleMoveCopy(req, env, key, basepath) {
+    if (isAttr(key)) {
+        return new Response("Attributes cannot be moved/copied\n", { status: 400 });
+    }
+
     // Parse source and destination from headers
     const dest = req.headers.get("Destination").slice(basepath.length);
     if (!dest || !dest.startsWith("/")) {
@@ -356,6 +455,17 @@ function encode(str) {
     return new TextEncoder().encode(str);
 }
 
+function isAttr(path: string): boolean {
+    return path.includes("/:attr/") || path.endsWith("/:attr");
+}
+
+function isAttrs(path: string): boolean {
+    return path.endsWith("/:attr");
+}
+
+function splitAttr(path: string): string[] {
+    return path.split("/:attr/");
+}
 
 function isObjectDir(object: R2Object): boolean {
     return (
@@ -380,9 +490,9 @@ function entriesFromObjects(objects: R2Object[], dir: string): Map<string, strin
 
 function formatHeaders(headers: Headers): string {
     let result = "";
-    for (const [key, value] of headers.entries()) {
+    headers.forEach((value, key) => {
         result += `${key}: ${value}\r\n`;
-    }
+    });
     return result;
 }
 
@@ -477,6 +587,16 @@ async function directoryEntries(bucket: any, key: string): Promise<string> {
         cursor = page.truncated ? page.cursor : undefined;
     } while (cursor);
 
+    return formatEntries(new Map([...entries.entries()].sort()));
+}
+
+async function attributeEntries(object: R2Object): Promise<string> {
+    const entries = new Map<string, string>();
+    for (const [k, v] of Object.entries(object.customMetadata)) {
+        if (k.startsWith("Attribute-")) {
+            entries.set(k.slice(10), "33188"); // default file mode is 0644 plus file flag 0100000
+        }
+    }
     return formatEntries(new Map([...entries.entries()].sort()));
 }
 

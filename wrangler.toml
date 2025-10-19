@@ -9,7 +9,12 @@ routes = [
 [assets]
 directory = "./assets"
 binding = "assets"
-run_worker_first = [ "/workbench.json" ]
+run_worker_first = [ 
+  "/signin", 
+  "/signout", 
+  "/dashboard",
+  "/shell",
+]
 
 [observability.logs]
 enabled = true

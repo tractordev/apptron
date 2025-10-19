@@ -5,22 +5,20 @@ package main
 import (
 	"archive/tar"
 	"bytes"
+	"fmt"
 	"log"
 	"syscall/js"
-	"time"
 
 	"tractor.dev/wanix"
 	"tractor.dev/wanix/fs"
 	"tractor.dev/wanix/fs/httpfs"
 	"tractor.dev/wanix/fs/memfs"
-	"tractor.dev/wanix/fs/syncfs"
 	"tractor.dev/wanix/fs/tarfs"
 	"tractor.dev/wanix/vfs/pipe"
 	"tractor.dev/wanix/vfs/ramfs"
 	"tractor.dev/wanix/vm"
 	"tractor.dev/wanix/web"
 	"tractor.dev/wanix/web/api"
-	"tractor.dev/wanix/web/fsa"
 	"tractor.dev/wanix/web/runtime"
 	"tractor.dev/wanix/web/virtio9p"
 )
@@ -28,7 +26,17 @@ import (
 func main() {
 	log.SetFlags(log.Lshortfile)
 
-	log.Println("starting apptron wanix")
+	apptronCfg := js.Global().Get("window").Get("apptron")
+	if apptronCfg.IsUndefined() {
+		log.Fatal("apptron config not found")
+	}
+	origin := apptronCfg.Get("origin")
+	if origin.IsUndefined() {
+		log.Fatal("apptron origin not found")
+	}
+	user := apptronCfg.Get("user")
+
+	log.Println("starting apptron wanix for user", user.String())
 
 	inst := runtime.Instance()
 
@@ -69,18 +77,25 @@ func main() {
 		// root.Bind("#bundle", "bundle")
 	}
 
-	r2fs := httpfs.New("https://r2fs.proteco.workers.dev/", nil)
-	opfs, err := fsa.OPFS("r2fs")
-	if err != nil {
-		log.Fatal(err)
-	}
-	sfs := syncfs.New(opfs, r2fs, 3*time.Second)
-	go func() {
-		if err := sfs.Sync(); err != nil {
-			log.Printf("err syncing: %v\n", err)
-		}
-	}()
-	if err := root.Namespace().Bind(sfs, ".", "#data"); err != nil {
+	// r2fs := httpfs.New("https://r2fs.proteco.workers.dev/", nil)
+	// opfs, err := fsa.OPFS("r2fs")
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+	// sfs := syncfs.New(opfs, r2fs, 3*time.Second)
+	// go func() {
+	// 	if err := sfs.Sync(); err != nil {
+	// 		log.Printf("err syncing: %v\n", err)
+	// 	}
+	// }()
+	// if err := root.Namespace().Bind(sfs, ".", "#r2fs"); err != nil {
+	// 	log.Fatal(err)
+	// }
+
+	//datafs := httpfs.NewCacher(httpfs.New(fmt.Sprintf("%s/data", origin.String()), nil))
+	datafs := httpfs.New(fmt.Sprintf("%s/data", origin.String()), nil)
+	datafs.Ignore("MAILPATH")
+	if err := root.Namespace().Bind(datafs, ".", "data"); err != nil {
 		log.Fatal(err)
 	}
 
