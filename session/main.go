@@ -44,6 +44,7 @@ func main() {
 func handler(vn *vnet.VirtualNetwork) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/bundle.tgz" {
+			w.Header().Set("Access-Control-Allow-Origin", "*")
 			http.ServeFileFS(w, r, bundle, "bundle.tgz")
 			return
 		}

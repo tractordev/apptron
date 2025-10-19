@@ -1,24 +1,215 @@
 import { Container, getContainer } from "@cloudflare/containers";
+import { validateToken } from "./auth";
+import { handle as handleR2FS } from "./r2fs";
 
-export class Session extends Container {
-  defaultPort = 8080;
-  sleepAfter = "1h";
-}
+const HOST_DOMAIN = "apptron.dev";
+const ADMIN_USERS = ["progrium"];
 
 export default {
-    async fetch(req, env) {  
+    async fetch(req: Request, env: any) {
         const url = new URL(req.url);
-        if (url.pathname === "/") {
-            return Response.redirect("https://github.com/tractordev/apptron", 307);
+        const ctx = parseContext(req, env);
+        const authURL = env.AUTH_URL;
+
+        if (ctx.envDomain && url.pathname === "/edit") {
+            const envReq = new Request(new URL("/_env", req.url).toString(), req);
+            const resp = await env.assets.fetch(envReq);
+            
+            const contentType = resp.headers.get('content-type');
+            if (!contentType || !contentType.includes('text/html')) {
+                return resp;
+            }
+
+            return insertMeta(resp, {
+                "auth-url": authURL
+            });
         }
+
+        if (["/dashboard", "/shell"].includes(url.pathname)) {
+            if (!await validateToken(authURL, ctx.tokenRaw)) {
+                return redirectToSignin(env, url);
+            }
+        }
+
+        if (url.pathname.startsWith("/data")) {
+            if (!await validateToken(authURL, ctx.tokenRaw)) {
+                return new Response("Forbidden", { status: 403 });
+            }
+            if (url.pathname.includes("/:attr/")) {
+                if (!ADMIN_USERS.includes(ctx.tokenJWT?.username)) {
+                    return new Response("Forbidden", { status: 403 });
+                }
+            }
+            // todo: validate user access to data path!
+            return handleR2FS(req, env, "/data");
+        }
+
+        if (url.pathname.startsWith("/edit/")) {
+            const parts = url.pathname.split("/");
+            const envName = parts[2];
+            const envUUID = await lookupEnvUUID(env, ctx, envName);
+            if (envUUID === null) {
+                return new Response("Not Found", { status: 404 });
+            }
+            return await envPage(req, env, envUUID, "/edit");
+        }
+
+        if (url.pathname === "/") {
+            return redirectToSignin(env, url);
+        }
+        
         if (url.pathname.startsWith("/x/local")) {
             return new Response("OK", { status: 200 });
         }
+        
         if (url.pathname.startsWith("/x/net") || 
             url.host.startsWith("_") ||
             url.pathname === "/bundle.tgz") {
             return getContainer(env.session).fetch(req);
         }
+
+        if (["/signin", "/signout", "/shell", "/dashboard"].includes(url.pathname)) {
+            const resp = await env.assets.fetch(req);
+
+            const contentType = resp.headers.get('content-type');
+            if (!contentType || !contentType.includes('text/html')) {
+                return resp;
+            }
+
+            return insertMeta(resp, {
+                "auth-url": authURL
+            });
+        }
+
         return env.assets.fetch(req);
     },
 };
+
+export class Session extends Container {
+    defaultPort = 8080;
+    sleepAfter = "1h";
+}
+
+export interface Context {
+    tokenRaw?: string;
+    tokenJWT?: Record<string, any>;
+    userUUID?: string;
+    userName?: string;
+    userDomain: boolean;
+    envUUID?: string;
+    envName?: string;
+    envDomain: boolean;
+}
+
+async function lookupEnvUUID(env: any, ctx: Context, envName: string) {
+    if (!envName) {
+        return null;
+    }
+    const envObject = await env.bucket.get(`/etc/uuid/${ctx.userName}/${envName}`);
+    if (envObject === null) {
+        return null;
+    }
+    if (envObject.customMetadata["Attribute-Environ"] === undefined) {
+        return null;
+    }
+    return envObject.customMetadata["Attribute-Environ"];
+}
+
+function parseJWT(token: string): Record<string, any> {
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    return JSON.parse(atob(base64));
+  }
+
+function parseContext(req: Request, env: any): Context {
+    const url = new URL(req.url);
+    const ctx: Context = {
+        userDomain: false,
+        envDomain: false,
+    };
+
+    ctx.tokenRaw = url.searchParams.get("token") || undefined;
+    if (!ctx.tokenRaw) {
+        const cookie = req.headers.get("cookie") || "";
+        const match = cookie.match(/hanko=([^;]+)/);
+        if (match) {
+            ctx.tokenRaw = match[1] || undefined;
+        }
+    }
+    if (!ctx.tokenRaw) {
+        ctx.tokenRaw = req.headers.get("Authorization")?.split(" ")[1] || undefined;
+    }
+
+    if (ctx.tokenRaw) {
+        ctx.tokenJWT = parseJWT(ctx.tokenRaw);
+    }
+
+    if (url.host.endsWith("." + HOST_DOMAIN)) {
+        const subdomain = url.host.slice(0, -("." + HOST_DOMAIN).length);
+        if (subdomain.length >= 32) {
+            ctx.envDomain = true;
+            ctx.envUUID = subdomain;
+        } else {
+            ctx.userDomain = true;
+            ctx.userName = subdomain;
+        }
+    }
+
+    if (url.searchParams.get("env")) {
+        ctx.envUUID = url.searchParams.get("env") || undefined;
+        ctx.envDomain = true;
+    } else if (url.searchParams.get("user")) {
+        ctx.userName = url.searchParams.get("user") || undefined;
+        ctx.userDomain = true;
+    }
+
+    return ctx;
+}
+
+function isLocal(env: any) {
+    return !!(env && env.LOCALHOST);
+}
+
+function redirectToSignin(env: any, url: URL) {
+    if (isLocal(env)) {
+        url.host = env.LOCALHOST;
+    } else {
+        url.host = HOST_DOMAIN;
+    }
+    url.pathname = "/signin";
+    return Response.redirect(url.toString(), 307);
+}
+
+function insertMeta(resp: Response, meta: Record<string, string>) {
+    return new HTMLRewriter().on('head', {
+        element(element) {
+            for (const [name, content] of Object.entries(meta)) {
+                element.append(`<meta name="${name}" content="${content}">`, { html: true });
+            }
+        }
+    }).transform(resp);
+}
+
+function insertHTML(resp: Response, element: string, content: string) {
+    return new HTMLRewriter().on(element, {
+        element(element) {
+            element.append(content, { html: true });
+        }
+    }).transform(resp);
+}
+
+async function envPage(req: Request, env: any, envUUID: string, path: string) {
+    const url = new URL(req.url);
+    if (isLocal(env)) {
+        url.searchParams.set("env", envUUID);
+        url.host = env.LOCALHOST;
+    } else {
+        url.host = envUUID + "." + HOST_DOMAIN;
+    }
+    url.pathname = path;
+    const envReq = new Request(new URL("/_frame", req.url).toString(), req);
+    return insertHTML(await env.assets.fetch(envReq), "body", `<iframe src="${url.toString()}" allow="usb; serial; hid; clipboard-read; clipboard-write; cross-origin-isolated"
+        sandbox="allow-scripts allow-same-origin allow-forms allow-modals allow-popups allow-presentation allow-popups-to-escape-sandbox"></iframe>`);
+}
+
+

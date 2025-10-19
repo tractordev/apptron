@@ -39,43 +39,34 @@
     <div style="height: 35px;">
         <apptron-topbar></apptron-topbar>
       </div>
-    <iframe src="/vscode" 
+    <iframe src="/_vscode" 
         allow="clipboard-read; clipboard-write; cross-origin-isolated"
         sandbox="allow-scripts allow-same-origin allow-forms allow-modals allow-popups allow-presentation allow-popups-to-escape-sandbox"></iframe>
     <script type="module">
-        import { WanixRuntime } from "/wanix.js";
-        
-        const queryParams = new URLSearchParams(window.location.search);
-        const w = new WanixRuntime({ 
-            helpers: true, 
-            bundle: queryParams.get('bundle') || "/bundle.tgz",
-            wasm: queryParams.get('wasm') || "/wanix.wasm",
-            network: queryParams.get('network') || "wss://apptron.dev/x/net"
-        });
+        import { setupWanix, bootBundle, setupHanko } from "/apptron.js";
+        const hanko = await setupHanko();
+        const user = await hanko.getUser();
+        const origin = window.location.origin;
+        window.apptron = {
+            user: user.username,
+            origin: origin,
+        }
+        const w = setupWanix();
         
         window.addEventListener("message", async (event) => {
             if (event.data.port) {
-                await w.ready;
+                await w.ready();
+                
                 // xterm.js mode 
                 // const xid = (await w.readText("web/dom/new/xterm")).trim();
                 // await w.writeFile("task/1/ctl", `bind #console/data web/dom/${xid}/data`);
                 // await w.writeFile("web/dom/body/ctl", `append-child ${xid}`);
-                await new Promise(resolve => setTimeout(resolve, 1000));
 
                 const port = w.createPort();
                 console.log("port", port);
                 event.data.port.postMessage({wanix: port}, [port]); 
                 
-                try {
-                    const initJS = await w.readText("#bundle/init.js");
-                    const blob = new Blob([initJS], { type: 'text/javascript' });
-                    const initUrl = URL.createObjectURL(blob);
-                    const initModule = await import(initUrl);
-                    await initModule.default(w);
-                } catch (e) {
-                    console.log(e);
-                    console.log("No bundle init.js found");
-                }   
+                await bootBundle(w);
             }
         });
         

@@ -5,7 +5,7 @@ all: assets/vscode router/node_modules extension/dist session/bundle.tgz assets/
 .PHONY: all
 
 dev: all
-	wrangler dev
+	wrangler dev --port=8788
 .PHONY: dev
 
 deploy: all

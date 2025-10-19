@@ -1,4 +1,4 @@
-import { register } from "https://esm.run/@teamhanko/hanko-elements";
+import { setupHanko, redirectTo, urlFor } from "/apptron.js";
 
 class TopBar extends HTMLElement {
     constructor() {
@@ -8,40 +8,46 @@ class TopBar extends HTMLElement {
     }
 
     async setup() {
-        const { hanko } = await register("https://ad6044b5-53c2-4cb5-8542-9fdaef75f771.hanko.io");
+        const hanko = await setupHanko();
         window.hanko = hanko;
-        hanko.onSessionCreated(() => {
-            window.location.reload();
-        });
         const session = await hanko.validateSession();
-        console.log("Session valid:", session.is_valid, "Claims:", session.claims);
         if (session.is_valid) {
             document.body.classList.add('signedin');
             this.shadowRoot.getElementById('header-bar').classList.add("signedin");
         }
 
+        this.shadowRoot.querySelector('#logout').addEventListener('click', () => {
+            redirectTo(urlFor("/signout"));
+        });
 
+        this.shadowRoot.querySelector('#signin').addEventListener('click', () => {
+            redirectTo(urlFor("/signin"));
+        });
 
-        const signinBtn = this.shadowRoot.querySelector('#signin');
-        const signinDialog = this.shadowRoot.getElementById('signin-dialog');
-        const signinCloseBtn = this.shadowRoot.querySelector('.signin-close');
-        
-        // Open dialog
-        signinBtn.addEventListener('click', () => {
-            signinDialog.showModal();
+        this.shadowRoot.querySelector('#dashboard').addEventListener('click', () => {
+            redirectTo(urlFor("/dashboard", {}, session.claims.username));
         });
+
+    
+        // const signinDialog = this.shadowRoot.getElementById('signin-dialog');
+        // const signinCloseBtn = this.shadowRoot.querySelector('.signin-close');
         
-        // Close dialog when clicking X
-        signinCloseBtn.addEventListener('click', () => {
-            signinDialog.close();
-        });
+        // // Open dialog
+        // signinBtn.addEventListener('click', () => {
+        //     signinDialog.showModal();
+        // });
         
-        // Optional: Close when clicking backdrop (outside dialog)
-        signinDialog.addEventListener('click', (e) => {
-            if (e.target === signinDialog) {
-                signinDialog.close();
-            }
-        });
+        // // Close dialog when clicking X
+        // signinCloseBtn.addEventListener('click', () => {
+        //     signinDialog.close();
+        // });
+        
+        // // Optional: Close when clicking backdrop (outside dialog)
+        // signinDialog.addEventListener('click', (e) => {
+        //     if (e.target === signinDialog) {
+        //         signinDialog.close();
+        //     }
+        // });
 
 
 
@@ -66,14 +72,6 @@ class TopBar extends HTMLElement {
             }
         });
 
-
-
-        const logoutBtn = this.shadowRoot.querySelector('#logout');
-        logoutBtn.addEventListener('click', async () => {
-            console.log("logout");
-            await window.hanko.user.logout();
-            window.location.reload();
-        });
     }
     
     async loadTemplate() {
