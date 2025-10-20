@@ -11,7 +11,10 @@ export default {
         const ctx = parseContext(req, env);
         const authURL = env.AUTH_URL;
 
-        if (ctx.envDomain && url.pathname === "/edit") {
+        if (ctx.envDomain && url.pathname.startsWith("/edit/")) {
+            const parts = url.pathname.split("/");
+            const envName = parts[2];
+
             const envReq = new Request(new URL("/_env", req.url).toString(), req);
             const resp = await env.assets.fetch(envReq);
             
@@ -21,7 +24,8 @@ export default {
             }
 
             return insertMeta(resp, {
-                "auth-url": authURL
+                "auth-url": authURL,
+                "env-name": envName,
             });
         }
 
@@ -51,7 +55,7 @@ export default {
             if (envUUID === null) {
                 return new Response("Not Found", { status: 404 });
             }
-            return await envPage(req, env, envUUID, "/edit");
+            return await envPage(req, env, envUUID, "/edit/"+envName);
         }
 
         if (url.pathname === "/" && req.method === "GET") {

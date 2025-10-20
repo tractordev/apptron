@@ -10,14 +10,14 @@
   <meta name="apple-mobile-web-app-title" content="Code">
   <link rel="apple-touch-icon" href="/vscode/code-192.png" />
 
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="/styles.css" />
 
   <!-- Disable pinch zooming -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no">
 
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 
-  <script src="topbar/topbar.js" type="module"></script>
+  <script src="/topbar/topbar.js" type="module"></script>
 
   <style>
     body {
@@ -37,13 +37,16 @@
 </head>
 <body>
     <script type="module">
-        import { setupWanix, bootBundle, getAuth, envUUID } from "/apptron.js";
+        import { setupWanix, bootBundle, getAuth, envUUID, getMeta } from "/apptron.js";
         const auth = await getAuth();
         const origin = window.location.origin;
         window.apptron = {
             user: auth.getUser(), // this promise will be resolved later
             origin: origin,
-            env: envUUID(),
+            env: {
+                "uuid": envUUID(),
+                "name": getMeta("env-name"),
+            }
         }
         
         const w = setupWanix();

@@ -12,7 +12,7 @@ export async function activate(context: vscode.ExtensionContext) {
 	}
 	
 	const channel = new MessageChannel();
-	const bridge = new WanixBridge(channel.port2, "vm/1/fsys");
+	const bridge = new WanixBridge(channel.port2, "vm/1/fsys/project");
 	context.subscriptions.push(bridge);
 
 	const port = (context as any).messagePassingProtocol;
