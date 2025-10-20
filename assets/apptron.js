@@ -26,8 +26,12 @@ export async function bootBundle(w) {
 }
 
 export async function setupHanko() {
+    if (isLocalhost()) {
+        const { hanko } = await register(document.querySelector('meta[name="auth-url"]').content);
+        return hanko;
+    }
     const { hanko } = await register(document.querySelector('meta[name="auth-url"]').content, {
-        cookieDomain: (isLocalhost() ? "" : ".")+appHost()
+        cookieDomain: "."+appHost()
     });
     return hanko;
 }
@@ -88,12 +92,12 @@ export function urlFor(path, params = {}, user = null) {
     }
     const currentURL = new URL(window.location.href);
     const url = new URL(currentURL.protocol + "//" + host + path);
-    if (currentURL.searchParams.get("user")) {
-        url.searchParams.set("user", currentURL.searchParams.get("user"));
-    }
-    if (currentURL.searchParams.get("env")) {
-        url.searchParams.set("env", currentURL.searchParams.get("env"));
-    }
+    // if (currentURL.searchParams.get("user")) {
+    //     url.searchParams.set("user", currentURL.searchParams.get("user"));
+    // }
+    // if (currentURL.searchParams.get("env")) {
+    //     url.searchParams.set("env", currentURL.searchParams.get("env"));
+    // }
     if (params && Object.keys(params).length > 0) {
         for (const [key, value] of Object.entries(params)) {
             url.searchParams.set(key, value);
