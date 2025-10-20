@@ -4,7 +4,7 @@ DOCKER_CMD 	?= $(shell command -v podman || command -v docker)
 all: assets/vscode router/node_modules extension/dist session/bundle.tgz assets/wanix.min.js assets/wanix.wasm
 .PHONY: all
 
-dev: all
+dev: all .env.local
 	wrangler dev --port=8788
 .PHONY: dev
 
@@ -24,6 +24,9 @@ clean:
 	rm -f assets/wanix.min.js
 	make -C bundle clean
 .PHONY: clean
+
+.env.local:
+	cp .env.example .env.local
 
 assets/vscode:
 	curl -sL $(VSCODE_URL) -o assets/vscode.zip
