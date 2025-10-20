@@ -176,12 +176,6 @@
         body: JSON.stringify(project)
       });
       if (response.ok) {
-        // Refresh the projects list
-        const resp = await fetch(urlFor("/projects", {}, window.user.username));
-        const projects = await resp.json();
-        populateProjectsGrid(projects);
-        
-        // Optionally redirect to the new project
         redirectTo(response.headers.get("Location"));
       } else {
         alert("Failed to create project");
