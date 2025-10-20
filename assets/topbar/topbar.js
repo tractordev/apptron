@@ -54,7 +54,7 @@ class TopBar extends HTMLElement {
 
         const accountBtn = this.shadowRoot.querySelector('#account');
         const accountDialog = this.shadowRoot.getElementById('account-dialog');
-        const accountCloseBtn = this.shadowRoot.querySelector('.account-close');
+        const accountCloseBtn = this.shadowRoot.querySelector('#account-dialog .dialog-close');
         
         // Open dialog
         accountBtn.addEventListener('click', () => {
