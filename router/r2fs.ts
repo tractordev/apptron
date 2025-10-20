@@ -158,10 +158,7 @@ export async function handlePut(req, env, key, path) {
         customMetadata = object.customMetadata || {};
         customMetadata["Change-Timestamp"] = Math.floor(Date.now() / 1000).toString();
         const attrValue = new TextDecoder().decode(await req.arrayBuffer());
-        console.log("Attribute Key: " + attrKey);
-        console.log("Attribute Value: " + attrValue);
-        customMetadata["Attribute-" + attrKey] = attrValue;
-        console.log("Writing metadata: " + JSON.stringify(customMetadata));
+        customMetadata["Attribute-" + attrKey] = attrValue.replace(/\n+$/, "");
         await env.bucket.put(key, object.body, {
             httpMetadata: object.httpMetadata || {},
             customMetadata,
@@ -232,7 +229,6 @@ export async function handleHead(req, env, key, basepath) {
     // ATTRIBUTES
     if (attrKey) {
         if (object.customMetadata["Attribute-" + attrKey] === undefined) {
-            console.log("Attribute Not Found: " + attrKey);
             return new Response("Attribute Not Found\n", { status: 404 });
         }
         return new Response(null, {
@@ -271,7 +267,10 @@ export async function handleGet(req, env, key, basepath, wantsIndex) {
     // ATTRIBUTES
     if (attrKey) {
         const attr = object.customMetadata["Attribute-" + attrKey];
-        return new Response(attr, {
+        if (attr === undefined) {
+            return new Response("Attribute Not Found\n", { status: 404 });
+        }
+        return new Response(attr+"\n", {
             status: 200,
             headers: {
                 "Content-Type": "plain/text",
@@ -526,6 +525,12 @@ function headersToMetadata(headers, metadata) {
     ].forEach(header => {
         if (headers.has(header.toLowerCase())) {
             metadata[header] = headers.get(header.toLowerCase());
+        }
+    });
+    // add any attributes
+    headers.forEach((value, key) => {
+        if (key.toLowerCase().startsWith("attribute-")) {
+            metadata["Attribute-" + key.slice(10)] = value;
         }
     });
 }
