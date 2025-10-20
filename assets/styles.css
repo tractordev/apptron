@@ -129,6 +129,14 @@ header h1 {
   gap: 1.5rem;
 }
 
+.no-projects {
+  color: var(--gray-100);
+  text-align: center;
+  font-style: italic;
+  margin: 2rem 0;
+  width: 100%;
+}
+
 .project-card {
   background: var(--gray-600);
   border: 1px solid var(--gray-500);
