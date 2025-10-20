@@ -93,6 +93,7 @@ func main() {
 	// }
 
 	//datafs := httpfs.NewCacher(httpfs.New(fmt.Sprintf("%s/data", origin.String()), nil))
+	// todo: restrict to admin users?
 	datafs := httpfs.New(fmt.Sprintf("%s/data", origin.String()), nil)
 	datafs.Ignore("MAILPATH")
 	if err := root.Namespace().Bind(datafs, ".", "data"); err != nil {

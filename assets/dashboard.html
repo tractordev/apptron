@@ -5,6 +5,21 @@
   <title>Apptron</title>
   <link rel="stylesheet" href="styles.css" />
   <script src="topbar/topbar.js" type="module"></script>
+  <script type="module">
+    import { setupAuth, secondsSince, urlFor } from "/apptron.js";
+    const auth = await setupAuth();
+    const user = await auth.getUser();
+    // this could be optimized to only PUT within a 
+    // certain time since creation to avoid excessive PUTs
+    // ie: secondsSince(user.created_at)
+    fetch(urlFor("/", {}, user.username), {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(user)
+    });
+  </script>
 </head>
 
 <body>

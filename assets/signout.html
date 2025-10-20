@@ -5,9 +5,9 @@
   <title>Apptron</title>
   <link rel="stylesheet" href="styles.css" />
   <script type="module">
-    import { setupHanko, authRedirect } from "/apptron.js";
-    const hanko = await setupHanko();
-    await hanko.logout();
+    import { setupAuth, authRedirect } from "/apptron.js";
+    const auth = await setupAuth();
+    await auth.logout();
     authRedirect("/");
   </script>
 </head>

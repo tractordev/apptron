@@ -25,7 +25,7 @@ export async function bootBundle(w) {
     }
 }
 
-export async function setupHanko() {
+export async function setupAuth() {
     if (isLocalhost()) {
         const { hanko } = await register(document.querySelector('meta[name="auth-url"]').content);
         return hanko;
@@ -92,12 +92,6 @@ export function urlFor(path, params = {}, user = null) {
     }
     const currentURL = new URL(window.location.href);
     const url = new URL(currentURL.protocol + "//" + host + path);
-    // if (currentURL.searchParams.get("user")) {
-    //     url.searchParams.set("user", currentURL.searchParams.get("user"));
-    // }
-    // if (currentURL.searchParams.get("env")) {
-    //     url.searchParams.set("env", currentURL.searchParams.get("env"));
-    // }
     if (params && Object.keys(params).length > 0) {
         for (const [key, value] of Object.entries(params)) {
             url.searchParams.set(key, value);
@@ -128,4 +122,11 @@ export async function authRedirect(defaultTarget = "/", user = null) {
     const currentParams = new URLSearchParams(window.location.search);
     const redirect = currentParams.get("redirect") || defaultTarget;
     redirectTo(urlFor(redirect, {}, user));
+}
+
+export function secondsSince(timestamp) {
+    const then = new Date(timestamp);
+    const now = new Date();
+    const diffInMs = now - then;
+    return Math.floor(diffInMs / 1000);
 }

@@ -54,13 +54,13 @@
 </head>
 <body>
 <script type="module">
-    import { setupWanix, bootBundle, setupHanko } from "/apptron.js";
-    const hanko = await setupHanko();
-    const session = await hanko.validateSession();
+    import { setupWanix, bootBundle, setupAuth, redirectTo, urlFor } from "/apptron.js";
+    const auth = await setupAuth();
+    const session = await auth.validateSession();
     if (!session.is_valid) {
-        authRedirect("/signin?redirect=/shell");
+        redirectTo(urlFor("/signin", {"redirect": "/shell"}));
     } else {
-        const user = await hanko.getUser();
+        const user = await auth.getUser();
         const origin = window.location.origin;
         window.apptron = {
             user: user.username,
