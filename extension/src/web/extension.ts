@@ -56,3 +56,20 @@ function createTerminal(wx: any) {
 }
 
 
+// @ts-ignore
+// polyfill for ReadableStream.prototype[Symbol.asyncIterator] on safari
+if (!ReadableStream.prototype[Symbol.asyncIterator]) {
+	// @ts-ignore
+    ReadableStream.prototype[Symbol.asyncIterator] = async function* () {
+        const reader = this.getReader();
+        try {
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) return;
+                yield value;
+            }
+        } finally {
+            reader.releaseLock();
+        }
+    };
+}
