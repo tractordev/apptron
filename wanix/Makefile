@@ -1,5 +1,5 @@
 
-build:
+build: main.go
 	GOOS=js GOARCH=wasm go build -o ../assets/wanix.wasm .
 .PHONY: build
 
