@@ -122,8 +122,9 @@
       document.querySelectorAll('.project-card .card-menu').forEach(popover => {
         popover.addEventListener('toggle', (e) => {
           if (e.newState !== 'open') return;
-
-          const triggerRect = e.source.getBoundingClientRect();
+          
+          const source = e.target.parentElement.querySelector('.ellipsis-btn');
+          const triggerRect = source.getBoundingClientRect();
           const popoverRect = popover.getBoundingClientRect();
 
           // Align right side of popover with right side of trigger
