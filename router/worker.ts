@@ -1,6 +1,6 @@
 import { Container, getContainer } from "@cloudflare/containers";
 import { validateToken } from "./auth";
-import { handle as handleR2FS } from "./r2fs";
+import { handle as handleR2FS, getAttrs } from "./r2fs";
 
 const HOST_DOMAIN = "apptron.dev";
 const ADMIN_USERS = ["progrium"];
@@ -99,6 +99,7 @@ export default {
             if (!await validateToken(authURL, ctx.tokenRaw)) {
                 return new Response("Forbidden", { status: 403 });
             }
+            let resp;
             switch (req.method) {
             case "GET":
                 const projects: Record<string, string>[] = [];
@@ -133,43 +134,29 @@ export default {
                 }
                 project["uuid"] = uuidv4();
 
-                const reqURL = new URL(req.url);
-                reqURL.host = (isLocal(env) ? env.LOCALHOST : HOST_DOMAIN);
-
-                reqURL.pathname = `/data/env/${project["uuid"]}/`;
-                const envReq = new Request(reqURL.toString(), {
-                    method: "PUT",
-                    headers: {
-                        "Content-Type": "application/x-directory",
-                        "Attribute-Name": project["name"],
-                    },
+                
+                resp = await mkdir(req, env, `/env/${project["uuid"]}`, {
+                    "name": project["name"],
+                    "owner": ctx.userUUID,
                 });
-                const envResp = await handleR2FS(envReq, env, "/data");
-                if (!envResp.ok) {
-                    return envResp;
+                if (!resp.ok) {
+                    return resp;
                 }
 
-                reqURL.pathname = `/data/env/${project["uuid"]}/project/`;
-                const prjReq = new Request(reqURL.toString(), {method: "PUT"});
-                const prjResp = await handleR2FS(prjReq, env, "/data");
-                if (!prjResp.ok) {
-                    // todo: delete env!
-                    return prjResp;
+                resp = await mkdir(req, env, `/env/${project["uuid"]}/project`);
+                if (!resp.ok) {
+                    await rm(req, env, `/env/${project["uuid"]}`);
+                    return resp;
                 }
 
-                reqURL.pathname = `/data/etc/index/${ctx.userName}/${project["name"]}`;
-                const idxReq = new Request(reqURL.toString(), {
-                    method: "PUT",
-                    headers: {
-                        "Content-Type": "application/x-directory",
-                        "Attribute-UUID": project["uuid"],
-                        "Attribute-Description": project["description"] || "",
-                    },
+                resp = await mkdir(req, env, `/etc/index/${ctx.userName}/${project["name"]}`, {
+                    "uuid": project["uuid"],
+                    "description": project["description"] || "",
+                    "owner": ctx.userUUID,
                 });
-                const idxResp = await handleR2FS(idxReq, env, "/data");
-                if (!idxResp.ok) {
-                    // todo: delete env!
-                    return idxResp;
+                if (!resp.ok) {
+                    await rm(req, env, `/env/${project["uuid"]}`);
+                    return resp;
                 }
 
                 const projectURL = new URL(req.url);
@@ -183,14 +170,22 @@ export default {
                 if (!projectName) {
                     return new Response("Not Found", { status: 404 });
                 }
-                const delURL = new URL(req.url);
-                delURL.pathname = `/data/etc/index/${ctx.userName}/${projectName}`;
-                delURL.host = (isLocal(env) ? env.LOCALHOST : HOST_DOMAIN);
-                const delReq = new Request(delURL.toString(), {method: "DELETE"});
-                const delResp = await handleR2FS(delReq, env, "/data");
-                if (!delResp.ok) {
-                    return delResp;
+
+                const attrs = await getAttrs(env.bucket, `/etc/index/${ctx.userName}/${projectName}`);
+                if (!attrs) {
+                    return new Response("Not Found", { status: 404 });
                 }
+
+                resp = await rm(req, env, `/etc/index/${ctx.userName}/${projectName}`);
+                if (!resp.ok) {
+                    return resp;
+                }
+
+                resp = await rm(req, env, `/env/${attrs["uuid"]}`);
+                if (!resp.ok) {
+                    return resp;
+                }
+
                 return new Response(null, { status: 204 });
             }
         }
@@ -247,6 +242,21 @@ function ensureSystemDirs(req: Request, env: any) {
         mkdir(req, env, "/usr"),
         mkdir(req, env, "/env"),
     ]);
+}
+
+async function rm(req: Request, env: any, path: string): Promise<Response> {
+    // Ensure path starts with a "/" and does not end with one (unless path is just "/")
+    if (!path.startsWith("/")) {
+        path = "/" + path;
+    }
+    if (path.length > 1 && path.endsWith("/")) {
+        path = path.slice(0, -1);
+    }
+    const url = new URL(req.url);
+    url.host = (isLocal(env) ? env.LOCALHOST : HOST_DOMAIN);
+    url.pathname = `/data${path}/`;
+    const delReq = new Request(url.toString(), {method: "DELETE"});
+    return handleR2FS(delReq, env, "/data");
 }
 
 async function mkdir(req: Request, env: any, path: string, attrs?: Record<string, string>): Promise<Response> {
@@ -313,6 +323,7 @@ function parseContext(req: Request, env: any): Context {
 
     if (ctx.tokenRaw) {
         ctx.tokenJWT = parseJWT(ctx.tokenRaw);
+        ctx.userUUID = ctx.tokenJWT["sub"]; // should be user_id
     }
 
     if (url.host.endsWith("." + HOST_DOMAIN)) {
