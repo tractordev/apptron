@@ -39,7 +39,7 @@ extension/dist: extension/node_modules
 extension/node_modules:
 	cd extension && npm ci
 
-router/node_modules:
+router/node_modules: router/package.json
 	cd router && npm ci
 
 session/bundle.tgz:
