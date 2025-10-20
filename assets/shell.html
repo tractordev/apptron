@@ -54,8 +54,8 @@
 </head>
 <body>
 <script type="module">
-    import { setupWanix, bootBundle, setupAuth, redirectTo, urlFor } from "/apptron.js";
-    const auth = await setupAuth();
+    import { setupWanix, bootBundle, getAuth, redirectTo, urlFor } from "/apptron.js";
+    const auth = await getAuth();
     const session = await auth.validateSession();
     if (!session.is_valid) {
         redirectTo(urlFor("/signin", {"redirect": "/shell"}));

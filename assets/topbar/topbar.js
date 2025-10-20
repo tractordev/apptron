@@ -1,4 +1,4 @@
-import { setupAuth, redirectTo, urlFor } from "/apptron.js";
+import { getAuth, redirectTo, urlFor } from "/apptron.js";
 
 class TopBar extends HTMLElement {
     constructor() {
@@ -8,7 +8,7 @@ class TopBar extends HTMLElement {
     }
 
     async setup() {
-        const auth = await setupAuth();
+        const auth = await getAuth();
         window.apptron ||= {};
         window.apptron.auth = auth;
         const session = await auth.validateSession();

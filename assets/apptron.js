@@ -25,15 +25,21 @@ export async function bootBundle(w) {
     }
 }
 
-export async function setupAuth() {
+let auth = null;
+export async function getAuth() {
+    if (auth) {
+        return auth;
+    }
     if (isLocalhost()) {
         const { hanko } = await register(document.querySelector('meta[name="auth-url"]').content);
-        return hanko;
+        auth = hanko;
+        return auth;
     }
     const { hanko } = await register(document.querySelector('meta[name="auth-url"]').content, {
         cookieDomain: "."+appHost()
     });
-    return hanko;
+    auth = hanko;
+    return auth;
 }
 
 export function isLocalhost() {
@@ -71,6 +77,21 @@ export function isEnvDomain() {
         return false;
     }
     return true;
+}
+
+export function envUUID() {
+    if (!isEnvDomain()) {
+        return null;
+    }
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("env")) {
+        return params.get("env");
+    }
+    const subdomain = window.location.hostname.split(".").slice(0, -2).join(".");
+    if (subdomain.length < 32) {
+        return null;
+    }
+    return subdomain;
 }
 
 export function appHost() {
