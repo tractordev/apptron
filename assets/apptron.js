@@ -31,15 +31,23 @@ export async function getAuth() {
         return auth;
     }
     if (isLocalhost()) {
-        const { hanko } = await register(document.querySelector('meta[name="auth-url"]').content);
+        const { hanko } = await register(getMeta("auth-url"));
         auth = hanko;
         return auth;
     }
-    const { hanko } = await register(document.querySelector('meta[name="auth-url"]').content, {
+    const { hanko } = await register(getMeta("auth-url"), {
         cookieDomain: "."+appHost()
     });
     auth = hanko;
     return auth;
+}
+
+export function getMeta(name) {
+    const meta = document.querySelector('meta[name="'+name+'"]');
+    if (!meta) {
+        return null;
+    }
+    return meta.content;
 }
 
 export function isLocalhost() {

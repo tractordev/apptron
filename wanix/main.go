@@ -7,19 +7,23 @@ import (
 	"bytes"
 	"fmt"
 	"log"
+	"path/filepath"
 	"slices"
 	"syscall/js"
+	"time"
 
 	"tractor.dev/wanix"
 	"tractor.dev/wanix/fs"
 	"tractor.dev/wanix/fs/httpfs"
 	"tractor.dev/wanix/fs/memfs"
+	"tractor.dev/wanix/fs/syncfs"
 	"tractor.dev/wanix/fs/tarfs"
 	"tractor.dev/wanix/vfs/pipe"
 	"tractor.dev/wanix/vfs/ramfs"
 	"tractor.dev/wanix/vm"
 	"tractor.dev/wanix/web"
 	"tractor.dev/wanix/web/api"
+	"tractor.dev/wanix/web/fsa"
 	"tractor.dev/wanix/web/jsutil"
 	"tractor.dev/wanix/web/runtime"
 	"tractor.dev/wanix/web/virtio9p"
@@ -40,16 +44,26 @@ func main() {
 	if origin.IsUndefined() {
 		log.Fatal("apptron origin not found")
 	}
+	username := ""
+	userID := ""
 	user := apptronCfg.Get("user")
 	if !user.IsUndefined() {
 		if user.InstanceOf(js.Global().Get("Promise")) {
-			user = jsutil.Await(user).Get("username")
+			user = jsutil.Await(user)
+			username = user.Get("username").String()
+			userID = user.Get("user_id").String()
 		}
 	}
 
+	envUUID := ""
+	envName := ""
 	env := apptronCfg.Get("env")
+	if !env.IsUndefined() {
+		envUUID = env.Get("uuid").String()
+		envName = env.Get("name").String()
+	}
 
-	log.Printf("starting apptron wanix for user %s, env %s\n", user.String(), env.String())
+	log.Printf("starting apptron wanix for user %s, env %s\n", username, envName)
 
 	inst := runtime.Instance()
 
@@ -105,20 +119,47 @@ func main() {
 	// 	log.Fatal(err)
 	// }
 
-	isAdmin := slices.Contains(admins, user.String())
+	isAdmin := slices.Contains(admins, username)
 	if isAdmin {
 		//datafs := httpfs.NewCacher(httpfs.New(fmt.Sprintf("%s/data", origin.String()), nil))
 		datafs := httpfs.New(fmt.Sprintf("%s/data", origin.String()), nil)
 		datafs.Ignore("MAILPATH")
-		if err := root.Namespace().Bind(datafs, ".", "data"); err != nil {
+		if err := root.Namespace().Bind(datafs, ".", "root/data"); err != nil {
 			log.Fatal(err)
 		}
 	}
 
+	homefs := httpfs.New(fmt.Sprintf("%s/data/usr/%s", origin.String(), userID), nil)
+	opfs, err := fsa.OPFS("apptron", "usr", userID)
+	if err != nil {
+		log.Fatal(err)
+	}
+	sfs := syncfs.New(opfs, homefs, 3*time.Second)
+	log.Println("syncing user fs")
+	if err := sfs.Sync(); err != nil {
+		log.Printf("err syncing: %v\n", err)
+	}
+	log.Println("user fs synced")
+	if err := root.Namespace().Bind(sfs, ".", "home/"+username); err != nil {
+		log.Fatal(err)
+	}
+
 	if !env.IsUndefined() {
-		projectfs := httpfs.New(fmt.Sprintf("%s/data/env/%s/project", origin.String(), env.String()), nil)
-		projectfs.Ignore("MAILPATH")
-		if err := root.Namespace().Bind(projectfs, ".", "project"); err != nil {
+		projectfs := httpfs.New(fmt.Sprintf("%s/data/env/%s/project", origin.String(), envUUID), nil)
+		opfs, err := fsa.OPFS("apptron", "env", envUUID, "project")
+		if err != nil {
+			log.Fatal(err)
+		}
+		sfs := syncfs.New(opfs, projectfs, 3*time.Second)
+		log.Println("syncing project fs")
+		if err := sfs.Sync(); err != nil {
+			log.Printf("err syncing: %v\n", err)
+		}
+		log.Println("project fs synced")
+		if err := root.Namespace().Bind(sfs, ".", "project"); err != nil {
+			log.Fatal(err)
+		}
+		if err := root.Bind("project", filepath.Join("home", username, envName)); err != nil {
 			log.Fatal(err)
 		}
 	}
