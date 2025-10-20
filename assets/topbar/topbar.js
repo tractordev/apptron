@@ -1,4 +1,4 @@
-import { setupHanko, redirectTo, urlFor } from "/apptron.js";
+import { setupAuth, redirectTo, urlFor } from "/apptron.js";
 
 class TopBar extends HTMLElement {
     constructor() {
@@ -8,9 +8,10 @@ class TopBar extends HTMLElement {
     }
 
     async setup() {
-        const hanko = await setupHanko();
-        window.hanko = hanko;
-        const session = await hanko.validateSession();
+        const auth = await setupAuth();
+        window.apptron ||= {};
+        window.apptron.auth = auth;
+        const session = await auth.validateSession();
         if (session.is_valid) {
             document.body.classList.add('signedin');
             this.shadowRoot.getElementById('header-bar').classList.add("signedin");

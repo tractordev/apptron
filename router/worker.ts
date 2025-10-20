@@ -54,8 +54,40 @@ export default {
             return await envPage(req, env, envUUID, "/edit");
         }
 
-        if (url.pathname === "/") {
+        if (url.pathname === "/" && req.method === "GET") {
             return redirectToSignin(env, url);
+        }
+
+        if (ctx.userDomain && url.pathname === "/" && req.method === "PUT") {
+            // ensure user is set up
+            if (!await validateToken(authURL, ctx.tokenRaw)) {
+                return new Response("Forbidden", { status: 403 });
+            }
+            const user = await req.json();
+            
+            const usrURL = new URL(req.url);
+            usrURL.pathname = `/data/usr/${user.user_id}/`;
+            usrURL.host = (isLocal(env) ? env.LOCALHOST : HOST_DOMAIN);
+            const usrReq = new Request(usrURL.toString(), {method: "PUT"});
+            const usrResp = await handleR2FS(usrReq, env, "/data");
+            if (!usrResp.ok) {
+                return usrResp;
+            }
+
+            usrURL.pathname = `/data/etc/index/${user.username}/`;
+            const idxReq = new Request(usrURL.toString(), {
+                method: "PUT", 
+                headers: {
+                    "Content-Type": "application/x-directory",
+                    "Attribute-UUID": user.user_id,
+                },
+            });
+            const idxResp = await handleR2FS(idxReq, env, "/data");
+            if (!idxResp.ok) {
+                return idxResp;
+            }
+
+            return new Response(null, { status: 204 });
         }
         
         if (url.pathname.startsWith("/x/local")) {

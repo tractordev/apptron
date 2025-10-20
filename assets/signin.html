@@ -5,19 +5,20 @@
   <title>Apptron</title>
   <link rel="stylesheet" href="styles.css" />
   <script type="module">
-    import { setupHanko, authRedirect } from "/apptron.js";
+    import { setupAuth, authRedirect } from "/apptron.js";
 
-    const hanko = await setupHanko();
+    const auth = await setupAuth();
 
-    hanko.onSessionCreated(async () => {
-      const user = await hanko.getUser();
-      authRedirect("/dashboard", user.username);
+    auth.onSessionCreated(async () => {
+      // on sign-in 
+      const session = await auth.validateSession();
+      authRedirect("/dashboard", session.claims.username);
     });
 
-    const session = await hanko.validateSession();
+    // already signed in
+    const session = await auth.validateSession();    
     if (session.is_valid) {
-      const user = await hanko.getUser();
-      authRedirect("/dashboard", user.username);
+      authRedirect("/dashboard", session.claims.username);
     }
   </script>
 </head>
