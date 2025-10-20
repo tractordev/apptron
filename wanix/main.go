@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"fmt"
 	"log"
+	"slices"
 	"syscall/js"
 
 	"tractor.dev/wanix"
@@ -19,9 +20,14 @@ import (
 	"tractor.dev/wanix/vm"
 	"tractor.dev/wanix/web"
 	"tractor.dev/wanix/web/api"
+	"tractor.dev/wanix/web/jsutil"
 	"tractor.dev/wanix/web/runtime"
 	"tractor.dev/wanix/web/virtio9p"
 )
+
+// todo: centralize or make based on jwt claims
+// there is also admins defined in the cloudflare worker
+var admins = []string{"progrium"}
 
 func main() {
 	log.SetFlags(log.Lshortfile)
@@ -35,8 +41,15 @@ func main() {
 		log.Fatal("apptron origin not found")
 	}
 	user := apptronCfg.Get("user")
+	if !user.IsUndefined() {
+		if user.InstanceOf(js.Global().Get("Promise")) {
+			user = jsutil.Await(user).Get("username")
+		}
+	}
 
-	log.Println("starting apptron wanix for user", user.String())
+	env := apptronCfg.Get("env")
+
+	log.Printf("starting apptron wanix for user %s, env %s\n", user.String(), env.String())
 
 	inst := runtime.Instance()
 
@@ -92,12 +105,22 @@ func main() {
 	// 	log.Fatal(err)
 	// }
 
-	//datafs := httpfs.NewCacher(httpfs.New(fmt.Sprintf("%s/data", origin.String()), nil))
-	// todo: restrict to admin users?
-	datafs := httpfs.New(fmt.Sprintf("%s/data", origin.String()), nil)
-	datafs.Ignore("MAILPATH")
-	if err := root.Namespace().Bind(datafs, ".", "data"); err != nil {
-		log.Fatal(err)
+	isAdmin := slices.Contains(admins, user.String())
+	if isAdmin {
+		//datafs := httpfs.NewCacher(httpfs.New(fmt.Sprintf("%s/data", origin.String()), nil))
+		datafs := httpfs.New(fmt.Sprintf("%s/data", origin.String()), nil)
+		datafs.Ignore("MAILPATH")
+		if err := root.Namespace().Bind(datafs, ".", "data"); err != nil {
+			log.Fatal(err)
+		}
+	}
+
+	if !env.IsUndefined() {
+		projectfs := httpfs.New(fmt.Sprintf("%s/data/env/%s/project", origin.String(), env.String()), nil)
+		projectfs.Ignore("MAILPATH")
+		if err := root.Namespace().Bind(projectfs, ".", "project"); err != nil {
+			log.Fatal(err)
+		}
 	}
 
 	inst.Set("createPort", js.FuncOf(func(this js.Value, args []js.Value) any {
@@ -109,6 +132,7 @@ func main() {
 	go api.PortResponder(inst.Call("_portConn", inst.Get("_sys").Get("port1")), root)
 
 	inst.Call("_wasmReady")
+	log.Println("wanix ready")
 
 	virtio9p.Serve(root.Namespace(), inst, false)
 
