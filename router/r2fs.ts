@@ -595,6 +595,21 @@ async function directoryEntries(bucket: any, key: string): Promise<string> {
     return formatEntries(new Map([...entries.entries()].sort()));
 }
 
+export async function getAttrs(bucket: any, key: string): Promise<Record<string, string>|null> {
+    const object = await bucket.get(key);
+    if (object === null) {
+        console.log("no object", key)
+        return null;
+    }
+    const attrs = {};
+    for (const [k, v] of Object.entries(object.customMetadata || {})) {
+        if (k.startsWith("Attribute-")) {
+            attrs[k.slice(10)] = v;
+        }
+    }
+    return attrs;
+}
+
 async function attributeEntries(object: R2Object): Promise<string> {
     const entries = new Map<string, string>();
     for (const [k, v] of Object.entries(object.customMetadata)) {

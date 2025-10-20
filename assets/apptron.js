@@ -136,7 +136,7 @@ export function redirectTo(url) {
     if (isEnvDomain()) {
         let origin = window.location.protocol + "//" + appHost();
         if (window.apptron) {
-            origin = window.location.protocol + "//" + window.apptron.user + "." + appHost();
+            origin = window.location.protocol + "//" + window.apptron.user.username + "." + appHost();
         }
         if (isLocalhost()) {
             origin = "*";

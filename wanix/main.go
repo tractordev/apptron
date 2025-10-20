@@ -49,10 +49,11 @@ func main() {
 	user := apptronCfg.Get("user")
 	if !user.IsUndefined() {
 		if user.InstanceOf(js.Global().Get("Promise")) {
-			user = jsutil.Await(user)
-			username = user.Get("username").String()
-			userID = user.Get("user_id").String()
+			apptronCfg.Set("user", jsutil.Await(user))
+			user = apptronCfg.Get("user")
 		}
+		username = user.Get("username").String()
+		userID = user.Get("user_id").String()
 	}
 
 	envUUID := ""

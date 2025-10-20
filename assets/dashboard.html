@@ -22,9 +22,6 @@
 
     const resp = await fetch(urlFor("/projects", {}, window.user.username));
     const projects = await resp.json();
-    console.log("projects:", projects);
-    
-    // Populate projects grid
     populateProjectsGrid(projects);
   </script>
 </head>
@@ -62,8 +59,8 @@
                     aria-haspopup="menu" aria-controls="${menuId}"
                     popovertarget="${menuId}" popovertargetaction="toggle">⋮</button>
             <div id="${menuId}" class="card-menu" popover role="menu" aria-label="Project menu">
-              <button class="menu-item" role="menuitem" data-action="edit" data-project="${project.uuid}">Edit Settings</button>
-              <button class="menu-item danger" role="menuitem" data-action="delete" data-project="${project.uuid}">Delete Project</button>
+              <button class="menu-item" role="menuitem" data-action="edit" data-project="${project.name}">Edit Settings</button>
+              <button class="menu-item danger" role="menuitem" data-action="delete" data-project="${project.name}">Delete Project</button>
             </div>
           </div>
           <p class="desc">${escapeHtml(description)}</p>
@@ -125,7 +122,7 @@
       document.querySelectorAll('.project-card .card-menu').forEach(popover => {
         popover.addEventListener('toggle', (e) => {
           if (e.newState !== 'open') return;
-          
+
           const triggerRect = e.source.getBoundingClientRect();
           const popoverRect = popover.getBoundingClientRect();
 
@@ -141,14 +138,21 @@
       document.querySelectorAll('.project-card .menu-item').forEach(btn => {
         btn.addEventListener('click', async (e) => {
           const action = e.target.dataset.action;
-          const projectUuid = e.target.dataset.project;
+          const projectName = e.target.dataset.project;
           if (action === 'edit') {
-            console.log("todo: edit", projectUuid);
+            console.log("todo: edit", projectName);
+
           } else if (action === 'delete') {
             const confirmed = confirm("Are you sure you want to delete this project?");
             if (confirmed) {
-              console.log("todo: delete", projectUuid);
-              // populateProjectsGrid(projects);
+              const resp = await fetch(urlFor(`/projects/${projectName}`, {}, window.user.username), {
+                method: "DELETE",
+              });
+              if (resp.ok) {
+                const resp = await fetch(urlFor("/projects", {}, window.user.username));
+                const projects = await resp.json();
+                populateProjectsGrid(projects);
+              }
             }
           }
           e.target.parentElement.hidePopover();
