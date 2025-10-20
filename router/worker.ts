@@ -90,6 +90,106 @@ export default {
             return new Response(null, { status: 204 });
         }
         
+        if (ctx.userDomain && url.pathname.startsWith("/projects")) {
+            if (!await validateToken(authURL, ctx.tokenRaw)) {
+                return new Response("Forbidden", { status: 403 });
+            }
+            switch (req.method) {
+            case "GET":
+                const projects: Record<string, string>[] = [];
+                let cursor: string | undefined = undefined;
+                do {
+                    const prefix = `/etc/index/${ctx.userName}/`;
+                    const page = await env.bucket.list({
+                        prefix,
+                        include: ["customMetadata"],
+                        cursor,
+                        limit: 1000,
+                    });
+                    for (const obj of page.objects || []) {
+                        const project = {
+                            name: obj.key.slice(prefix.length)
+                        };
+                        for (const [key, value] of Object.entries(obj.customMetadata)) {
+                            if (key.startsWith("Attribute-")) {
+                                project[key.slice(10)] = value;
+                            }
+                        }
+                        projects.push(project);
+                    }
+                    cursor = page.truncated ? page.cursor : undefined;
+                } while (cursor);
+
+                return new Response(JSON.stringify(projects), { status: 200 });
+            case "POST":
+                const project = await req.json();
+                if (!project["name"]) {
+                    return new Response("Bad Request", { status: 400 });
+                }
+                project["uuid"] = uuidv4();
+
+                const reqURL = new URL(req.url);
+                reqURL.host = (isLocal(env) ? env.LOCALHOST : HOST_DOMAIN);
+
+                reqURL.pathname = `/data/env/${project["uuid"]}/`;
+                const envReq = new Request(reqURL.toString(), {
+                    method: "PUT",
+                    headers: {
+                        "Content-Type": "application/x-directory",
+                        "Attribute-Name": project["name"],
+                    },
+                });
+                const envResp = await handleR2FS(envReq, env, "/data");
+                if (!envResp.ok) {
+                    return envResp;
+                }
+
+                reqURL.pathname = `/data/env/${project["uuid"]}/project/`;
+                const prjReq = new Request(reqURL.toString(), {method: "PUT"});
+                const prjResp = await handleR2FS(prjReq, env, "/data");
+                if (!prjResp.ok) {
+                    // todo: delete env!
+                    return prjResp;
+                }
+
+                reqURL.pathname = `/data/etc/index/${ctx.userName}/${project["name"]}`;
+                const idxReq = new Request(reqURL.toString(), {
+                    method: "PUT",
+                    headers: {
+                        "Content-Type": "application/x-directory",
+                        "Attribute-UUID": project["uuid"],
+                        "Attribute-Description": project["description"] || "",
+                    },
+                });
+                const idxResp = await handleR2FS(idxReq, env, "/data");
+                if (!idxResp.ok) {
+                    // todo: delete env!
+                    return idxResp;
+                }
+
+                const projectURL = new URL(req.url);
+                projectURL.pathname = `/edit/${project["name"]}`;
+                return new Response(null, { status: 201, headers: { "Location": projectURL.toString() } });
+            case "DELETE":
+                if (!url.pathname.startsWith("/projects/")) {
+                    return new Response("Not Found", { status: 404 });
+                }
+                const projectName = url.pathname.split("/").pop() || "";
+                if (!projectName) {
+                    return new Response("Not Found", { status: 404 });
+                }
+                const delURL = new URL(req.url);
+                delURL.pathname = `/data/etc/index/${ctx.userName}/${projectName}`;
+                delURL.host = (isLocal(env) ? env.LOCALHOST : HOST_DOMAIN);
+                const delReq = new Request(delURL.toString(), {method: "DELETE"});
+                const delResp = await handleR2FS(delReq, env, "/data");
+                if (!delResp.ok) {
+                    return delResp;
+                }
+                return new Response(null, { status: 204 });
+            }
+        }
+
         if (url.pathname.startsWith("/x/local")) {
             return new Response("OK", { status: 200 });
         }
@@ -137,14 +237,14 @@ async function lookupEnvUUID(env: any, ctx: Context, envName: string) {
     if (!envName) {
         return null;
     }
-    const envObject = await env.bucket.get(`/etc/uuid/${ctx.userName}/${envName}`);
+    const envObject = await env.bucket.get(`/etc/index/${ctx.userName}/${envName}`);
     if (envObject === null) {
         return null;
     }
-    if (envObject.customMetadata["Attribute-Environ"] === undefined) {
+    if (envObject.customMetadata["Attribute-uuid"] === undefined) {
         return null;
     }
-    return envObject.customMetadata["Attribute-Environ"];
+    return envObject.customMetadata["Attribute-uuid"];
 }
 
 function parseJWT(token: string): Record<string, any> {
@@ -245,3 +345,11 @@ async function envPage(req: Request, env: any, envUUID: string, path: string) {
 }
 
 
+function uuidv4() {
+    // Generate a RFC4122 version 4 UUID string.
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        const r = crypto.getRandomValues(new Uint8Array(1))[0] & 15;
+        const v = c === 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+    });
+}
