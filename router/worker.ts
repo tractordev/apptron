@@ -55,6 +55,7 @@ export default {
         }
 
         if (url.pathname === "/" && req.method === "GET") {
+            await ensureSystemDirs(req, env);
             return redirectToSignin(env, url);
         }
 
@@ -66,7 +67,7 @@ export default {
             const user = await req.json();
             
             const usrURL = new URL(req.url);
-            usrURL.pathname = `/data/usr/${user.user_id}/`;
+            usrURL.pathname = `/data/usr/${user["user_id"]}/`;
             usrURL.host = (isLocal(env) ? env.LOCALHOST : HOST_DOMAIN);
             const usrReq = new Request(usrURL.toString(), {method: "PUT"});
             const usrResp = await handleR2FS(usrReq, env, "/data");
@@ -74,12 +75,12 @@ export default {
                 return usrResp;
             }
 
-            usrURL.pathname = `/data/etc/index/${user.username}/`;
+            usrURL.pathname = `/data/etc/index/${user["username"]}/`;
             const idxReq = new Request(usrURL.toString(), {
                 method: "PUT", 
                 headers: {
                     "Content-Type": "application/x-directory",
-                    "Attribute-UUID": user.user_id,
+                    "Attribute-UUID": user["user_id"],
                 },
             });
             const idxResp = await handleR2FS(idxReq, env, "/data");
@@ -231,6 +232,40 @@ export interface Context {
     envUUID?: string;
     envName?: string;
     envDomain: boolean;
+}
+
+function ensureSystemDirs(req: Request, env: any) {
+    console.log("Ensuring system directories exist...");
+    return Promise.all([
+        mkdir(req, env, "/"),
+        mkdir(req, env, "/etc"),
+        mkdir(req, env, "/etc/index"),
+        mkdir(req, env, "/usr"),
+        mkdir(req, env, "/env"),
+    ]);
+}
+
+async function mkdir(req: Request, env: any, path: string, attrs?: Record<string, string>): Promise<Response> {
+    // Ensure path starts with a "/" and does not end with one (unless path is just "/")
+    if (!path.startsWith("/")) {
+        path = "/" + path;
+    }
+    if (path.length > 1 && path.endsWith("/")) {
+        path = path.slice(0, -1);
+    }
+    const url = new URL(req.url);
+    url.host = (isLocal(env) ? env.LOCALHOST : HOST_DOMAIN);
+    url.pathname = `/data${path}/`;
+    const headers = {
+        "Content-Type": "application/x-directory",
+    }
+    if (attrs) {
+        for (const [key, value] of Object.entries(attrs)) {
+            headers[`Attribute-${key}`] = value;
+        }
+    }
+    const putReq = new Request(url.toString(), {method: "PUT", headers});
+    return handleR2FS(putReq, env, "/data");
 }
 
 async function lookupEnvUUID(env: any, ctx: Context, envName: string) {
