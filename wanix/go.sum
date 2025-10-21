@@ -18,3 +18,5 @@ tractor.dev/toolkit-go v0.0.0-20250103001615-9a6753936c19 h1:ODcU8zhYvUtfGJ3KeMh
 tractor.dev/toolkit-go v0.0.0-20250103001615-9a6753936c19/go.mod h1:vI9Jf9tepHLrUqGQf7XZuRcQySNajWRKBjPD4+Ay72I=
 tractor.dev/wanix v0.0.0-20251020193138-e75c1328ccc9 h1:QPh//v+BaRCaN6aqdWB9eCwUjlF+psLJq/eF51WTXv4=
 tractor.dev/wanix v0.0.0-20251020193138-e75c1328ccc9/go.mod h1:qcpx285zeq9TvSqky2aHaFe531DYOAvgq5TWiclhn+o=
+tractor.dev/wanix v0.0.0-20251021050738-a52fb8fce99d h1:E5Zz121jweUH2Qs65I+8plwzGW5+mAMeRv+vB3oTQS8=
+tractor.dev/wanix v0.0.0-20251021050738-a52fb8fce99d/go.mod h1:qcpx285zeq9TvSqky2aHaFe531DYOAvgq5TWiclhn+o=
