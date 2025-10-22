@@ -52,7 +52,13 @@
 
       <div class="dialog-body">
         <label for="project-name">Project name</label>
-        <input id="project-name" name="project-name" type="text" required minlength="1" />
+        <input  id="project-name" 
+                name="project-name" 
+                type="text" 
+                pattern="[A-Za-z][A-Za-z0-9_-]{1,23}" 
+                oninput="this.value = this.value.replace(/[^A-Za-z0-9_-]/g, '')" 
+                title="Names can only contain letters, numbers, dashes, and underscores"
+                required />
 
         <label for="project-desc">Description</label>
         <textarea id="project-desc" name="description" rows="4"></textarea>
@@ -89,10 +95,9 @@
               <button class="menu-item danger" role="menuitem" data-action="delete" data-project="${project.name}">Delete Project</button>
             </div>
           </div>
+          <p class="desc">${escapeHtml(description)}</p>
+          <span class="time">${escapeHtml(timeText)}</span>
         </div>
-        <p class="desc">${escapeHtml(description)}</p>
-        <span class="time">${escapeHtml(timeText)}</span>
-      </div>
     `;
   }
 
@@ -222,6 +227,10 @@
     const name = nameInput.value.trim();
     const description = (descInput.value || "").trim();
     if (!name) { nameInput.focus(); return; }
+    if (!nameInput.checkValidity()) {
+      nameInput.focus();
+      return;
+    }
 
     const project = { name, description };
 

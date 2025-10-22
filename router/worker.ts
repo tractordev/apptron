@@ -136,6 +136,10 @@ export default {
                 if (!project["name"]) {
                     return new Response("Bad Request", { status: 400 });
                 }
+                let name = project["name"].trim();
+                // Remove all characters except alphanumeric, dash, and underscore, replace spaces with dashes
+                name = name.replace(/\s+/g, "-").replace(/[^A-Za-z0-9\-_]/g, "");
+                project["name"] = name;
                 project["uuid"] = uuidv4();
 
                 
