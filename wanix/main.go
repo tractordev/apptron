@@ -181,10 +181,11 @@ func main() {
 	}
 
 	remoteHomeFS := httpfs.New(fmt.Sprintf("%s/data/usr/%s", origin.String(), userID), nil)
-	if err := fs.MkdirAll(opfs, fmt.Sprintf("usr/%s", userID), 0755); err != nil {
-		log.Fatal(err)
-	}
-	localHomeFS, err := fs.Sub(opfs, fmt.Sprintf("usr/%s", userID))
+	// if err := fs.MkdirAll(opfs, fmt.Sprintf("usr/%s", userID), 0755); err != nil {
+	// 	log.Fatal(err)
+	// }
+	// localHomeFS, err := fs.Sub(opfs, fmt.Sprintf("usr/%s", userID))
+	localHomeFS, err := fsa.OPFS("apptron", "usr", userID)
 	if err != nil {
 		log.Fatal(err)
 	}
