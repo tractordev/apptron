@@ -55,8 +55,8 @@
         <input  id="project-name" 
                 name="project-name" 
                 type="text" 
-                pattern="[A-Za-z][A-Za-z0-9_-]{1,23}" 
-                oninput="this.value = this.value.replace(/[^A-Za-z0-9_-]/g, '')" 
+                pattern="[A-Za-z][A-Za-z0-9_\-]{1,23}" 
+                oninput="this.value = this.value.replace(/[^A-Za-z0-9_\-]/g, '')" 
                 title="Names can only contain letters, numbers, dashes, and underscores"
                 required />
 

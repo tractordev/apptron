@@ -197,6 +197,9 @@ func main() {
 
 	if !env.IsUndefined() {
 		remoteProjectFS := httpfs.New(fmt.Sprintf("%s/data/env/%s/project", origin.String(), envUUID), nil)
+		if err := fs.MkdirAll(opfs, fmt.Sprintf("env/%s/project", envUUID), 0755); err != nil {
+			log.Fatal(err)
+		}
 		localProjectFS, err := fs.Sub(opfs, fmt.Sprintf("env/%s/project", envUUID))
 		if err != nil {
 			log.Fatal(err)
@@ -204,7 +207,7 @@ func main() {
 		sfs := syncfs.New(localProjectFS, remoteProjectFS, 3*time.Second)
 		log.Println("syncing project fs")
 		if err := sfs.Sync(); err != nil {
-			log.Printf("err syncing: %v\n", err)
+			log.Fatalf("err syncing: %v %v\n", err, envUUID)
 		}
 		log.Println("project fs synced")
 		if err := root.Namespace().Bind(sfs, ".", "project"); err != nil {
