@@ -41,16 +41,42 @@
       <!-- Projects will be populated dynamically -->
     </div>
   </div>
-  <script type="module">
-    import { urlFor, redirectTo } from "/apptron.js";
-    
-    // Template function to create a project card
-    function createProjectCard(project, index) {
-      const menuId = `menu-${index}`;
-      const description = project.description || project.desc || 'No description available';
-      const timeText = formatProjectTime(project);
+
+
+  <dialog id="new-project-dialog">
+    <form id="new-project-form" method="dialog" class="dialog">
+      <div class="dialog-header">
+        <h2>New Project</h2>
+        <button class="dialog-close" type="button" aria-label="Close">&times;</button>
+      </div>
+
+      <div class="dialog-body">
+        <label for="project-name">Project name</label>
+        <input id="project-name" name="project-name" type="text" required minlength="1" />
+
+        <label for="project-desc">Description</label>
+        <textarea id="project-desc" name="description" rows="4"></textarea>
+      </div>
+
+      <div class="dialog-footer">
+        <button class="btn" type="button" data-action="cancel">Cancel</button>
+        <button class="btn primary" type="submit">Create</button>
+      </div>
+    </form>
+  </dialog>
+
+
+
+<script type="module">
+  import { urlFor, redirectTo } from "/apptron.js";
+  
+  // Template function to create a project card
+  function createProjectCard(project, index) {
+    const menuId = `menu-${index}`;
+    const description = project.description || project.desc || 'No description available';
+    const timeText = formatProjectTime(project);
       
-      return `
+    return `
         <div class="project-card">
           <div class="card-header">
             <h2 class="title"><a style="text-decoration: none; color: inherit;" href="${urlFor(`/edit/${project.name}`, {}, window.user.username)}">${escapeHtml(project.name)}</a></h2>
@@ -63,79 +89,78 @@
               <button class="menu-item danger" role="menuitem" data-action="delete" data-project="${project.name}">Delete Project</button>
             </div>
           </div>
-          <p class="desc">${escapeHtml(description)}</p>
-          <span class="time">${escapeHtml(timeText)}</span>
         </div>
-      `;
-    }
-    
-    // Helper function to escape HTML
-    function escapeHtml(text) {
-      const div = document.createElement('div');
-      div.textContent = text;
-      return div.innerHTML;
-    }
-    
-    // Helper function to format project time
-    function formatProjectTime(project) {
-      if (project.updated_at || project.modified || project.lastModified) {
-        const date = new Date(project.updated_at || project.modified || project.lastModified);
-        const now = new Date();
-        const diffMs = now - date;
-        const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-        const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-        
-        if (diffDays === 0) {
-          if (diffHours === 0) {
-            return 'Just now';
-          } else if (diffHours === 1) {
-            return '1 hour ago';
-          } else {
-            return `${diffHours} hours ago`;
-          }
-        } else if (diffDays === 1) {
-          return '1 day ago';
-        } else if (diffDays < 7) {
-          return `${diffDays} days ago`;
-        } else if (diffDays < 30) {
-          const weeks = Math.floor(diffDays / 7);
-          return weeks === 1 ? '1 week ago' : `${weeks} weeks ago`;
+        <p class="desc">${escapeHtml(description)}</p>
+        <span class="time">${escapeHtml(timeText)}</span>
+      </div>
+    `;
+  }
+
+  // Escape HTML
+  function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+
+  // Format project time
+  function formatProjectTime(project) {
+    if (project.updated_at || project.modified || project.lastModified) {
+      const date = new Date(project.updated_at || project.modified || project.lastModified);
+      const now = new Date();
+      const diffMs = now - date;
+      const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+      const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+
+      if (diffDays === 0) {
+        if (diffHours === 0) {
+          return 'Just now';
+        } else if (diffHours === 1) {
+          return '1 hour ago';
         } else {
-          return date.toLocaleDateString();
+          return `${diffHours} hours ago`;
         }
+      } else if (diffDays === 1) {
+        return '1 day ago';
+      } else if (diffDays < 7) {
+        return `${diffDays} days ago`;
+      } else if (diffDays < 30) {
+        const weeks = Math.floor(diffDays / 7);
+        return weeks === 1 ? '1 week ago' : `${weeks} weeks ago`;
+      } else {
+        return date.toLocaleDateString();
       }
-      return 'Recently';
     }
-    
-    // Function to populate the projects grid
-    function populateProjectsGrid(projects) {
-      const grid = document.getElementById('projects-grid');
-      if (!grid) return;
-      
-      if (!projects || projects.length === 0) {
-        grid.innerHTML = '<p class="no-projects">No projects found. Create your first project!</p>';
-        return;
-      }
-      
-      const cardsHtml = projects.map((project, index) => createProjectCard(project, index)).join('');
-      grid.innerHTML = cardsHtml;
-      document.querySelectorAll('.project-card .card-menu').forEach(popover => {
-        popover.addEventListener('toggle', (e) => {
-          if (e.newState !== 'open') return;
-          
-          const source = e.target.parentElement.querySelector('.ellipsis-btn');
-          const triggerRect = source.getBoundingClientRect();
-          const popoverRect = popover.getBoundingClientRect();
+    return 'Recently';
+  }
 
-          // Align right side of popover with right side of trigger
-          // and top of popover with bottom of trigger
-          const marginLeft = triggerRect.right - popoverRect.width;
-          const marginTop = triggerRect.bottom;
+  // Populate the projects grid
+  function populateProjectsGrid(projects) {
+    const grid = document.getElementById('projects-grid');
+    if (!grid) return;
 
-          popover.style.marginLeft = `${marginLeft}px`;
-          popover.style.marginTop = `${marginTop}px`;
-        });
+    if (!projects || projects.length === 0) {
+      grid.innerHTML = '<p class="no-projects">No projects found. Create your first project!</p>';
+      return;
+    }
+
+    const cardsHtml = projects.map((project, index) => createProjectCard(project, index)).join('');
+    grid.innerHTML = cardsHtml;
+
+    document.querySelectorAll('.project-card .card-menu').forEach(popover => {
+      popover.addEventListener('toggle', (e) => {
+        if (e.newState !== 'open') return;
+
+        const triggerRect = e.source.getBoundingClientRect();
+        const popoverRect = popover.getBoundingClientRect();
+        const marginLeft = triggerRect.right - popoverRect.width;
+        const marginTop = triggerRect.bottom;
+
+        popover.style.marginLeft = `${marginLeft}px`;
+        popover.style.marginTop = `${marginTop}px`;
       });
+    });
+
       document.querySelectorAll('.project-card .menu-item').forEach(btn => {
         btn.addEventListener('click', async (e) => {
           const action = e.target.dataset.action;
@@ -157,31 +182,60 @@
             }
           }
           e.target.parentElement.hidePopover();
-        });
       });
-    }
-    
-    // Make function available globally
-    window.populateProjectsGrid = populateProjectsGrid;
-    document.getElementById("create-btn").addEventListener("click", async () => {
-      const name = prompt("Enter a name for your project");
-      if (!name) {
-        return;
-      }
-      const project = {name};
-      const response = await fetch(urlFor("/projects", {}, window.user.username), {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(project)
-      });
-      if (response.ok) {
-        redirectTo(response.headers.get("Location"));
-      } else {
-        alert("Failed to create project");
-      }
     });
+  }
+
+  // Expose globally
+  window.populateProjectsGrid = populateProjectsGrid;
+
+  // === New Project dialog logic ===
+  const createBtn = document.getElementById("create-btn");
+  const dlg = document.getElementById("new-project-dialog");
+  const form = document.getElementById("new-project-form");
+  const closeBtn = dlg.querySelector(".dialog-close");
+  const cancelBtn = dlg.querySelector('[data-action="cancel"]');
+  const nameInput = document.getElementById("project-name");
+  const descInput = document.getElementById("project-desc");
+
+  createBtn.addEventListener("click", () => {
+    form.reset();
+    dlg.showModal();
+    setTimeout(() => nameInput.focus(), 0);
+  });
+
+  function closeDialog() {
+    if (dlg.open) dlg.close();
+  }
+
+  closeBtn.addEventListener("click", closeDialog);
+  cancelBtn.addEventListener("click", closeDialog);
+
+  dlg.addEventListener("click", (e) => {
+    const r = dlg.getBoundingClientRect();
+    const inBounds = e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom;
+    if (!inBounds) closeDialog();
+  });
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const name = nameInput.value.trim();
+    const description = (descInput.value || "").trim();
+    if (!name) { nameInput.focus(); return; }
+
+    const project = { name, description };
+
+    const response = await fetch(urlFor("/projects", {}, window.user.username), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(project)
+    });
+    if (response.ok) {
+      redirectTo(response.headers.get("Location"));
+    } else {
+      alert("Failed to create project");
+    }
+  });
   </script>
 </body>
 </html>
