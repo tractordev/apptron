@@ -20,8 +20,8 @@
     /* HANKO DEFAULT STYLES, DON'T RENAME ---------------------------*/
     /* Color Scheme */
     --color: #fff;
-    --color-shade-1: #6F6F6F;
-    --color-shade-2: #8C8C8C;
+    --color-shade-1: var(--gray-300);
+    --color-shade-2: var(--gray-200);
 
     --brand-color: var(--yellow);
     --brand-color-shade-1: var(--yellow-shade);
@@ -89,6 +89,45 @@ html, body {
     background-color: var(--gray-700);
     font-size: var(--font-size);
 }
+
+/* global styles --------------------- */
+* {
+  box-sizing: border-box;
+}
+
+label {
+  color: var(--gray-100);
+  margin-bottom: 0.25rem;
+}
+input[type="text"], textarea {
+  border-radius: var(--border-radius);
+  border: 1px solid var(--gray-300);
+  background-color: inherit;
+  font: inherit;
+  color: inherit;
+  padding: 0.5rem;
+}
+input, button {
+  height: var(--item-height);
+}
+input[type="text"]:focus,
+textarea:focus,
+button:focus {
+  outline: none; 
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.2);
+}
+button {
+  border-radius: var(--border-radius);
+  border: 0px solid;
+  background-color: var(--gray-100);
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+button.primary {
+  background-color: var(--yellow);
+  color: #000;
+}
+
 
 /* DASHBOARD */
 
@@ -188,16 +227,16 @@ header h1 {
 
 /* HEADER BAR */
 #header-bar {
-    height: 35px;
-    box-sizing: border-box;
-    z-index: 1000;
-    background-color: var(--gray-800);
-    display: flex !important; /* override the web component loading display: none */
-    justify-content: space-between;
-    align-items: center;
-    padding: 0.5rem 1rem;
-    color: var(--gray-100);
-    flex-shrink: 0;
+  height: 35px;
+  box-sizing: border-box;
+  z-index: 1000;
+  background-color: var(--gray-800);
+  display: flex !important; /* override the web component loading display: none */
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 1rem;
+  color: var(--gray-100);
+  flex-shrink: 0;
 }
 #header-bar a {
   text-decoration: none;
@@ -207,50 +246,47 @@ header h1 {
     color: var(--yellow);
 }
 #header-bar svg {
-    height: 1.2rem;
-    width: auto;
-    vertical-align: text-bottom;
-    color: inherit;
+  height: 1.2rem;
+  width: auto;
+  vertical-align: text-bottom;
+  color: inherit;
 }
 #header-bar #nav-links {
-    display: flex;
-    gap: 2rem;
+  display: flex;
+  gap: 2rem;
 }
 
 #header-bar #nav-links button {
-    all: unset;
-    cursor: pointer;
+  all: unset;
+  cursor: pointer;
 }
 
 /* Dialog Styles */
 dialog {
-    background-color: var(--gray-600);
-    border: 1px solid var(--gray-500);
-    border-radius: var(--border-radius);
-    padding: 1rem;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
-    color: #fff;
-    z-index: 1000;
-    pointer-events: auto !important;
+  font: inherit;
+  background-color: var(--gray-600);
+  border: 1px solid var(--gray-500);
+  border-radius: var(--border-radius);
+  padding: 1rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  color: #fff;
+  z-index: 1000;
+  pointer-events: auto !important;
 }
-
 dialog::backdrop {
-    background-color: rgba(0, 0, 0, 0.6);
+  background-color: rgba(0, 0, 0, 0.6);
 }
-
 .dialog-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 1rem 1rem 0 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
-
 /* this should match the hanko h1 that is used in the sign in dialog header */
-.dialog-header h2 {
+#account-dialog .dialog-header h2 {
   margin: 0;
   font-size: 24px;
+  padding: 1rem 1rem 0 1rem;
 }
-
 .dialog-close {
     background: none;
     border: none;
@@ -266,24 +302,50 @@ dialog::backdrop {
     justify-content: center;
     margin-left: auto;
 }
-
 .dialog-close:hover {
     color: #fff;
-}
-
-.dialog-body {
-    padding: 0 1rem;
 }
 
 .dialog-body p {
     margin-top: 0;
     color: var(--gray-100);
 }
+
+/* only applying these styles to the create project
+modal for now, bc the other one is a hanko component
+with its own padding and styles */
+#new-project-dialog {
+  padding: 2rem;
+}
+#new-project-dialog input[type=text],
+#new-project-dialog textarea, 
+#new-project-dialog label {
+  display: block;
+  width: 100%;
+}
+#new-project-dialog input[type=text],
+#new-project-dialog textarea {
+  margin-bottom: 1rem;
+}
+#new-project-dialog
+.dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+/* Create project modal */
+#new-project-dialog {
+  width: 464px;
+}
+
 /* otherwise there's too much space between the close button and the dialog contents... */
 .auth-container {
   margin-top: -1rem;
 }
 
+
+/* Top bar login state */
 #logout {
   display: none !important;
 }
