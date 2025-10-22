@@ -11,6 +11,10 @@ export default {
         const ctx = parseContext(req, env);
         const authURL = env.AUTH_URL;
 
+        if (url.pathname.endsWith(".map")) {
+            return new Response("", { status: 200 });
+        }
+
         if (ctx.envDomain && url.pathname.startsWith("/edit/")) {
             const parts = url.pathname.split("/");
             const envName = parts[2];
@@ -391,7 +395,7 @@ async function envPage(req: Request, env: any, envUUID: string, path: string) {
     url.pathname = path;
     const envReq = new Request(new URL("/_frame", req.url).toString(), req);
     return insertHTML(await env.assets.fetch(envReq), "body", `<iframe src="${url.toString()}" allow="usb; serial; hid; clipboard-read; clipboard-write; cross-origin-isolated"
-        sandbox="allow-scripts allow-same-origin allow-forms allow-modals allow-popups allow-presentation allow-popups-to-escape-sandbox"></iframe>`);
+        sandbox="allow-scripts allow-same-origin allow-forms allow-modals allow-popups allow-popups-to-escape-sandbox"></iframe>`);
 }
 
 

@@ -8,7 +8,7 @@ replace github.com/hugelgupf/p9 => github.com/progrium/p9 v0.0.0-20251014191851-
 
 // replace tractor.dev/wanix => ../../wanix
 
-require tractor.dev/wanix v0.0.0-20251020193138-e75c1328ccc9
+require tractor.dev/wanix v0.0.0-20251022173730-d6ef5f91e6f0
 
 require (
 	github.com/fxamacker/cbor/v2 v2.9.0 // indirect

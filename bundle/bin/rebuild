@@ -1,0 +1,38 @@
+#!/bin/busybox sh
+
+set -euo pipefail
+
+env_root=/web/opfs/apptron/env/$ENV_UUID/root
+echo "Building environment..."
+
+mount -o bind /dev /envbuild/dev
+mount -t proc proc /envbuild/proc
+mount -t sysfs sys /envbuild/sys
+
+cp /project/.apptron/envbuild /envbuild/.envbuild
+chroot /envbuild /bin/sh -c ". .envbuild"
+umount /envbuild/dev
+umount /envbuild/proc
+umount /envbuild/sys
+rm /envbuild/.envbuild
+echo "Saving environment (this will be faster soon)..."
+rm -rf $env_root
+cp -r /envbuild $env_root
+rm -rf /envbuild/*
+echo "Build complete"
+echo
+
+# next boot will use the new environment,
+# but here we will chroot into it
+mount -o bind /dev $env_root/dev
+mount -o bind /home $env_root/home
+# mount -o bind /project $env_root/project
+# mount -o bind /web $env_root/web
+mount -t proc proc $env_root/proc
+mount -t sysfs sys $env_root/sys
+cp /etc/resolv.conf $env_root/etc/resolv.conf
+cp /etc/profile.d/apptron.sh $env_root/etc/profile.d/apptron.sh
+
+# read -p "Press enter to continue"
+
+chroot $env_root /bin/start

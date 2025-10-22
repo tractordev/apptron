@@ -317,7 +317,34 @@ export async function handleGet(req, env, key, basepath, wantsIndex) {
                 controller.close();
             }
         }), { headers: { "Content-Type": `multipart/mixed; boundary=${BOUNDARY}` } });
-    } 
+    }
+
+    // multipart/mixed listing gives metadata for all files in the directory
+    // important for caching
+    if (req.headers.get("Accept")?.includes("multipart/mixed")) {
+        const objects = await objectsInDir(env.bucket, key, 2);
+        return new Response(new ReadableStream({
+            async start(controller) {
+                controller.enqueue(encode(
+                    `--${BOUNDARY}\r\n` +
+                    `${formatHeaders(headersFromObject(object, basepath))}\r\n` +
+                    `${formatEntries(entriesFromObjects(objects, key))}\r\n`
+                ));
+                for (const obj of objects) {
+                    if (obj.key.slice(key.length).split("/").length > (key === "/" ? 1 : 2)) {
+                        continue;
+                    }
+                    controller.enqueue(encode(
+                        `--${BOUNDARY}\r\n` +
+                        `${formatHeaders(headersFromObject(obj, basepath, !isObjectDir(obj)))}\r\n` +
+                        ((isObjectDir(obj)) ? `${formatEntries(entriesFromObjects(objects, obj.key))}\r\n` : "")
+                    ));
+                }
+                controller.enqueue(encode(`--${BOUNDARY}--\r\n`));
+                controller.close();
+            }
+        }), { headers: { "Content-Type": `multipart/mixed; boundary=${BOUNDARY}` } });
+    }
     
     // normal listing
     const listing = await directoryEntries(env.bucket, key);

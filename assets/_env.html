@@ -37,7 +37,7 @@
 </head>
 <body>
     <script type="module">
-        import { setupWanix, bootBundle, getAuth, envUUID, getMeta } from "/apptron.js";
+        import { setupWanix, getAuth, envUUID, getMeta, redirectTo, urlFor } from "/apptron.js";
         const auth = await getAuth();
         const origin = window.location.origin;
         window.apptron = {
@@ -54,25 +54,20 @@
         // need to register this as early as possible
         window.addEventListener("message", async (event) => {
             if (event.data.port) {
-                console.log("waiting for wanix...");
+                console.log("vscode waiting for apptron...");
                 await w.ready();
                 
-                
-                // xterm.js mode 
-                // const xid = (await w.readText("web/dom/new/xterm")).trim();
-                // await w.writeFile("task/1/ctl", `bind #console/data web/dom/${xid}/data`);
-                // await w.writeFile("web/dom/body/ctl", `append-child ${xid}`);
 
-                console.log("creating port...");
+                console.log("creating port for vscode...");
                 const port = w.createPort();
-                
-                console.log("booting bundle...");
-                await bootBundle(w);
-
-                console.log("sending port to vscode", port);
                 event.data.port.postMessage({wanix: port}, [port]); 
             }
         });
+
+        const session = await auth.validateSession();
+        if (!session.is_valid) {
+            redirectTo(urlFor("/signin"));
+        }
         
     </script>
     <div style="height: 35px;">
@@ -80,7 +75,7 @@
       </div>
     <iframe src="/_vscode" 
         allow="clipboard-read; clipboard-write; cross-origin-isolated"
-        sandbox="allow-scripts allow-same-origin allow-forms allow-modals allow-popups allow-presentation allow-popups-to-escape-sandbox"></iframe>
+        sandbox="allow-scripts allow-same-origin allow-forms allow-modals allow-popups allow-popups-to-escape-sandbox"></iframe>
     
 
 </body>

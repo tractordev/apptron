@@ -63,8 +63,8 @@
         const user = await auth.getUser();
         const origin = window.location.origin;
         window.apptron = {
-            user: user.username,
-            origin: origin,
+            user,
+            origin,
         }
         const w = setupWanix();
         await w.ready();

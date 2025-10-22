@@ -1,0 +1,26 @@
+export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+export PAGER=less
+umask 022
+
+export SESSION_IP=$(ifconfig eth0 | grep "inet addr" | cut -d: -f2 | cut -d' ' -f1)
+
+for script in /etc/profile.d/*.sh ; do
+	if [ -r "$script" ] ; then
+		. "$script"
+	fi
+done
+unset script
+
+# use nicer PS1 for bash and busybox ash
+if [ -n "$BASH_VERSION" -o "$BB_ASH_VERSION" ]; then
+	export PS1="$USER:\w $ "
+fi
+
+if [ -f "/home/$USER/.profile" ]; then
+	. "/home/$USER/.profile"
+fi
+
+if [ -n "$ENV_NAME" ]; then
+	cd ~/$ENV_NAME
+fi
+
