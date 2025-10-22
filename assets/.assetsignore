@@ -1,2 +1,3 @@
 system/node_modules
 preview/node_modules
+.DS_Store
