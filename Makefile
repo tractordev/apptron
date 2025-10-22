@@ -5,6 +5,7 @@ all: assets/vscode router/node_modules extension/dist session/bundle.tgz assets/
 .PHONY: all
 
 dev: all .env.local
+	docker rm -f $(shell docker ps -a --filter "name=^workerd-apptron-Session" --format "{{.ID}}") > /dev/null 2>&1 || true
 	wrangler dev --port=8788
 .PHONY: dev
 
