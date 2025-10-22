@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"embed"
 	"encoding/binary"
 	"encoding/hex"
 	"fmt"
@@ -19,9 +18,6 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/progrium/go-netstack/vnet"
 )
-
-//go:embed bundle.tgz
-var bundle embed.FS
 
 func main() {
 	vn, err := vnet.New(&vnet.Configuration{
@@ -45,7 +41,7 @@ func handler(vn *vnet.VirtualNetwork) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/bundle.tgz" {
 			w.Header().Set("Access-Control-Allow-Origin", "*")
-			http.ServeFileFS(w, r, bundle, "bundle.tgz")
+			http.ServeFile(w, r, "bundle.tgz")
 			return
 		}
 
