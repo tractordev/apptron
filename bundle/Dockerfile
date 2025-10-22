@@ -17,5 +17,4 @@ COPY --from=v86 /libv86.js /v86/libv86.js
 COPY --from=v86 /v86.wasm /v86/v86.wasm
 COPY --from=v86 /bios/seabios.bin /v86/seabios.bin
 COPY --from=v86 /bios/vgabios.bin /v86/vgabios.bin
-COPY ./init.js /init.js
 CMD ["true"]

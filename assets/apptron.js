@@ -12,19 +12,6 @@ export function setupWanix() {
     return w;
 }
 
-export async function bootBundle(w) {
-    try {
-        const initJS = await w.readText("#bundle/init.js");
-        const blob = new Blob([initJS], { type: 'text/javascript' });
-        const initUrl = URL.createObjectURL(blob);
-        const initModule = await import(initUrl);
-        await initModule.default(w);
-    } catch (e) {
-        console.log(e);
-        console.log("No bundle init.js found");
-    }
-}
-
 let auth = null;
 export async function getAuth() {
     if (auth) {
