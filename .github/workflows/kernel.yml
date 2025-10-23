@@ -4,7 +4,7 @@ on:
     branches:
       - main
     paths:
-      - 'kernel/**'
+      - 'system/kernel/**'
 
 jobs:
   build-amd64:
@@ -34,7 +34,7 @@ jobs:
       - name: Build and push to GHCR
         uses: docker/build-push-action@v6
         with:
-          context: kernel
+          context: system/kernel
           platforms: linux/amd64
           push: true
           tags: ghcr.io/${{ github.repository }}:kernel
