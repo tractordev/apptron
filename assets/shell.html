@@ -54,7 +54,7 @@
 </head>
 <body>
 <script type="module">
-    import { setupWanix, bootBundle, getAuth, redirectTo, urlFor } from "/apptron.js";
+    import { setupWanix, getAuth, redirectTo, urlFor } from "/apptron.js";
     const auth = await getAuth();
     const session = await auth.validateSession();
     if (!session.is_valid) {
@@ -83,7 +83,7 @@
             await w.writeFile("web/dom/body/ctl", `append-child ${xid}`);
         }
         
-        await bootBundle(w);
+        
     }
 </script>
 </body>
