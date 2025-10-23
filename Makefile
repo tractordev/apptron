@@ -1,7 +1,7 @@
 VSCODE_URL	?= https://github.com/progrium/vscode-web/releases/download/v1/vscode-web-1.103.2.zip
 DOCKER_CMD 	?= $(shell command -v podman || command -v docker)
 
-all: assets/vscode router/node_modules extension/dist session/bundle.tgz assets/wanix.min.js assets/wanix.wasm
+all: assets/vscode worker/node_modules extension/system/dist assets/wanix.min.js assets/wanix.wasm
 .PHONY: all
 
 dev: all .env.local
@@ -15,15 +15,14 @@ deploy: all
 
 clean:
 	rm -rf assets/vscode
-	rm -rf router/node_modules
+	rm -rf worker/node_modules
 	rm -rf node_modules
-	rm -rf extension/dist
-	rm -rf extension/node_modules
+	rm -rf extension/system/dist
+	rm -rf extension/system/node_modules
 	rm -f assets/wanix.wasm
 	rm -f assets/wanix.debug.wasm
 	rm -f assets/wanix.js
 	rm -f assets/wanix.min.js
-	make -C bundle clean
 .PHONY: clean
 
 .env.local:
@@ -37,17 +36,14 @@ assets/vscode:
 	rm -rf .tmp
 	rm assets/vscode.zip
 
-extension/dist: extension/node_modules
-	cd extension && npm run compile-web
+extension/system/dist: extension/system/node_modules
+	cd extension/system && npm run compile-web
 
-extension/node_modules:
-	cd extension && npm ci
+extension/system/node_modules:
+	cd extension/system && npm ci
 
-router/node_modules: router/package.json
-	cd router && npm ci
-
-session/bundle.tgz:
-	cd bundle && make
+worker/node_modules: worker/package.json
+	cd worker && npm ci
 
 assets/wanix.wasm:
 	cd wanix && GOOS=js GOARCH=wasm go build -o ../assets/wanix.wasm
@@ -58,5 +54,3 @@ assets/wanix.min.js:
 	$(DOCKER_CMD) create --name apptron-wanix --platform linux/amd64 ghcr.io/tractordev/wanix:runtime
 	$(DOCKER_CMD) cp apptron-wanix:/wanix.min.js assets/wanix.min.js
 	$(DOCKER_CMD) cp apptron-wanix:/wanix.js assets/wanix.js
-#$(DOCKER_CMD) cp apptron-wanix:/wanix.debug.wasm assets/wanix.debug.wasm
-#$(DOCKER_CMD) cp apptron-wanix:/wanix.wasm assets/wanix.wasm

@@ -1,6 +1,6 @@
 name = "apptron"
 compatibility_date = "2025-08-21"
-main = "./router/worker.ts"
+main = "./worker/src/worker.ts"
 routes = [
   { pattern = "*.apptron.dev/*", zone_name = "apptron.dev" },
   { pattern = "apptron.dev/*", zone_name = "apptron.dev" }
@@ -21,7 +21,7 @@ enabled = true
 
 [[containers]]
 class_name = "Session"
-image = "./session/Dockerfile"
+image = "./Dockerfile"
 max_instances = 1
 
 [[durable_objects.bindings]]
