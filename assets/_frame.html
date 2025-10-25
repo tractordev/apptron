@@ -26,7 +26,7 @@
     }
   </style>
   <script type="module">
-    import { appHost } from "/apptron.js";
+    import { appHost } from "/lib/apptron.js";
     window.onmessage = (event) => {
       if (!event.origin.endsWith(appHost())) {
         return;

@@ -4,9 +4,10 @@
   <meta charset="UTF-8" />
   <title>Apptron</title>
   <link rel="stylesheet" href="styles.css" />
-  <script src="topbar/topbar.js" type="module"></script>
+  <script src="/lib/topbar.js" type="module"></script>
+  <script src="/lib/dropdown.js" type="module"></script>
   <script type="module">
-    import { getAuth, secondsSince, urlFor } from "/apptron.js";
+    import { getAuth, secondsSince, urlFor } from "/lib/apptron.js";
     const auth = await getAuth();
     window.user = await auth.getUser();
     // this could be optimized to only PUT within a 
@@ -74,26 +75,26 @@
 
 
 <script type="module">
-  import { urlFor, redirectTo } from "/apptron.js";
+  import { urlFor, redirectTo } from "/lib/apptron.js";
   
   // Template function to create a project card
   function createProjectCard(project, index) {
     const menuId = `menu-${index}`;
     const description = project.description || project.desc || 'No description available';
     const timeText = formatProjectTime(project);
-      
+
     return `
         <div class="project-card">
           <div class="card-header">
             <h2 class="title"><a style="text-decoration: none; color: inherit;" href="${urlFor(`/edit/${project.name}`, {}, window.user.username)}">${escapeHtml(project.name)}</a></h2>
-            <button class="ellipsis-btn" type="button"
-                    style="padding: 0 4px 0 4px;"
-                    aria-haspopup="menu" aria-controls="${menuId}"
-                    popovertarget="${menuId}" popovertargetaction="toggle">⋮</button>
-            <div id="${menuId}" class="card-menu" popover role="menu" aria-label="Project menu">
-              <button class="menu-item" role="menuitem" data-action="edit" data-project="${project.name}">Edit Settings</button>
-              <button class="menu-item danger" role="menuitem" data-action="delete" data-project="${project.name}">Delete Project</button>
-            </div>
+            <apptron-dropdown align="right">
+              <button class="ellipsis-btn" type="button"
+                      style="padding: 4px;">⋮</button>
+              <div class="card-menu" popover role="menu" aria-label="Project menu">
+                <button class="menu-item" role="menuitem" data-action="edit" data-project="${project.name}">Edit Settings</button>
+                <button class="menu-item danger" role="menuitem" data-action="delete" data-project="${project.name}">Delete Project</button>
+              </div>
+            </apptron-dropdown>
           </div>
           <p class="desc">${escapeHtml(description)}</p>
           <span class="time">${escapeHtml(timeText)}</span>
@@ -151,20 +152,6 @@
 
     const cardsHtml = projects.map((project, index) => createProjectCard(project, index)).join('');
     grid.innerHTML = cardsHtml;
-
-    document.querySelectorAll('.project-card .card-menu').forEach(popover => {
-      popover.addEventListener('toggle', (e) => {
-        if (e.newState !== 'open') return;
-
-        const triggerRect = e.source.getBoundingClientRect();
-        const popoverRect = popover.getBoundingClientRect();
-        const marginLeft = triggerRect.right - popoverRect.width;
-        const marginTop = triggerRect.bottom;
-
-        popover.style.marginLeft = `${marginLeft}px`;
-        popover.style.marginTop = `${marginTop}px`;
-      });
-    });
 
       document.querySelectorAll('.project-card .menu-item').forEach(btn => {
         btn.addEventListener('click', async (e) => {
