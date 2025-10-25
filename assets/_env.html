@@ -17,7 +17,7 @@
 
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 
-  <script src="/topbar/topbar.js" type="module"></script>
+  <script src="/lib/topbar.js" type="module"></script>
 
   <style>
     body {
@@ -37,7 +37,7 @@
 </head>
 <body>
     <script type="module">
-        import { setupWanix, getAuth, envUUID, getMeta, redirectTo, urlFor } from "/apptron.js";
+        import { setupWanix, getAuth, envUUID, getMeta, redirectTo, urlFor } from "/lib/apptron.js";
         const auth = await getAuth();
         const origin = window.location.origin;
         window.apptron = {

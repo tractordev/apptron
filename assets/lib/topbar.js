@@ -1,4 +1,4 @@
-import { getAuth, redirectTo, urlFor } from "/apptron.js";
+import { getAuth, redirectTo, urlFor } from "/lib/apptron.js";
 
 class TopBar extends HTMLElement {
     constructor() {
@@ -78,7 +78,7 @@ class TopBar extends HTMLElement {
     async loadTemplate() {
         try {
             // Fetch the template from external file
-            const response = await fetch('/topbar/topbar.html');
+            const response = await fetch('/lib/topbar.html');
             const text = await response.text();
             
             // Parse the template
