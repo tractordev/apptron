@@ -44,12 +44,12 @@
   </div>
 
 
-<dialog id="project-dialog">
-  <form id="project-form" method="dialog" class="dialog">
-    <div class="dialog-header">
-      <h2 id="project-dialog-title">New Project</h2>
-      <button class="dialog-close" type="button" aria-label="Close">&times;</button>
-    </div>
+  <dialog id="project-dialog">
+    <form id="project-form" method="dialog" class="dialog">
+      <div class="dialog-header">
+        <h2 id="project-dialog-title">New Project</h2>
+        <button class="dialog-close" type="button" data-action="close" aria-label="Close">&times;</button>
+      </div>
 
     <div class="dialog-body">
       <label for="project-name">Project name</label>
@@ -63,12 +63,12 @@
       <textarea id="project-desc" name="description" rows="4"></textarea>
     </div>
 
-    <div class="dialog-footer">
-      <button class="btn" type="button" data-action="cancel">Cancel</button>
-      <button class="btn primary" id="project-submit" type="submit">Create</button>
-    </div>
-  </form>
-</dialog>
+      <div class="dialog-footer">
+        <button class="btn" type="button" data-action="close">Cancel</button>
+        <button class="btn primary" id="project-submit" type="submit">Create</button>
+      </div>
+    </form>
+  </dialog>
 
 
 
@@ -200,16 +200,37 @@
   // Expose globally
   window.populateProjectsGrid = populateProjectsGrid;
 
+  // === New Project dialog logic ===
+  function modalDialog(el) {
+    const closers = el.querySelectorAll('[data-action="close"]');
+    closers.forEach(closer => {
+      closer.addEventListener("click", () => el.close());
+    });
+    el.addEventListener("click", (e) => {
+      const r = el.getBoundingClientRect();
+      const inBounds = (
+        e.clientX >= r.left &&
+        e.clientX <= r.right &&
+        e.clientY >= r.top &&
+        e.clientY <= r.bottom
+      );
+      if (!inBounds) el.close();
+    });
+    return el;
+  }
+
+
   // === Project dialog controller (create + edit) ===
   const createBtn   = document.getElementById("create-btn");
   const dlg         = document.getElementById("project-dialog");
   const form        = document.getElementById("project-form");
   const titleEl     = document.getElementById("project-dialog-title");
   const submitEl    = document.getElementById("project-submit");
-  const closeBtn    = dlg.querySelector(".dialog-close");
-  const cancelBtn   = dlg.querySelector('[data-action="cancel"]');
   const nameInput   = document.getElementById("project-name");
   const descInput   = document.getElementById("project-desc");
+
+  // set up close button behavior
+  modalDialog(dlg);
 
   // track which project we’re editing (for PATCH/PUT)
   let originalName = null;
@@ -243,18 +264,7 @@
 
   createBtn.addEventListener("click", openCreateDialog);
 
-  // === Close modal helper function === //
-  function closeDialog() {
-    if (dlg.open) dlg.close();
-  }
-  closeBtn.addEventListener("click", closeDialog);
-  cancelBtn.addEventListener("click", closeDialog);
-
-  dlg.addEventListener("click", (e) => {
-    const r = dlg.getBoundingClientRect();
-    const inBounds = e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom;
-    if (!inBounds) closeDialog();
-  });
+  
 
 // === Submit handler for create AND edit === //
   form.addEventListener("submit", async (e) => {
@@ -283,7 +293,7 @@
 
         if (!resp.ok) throw new Error("Failed to update project");
 
-        closeDialog();
+        dlg.close();
 
         // Refresh list so the new description shows
         const listResp = await fetch(urlFor("/projects", {}, window.user.username));
