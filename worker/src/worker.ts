@@ -248,7 +248,7 @@ export default {
             return getContainer(env.session).fetch(req);
         }
 
-        if (["/signin", "/signout", "/shell", "/dashboard"].includes(url.pathname)) {
+        if (["/signin", "/signout", "/shell", "/dashboard", "/debug"].includes(url.pathname)) {
             const resp = await env.assets.fetch(req);
 
             const contentType = resp.headers.get('content-type');
