@@ -156,7 +156,8 @@ export async function handlePut(req, env, key, path) {
             return new Response("Object Not Found\n", { status: 404 });
         }
         customMetadata = object.customMetadata || {};
-        customMetadata["Change-Timestamp"] = Math.floor(Date.now() / 1000).toString();
+        // Use microseconds for Change-Timestamp
+        customMetadata["Change-Timestamp"] = (Date.now() * 1000).toString();
         const attrValue = new TextDecoder().decode(await req.arrayBuffer());
         customMetadata["Attribute-" + attrKey] = attrValue.replace(/\n+$/, "");
         await env.bucket.put(key, object.body, {
