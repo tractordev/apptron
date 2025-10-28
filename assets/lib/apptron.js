@@ -18,6 +18,9 @@ export async function getAuth() {
     if (auth) {
         return auth;
     }
+    if (!getMeta("auth-url")) {
+        throw new Error("auth-url meta tag not found");
+    }
     if (isLocalhost()) {
         const { hanko } = await register(getMeta("auth-url"));
         auth = hanko;
