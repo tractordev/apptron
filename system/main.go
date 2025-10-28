@@ -8,6 +8,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"path"
 	"path/filepath"
 	"slices"
 	"strings"
@@ -25,7 +26,7 @@ import (
 	"tractor.dev/wanix/vm"
 	"tractor.dev/wanix/web"
 	"tractor.dev/wanix/web/api"
-	"tractor.dev/wanix/web/fsa"
+	"tractor.dev/wanix/web/idbfs"
 	"tractor.dev/wanix/web/jsutil"
 	"tractor.dev/wanix/web/runtime"
 	"tractor.dev/wanix/web/virtio9p"
@@ -113,8 +114,10 @@ func main() {
 		}
 	}
 
-	opfs, err := fsa.OPFS("apptron")
-	if err != nil {
+	// IDBFS is still origin-private if not exactly OPFS.
+	// Not only does it work in older Safari, but it's 50% faster than OPFS.
+	opfs := idbfs.New("apptron")
+	if err := root.Namespace().Bind(opfs, ".", "web/idbfs/apptron"); err != nil {
 		log.Fatal(err)
 	}
 
@@ -181,11 +184,13 @@ func main() {
 	}
 
 	remoteHomeFS := httpfs.New(fmt.Sprintf("%s/data/usr/%s", origin.String(), userID), nil)
-	// if err := fs.MkdirAll(opfs, fmt.Sprintf("usr/%s", userID), 0755); err != nil {
-	// 	log.Fatal(err)
-	// }
-	// localHomeFS, err := fs.Sub(opfs, fmt.Sprintf("usr/%s", userID))
-	localHomeFS, err := fsa.OPFS("apptron", "usr", userID)
+	if err := fs.MkdirAll(remoteHomeFS, ".", 0755); err != nil {
+		log.Fatal(err)
+	}
+	if err := fs.MkdirAll(opfs, path.Join("usr", userID), 0755); err != nil {
+		log.Fatal(err)
+	}
+	localHomeFS, err := fs.Sub(opfs, path.Join("usr", userID))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -201,10 +206,13 @@ func main() {
 
 	if !env.IsUndefined() {
 		remoteProjectFS := httpfs.New(fmt.Sprintf("%s/data/env/%s/project", origin.String(), envUUID), nil)
-		if err := fs.MkdirAll(opfs, fmt.Sprintf("env/%s/project", envUUID), 0755); err != nil {
+		if err := fs.MkdirAll(remoteProjectFS, ".", 0755); err != nil {
 			log.Fatal(err)
 		}
-		localProjectFS, err := fs.Sub(opfs, fmt.Sprintf("env/%s/project", envUUID))
+		if err := fs.MkdirAll(opfs, path.Join("env", envUUID, "project"), 0755); err != nil {
+			log.Fatal(err)
+		}
+		localProjectFS, err := fs.Sub(opfs, path.Join("env", envUUID, "project"))
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -289,5 +297,9 @@ func main() {
 	inst.Call("_wasmReady")
 	log.Println("apptron ready")
 
-	virtio9p.Serve(root.Namespace(), inst, false)
+	debug := inst.Get("config").Get("debug9p")
+	if debug.IsUndefined() {
+		debug = js.ValueOf(false)
+	}
+	virtio9p.Serve(root.Namespace(), inst, debug.Bool())
 }
