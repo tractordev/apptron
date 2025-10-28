@@ -10,7 +10,7 @@ udhcpc -i eth0 -s /bin/post-dhcp
 source /etc/profile # loads apptron.sh for ENV_UUID
 
 if [ -f /project/.apptron/envbuild ]; then
-    env_root=/web/opfs/apptron/env/$ENV_UUID/root
+    env_root=/web/idbfs/apptron/env/$ENV_UUID/root
     if [ ! -e $env_root ] || [ /project/.apptron/envbuild -nt $env_root ]; then
         echo
         exec /bin/rebuild

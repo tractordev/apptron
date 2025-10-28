@@ -5,6 +5,7 @@ export function setupWanix() {
     const params = new URLSearchParams(window.location.search);
     const w = new WanixRuntime({ 
         helpers: true, 
+        debug9p: false,
         bundle: params.get('bundle') || urlFor("/bundle.tgz"),
         wasm: params.get('wasm') || urlFor("/wanix.wasm"),
         network: params.get('network') || "wss://apptron.dev/x/net"

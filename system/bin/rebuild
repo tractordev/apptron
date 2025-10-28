@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-env_root=/web/opfs/apptron/env/$ENV_UUID/root
+env_root=/web/idbfs/apptron/env/$ENV_UUID/root
 echo "Building environment..."
 
 mount -o bind /dev /envbuild/dev
