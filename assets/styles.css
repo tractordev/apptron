@@ -314,20 +314,20 @@ dialog::backdrop {
 /* only applying these styles to the create project
 modal for now, bc the other one is a hanko component
 with its own padding and styles */
-#new-project-dialog {
+#project-dialog {
   padding: 2rem;
 }
-#new-project-dialog input[type=text],
-#new-project-dialog textarea, 
-#new-project-dialog label {
+#project-dialog input[type=text],
+#project-dialog textarea, 
+#project-dialog label {
   display: block;
   width: 100%;
 }
-#new-project-dialog input[type=text],
-#new-project-dialog textarea {
+#project-dialog input[type=text],
+#project-dialog textarea {
   margin-bottom: 1rem;
 }
-#new-project-dialog
+#project-dialog
 .dialog-footer {
   display: flex;
   justify-content: flex-end;
@@ -335,7 +335,7 @@ with its own padding and styles */
 }
 
 /* Create project modal */
-#new-project-dialog {
+#project-dialog {
   width: 464px;
 }
 
