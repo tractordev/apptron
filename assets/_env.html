@@ -17,7 +17,7 @@
 
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 
-  <script src="/lib/topbar.js" type="module"></script>
+  <script src="/lib/html-component.js" type="module"></script>
 
   <style>
     body {
@@ -73,9 +73,9 @@
         redirectIfNotSignedIn();
         setInterval(redirectIfNotSignedIn, 60 * 1000); // 1 minute
     </script>
-    <div style="height: 35px;">
-        <apptron-topbar></apptron-topbar>
-      </div>
+    <div class="header-container">
+        <html-component src="/com/topbar"></html-component>
+    </div>
     <iframe src="/_vscode" 
         allow="clipboard-read; clipboard-write; cross-origin-isolated"
         sandbox="allow-scripts allow-same-origin allow-forms allow-modals allow-popups allow-popups-to-escape-sandbox"></iframe>

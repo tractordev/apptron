@@ -3,11 +3,12 @@
 <head>
   <meta charset="UTF-8" />
   <title>Apptron</title>
-  <link rel="stylesheet" href="styles.css" />
-  <script src="/lib/topbar.js" type="module"></script>
+  <link rel="stylesheet" href="/styles.css" />
+  <script src="/lib/html-component.js" type="module"></script>
   <script src="/lib/dropdown.js" type="module"></script>
   <script type="module">
     import { getAuth, secondsSince, urlFor } from "/lib/apptron.js";
+  
     const auth = await getAuth();
     window.user = await auth.getUser();
     // this could be optimized to only PUT within a 
@@ -28,8 +29,8 @@
 </head>
 
 <body>
-  <div style="height: 35px;">
-    <apptron-topbar></apptron-topbar>
+  <div class="header-container">
+    <html-component src="/com/topbar"></html-component>
   </div>
 
   <div class="container">
@@ -74,6 +75,7 @@
 
 <script type="module">
   import { urlFor, redirectTo } from "/lib/apptron.js";
+  import { modalDialog } from "/lib/helpers.js";
   
   // Template function to create a project card
   function createProjectCard(project, index) {
@@ -199,26 +201,6 @@
 
   // Expose globally
   window.populateProjectsGrid = populateProjectsGrid;
-
-  // === New Project dialog logic ===
-  function modalDialog(el) {
-    const closers = el.querySelectorAll('[data-action="close"]');
-    closers.forEach(closer => {
-      closer.addEventListener("click", () => el.close());
-    });
-    el.addEventListener("click", (e) => {
-      const r = el.getBoundingClientRect();
-      const inBounds = (
-        e.clientX >= r.left &&
-        e.clientX <= r.right &&
-        e.clientY >= r.top &&
-        e.clientY <= r.bottom
-      );
-      if (!inBounds) el.close();
-    });
-    return el;
-  }
-
 
   // === Project dialog controller (create + edit) ===
   const createBtn   = document.getElementById("create-btn");
