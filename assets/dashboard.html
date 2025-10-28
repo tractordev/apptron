@@ -294,11 +294,6 @@
         if (!resp.ok) throw new Error("Failed to update project");
 
         dlg.close();
-<<<<<<< HEAD
-
-=======
-        
->>>>>>> 1c77697 (dashboard list and backend: update project modal to also support editing)
         // Refresh list so the new description shows
         const listResp = await fetch(urlFor("/projects", {}, window.user.username));
         const projects = await listResp.json();
