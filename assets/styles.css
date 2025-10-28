@@ -261,6 +261,10 @@ header h1 {
   cursor: pointer;
 }
 
+.header-container {
+  height: 35px;
+}
+
 /* Dialog Styles */
 dialog {
   font: inherit;
@@ -346,16 +350,12 @@ with its own padding and styles */
 
 
 /* Top bar login state */
-#logout {
+#logout, #account, #dashboard {
   display: none !important;
 }
-#account {
-  display: none !important;
-}
-.signedin #account {
-  display: block !important;
-}
-.signedin #logout {
+.signedin #account,
+.signedin #logout,
+.signedin #dashboard {
   display: block !important;
 }
 .signedin #signin {
