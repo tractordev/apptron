@@ -48,7 +48,7 @@
     <form id="new-project-form" method="dialog" class="dialog">
       <div class="dialog-header">
         <h2>New Project</h2>
-        <button class="dialog-close" type="button" aria-label="Close">&times;</button>
+        <button class="dialog-close" type="button" data-action="close" aria-label="Close">&times;</button>
       </div>
 
       <div class="dialog-body">
@@ -66,7 +66,7 @@
       </div>
 
       <div class="dialog-footer">
-        <button class="btn" type="button" data-action="cancel">Cancel</button>
+        <button class="btn" type="button" data-action="close">Cancel</button>
         <button class="btn primary" type="submit">Create</button>
       </div>
     </form>
@@ -182,11 +182,27 @@
   window.populateProjectsGrid = populateProjectsGrid;
 
   // === New Project dialog logic ===
+  function modalDialog(el) {
+    const closers = el.querySelectorAll('[data-action="close"]');
+    closers.forEach(closer => {
+      closer.addEventListener("click", () => el.close());
+    });
+    el.addEventListener("click", (e) => {
+      const r = el.getBoundingClientRect();
+      const inBounds = (
+        e.clientX >= r.left &&
+        e.clientX <= r.right &&
+        e.clientY >= r.top &&
+        e.clientY <= r.bottom
+      );
+      if (!inBounds) el.close();
+    });
+    return el;
+  }
+
   const createBtn = document.getElementById("create-btn");
-  const dlg = document.getElementById("new-project-dialog");
+  const dlg = modalDialog(document.getElementById("new-project-dialog"));
   const form = document.getElementById("new-project-form");
-  const closeBtn = dlg.querySelector(".dialog-close");
-  const cancelBtn = dlg.querySelector('[data-action="cancel"]');
   const nameInput = document.getElementById("project-name");
   const descInput = document.getElementById("project-desc");
 
@@ -194,19 +210,6 @@
     form.reset();
     dlg.showModal();
     setTimeout(() => nameInput.focus(), 0);
-  });
-
-  function closeDialog() {
-    if (dlg.open) dlg.close();
-  }
-
-  closeBtn.addEventListener("click", closeDialog);
-  cancelBtn.addEventListener("click", closeDialog);
-
-  dlg.addEventListener("click", (e) => {
-    const r = dlg.getBoundingClientRect();
-    const inBounds = e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom;
-    if (!inBounds) closeDialog();
   });
 
   form.addEventListener("submit", async (e) => {
