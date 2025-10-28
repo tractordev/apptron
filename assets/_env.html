@@ -64,11 +64,14 @@
             }
         });
 
-        const session = await auth.validateSession();
-        if (!session.is_valid) {
-            redirectTo(urlFor("/signin"));
+        async function redirectIfNotSignedIn() {
+            const session = await auth.validateSession();
+            if (!session.is_valid) {
+                redirectTo(urlFor("/signin"));
+            }
         }
-        
+        redirectIfNotSignedIn();
+        setInterval(redirectIfNotSignedIn, 60 * 1000); // 1 minute
     </script>
     <div style="height: 35px;">
         <apptron-topbar></apptron-topbar>
