@@ -170,6 +170,46 @@ export default {
                 const projectURL = new URL(req.url);
                 projectURL.pathname = `/edit/${project["name"]}`;
                 return new Response(null, { status: 201, headers: { "Location": projectURL.toString() } });
+            
+
+            case "PUT": {
+                if (!url.pathname.startsWith("/projects/")) {
+                    return new Response("Not Found", { status: 404 });
+                }
+
+                const projectName = url.pathname.split("/").pop() || "";
+                if (!projectName) {
+                    return new Response("Bad Request", { status: 400 });
+                }
+
+                const update = await req.json();
+
+                // Look up existing project metadata
+                const attrs = await getAttrs(env.bucket, `/etc/index/${ctx.userName}/${projectName}`);
+                if (!attrs) {
+                    return new Response("Not Found", { status: 404 });
+                }
+
+                // Update description (and other metadata if you like)
+                const newAttrs = {
+                    "uuid": attrs["uuid"],
+                    "owner": ctx.userUUID,
+                    "description": update["description"] || attrs["description"] || "",
+                    "name": attrs["name"] || projectName,
+                };
+
+                // Write updated attributes back using mkdir (idempotent PUT)
+                const updateResp = await mkdir(req, env, `/etc/index/${ctx.userName}/${projectName}`, newAttrs);
+
+                if (!updateResp.ok) {
+                    return updateResp;
+                }
+
+                return new Response(JSON.stringify({ name: projectName, description: newAttrs.description }), {
+                    status: 200,
+                    headers: { "Content-Type": "application/json" },
+                });
+            }
             case "DELETE":
                 if (!url.pathname.startsWith("/projects/")) {
                     return new Response("Not Found", { status: 404 });
@@ -280,6 +320,7 @@ async function mkdir(req: Request, env: any, path: string, attrs?: Record<string
     url.pathname = `/data${path}/`;
     const headers = {
         "Content-Type": "application/x-directory",
+        "Change-Timestamp": (Date.now() * 1000).toString(),
     }
     if (attrs) {
         for (const [key, value] of Object.entries(attrs)) {
