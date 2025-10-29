@@ -1,15 +1,21 @@
 import { WanixRuntime } from "/wanix.js";
 import { register } from "/hanko/elements.js";
 
-export function setupWanix() {
+export async function setupWanix() {
     const params = new URLSearchParams(window.location.search);
-    const w = new WanixRuntime({ 
-        helpers: true, 
+    if (params.get("cache") === "clear") {
+        await clearAllCache();
+    }
+    const w = new WanixRuntime({
+        helpers: true,
         debug9p: false,
-        bundle: params.get('bundle') || urlFor("/bundle.tgz"),
-        wasm: params.get('wasm') || urlFor("/wanix.wasm"),
+        // bundle: params.get('bundle') || urlFor("/bundle.tgz"),
+        // wasm: params.get('wasm') || urlFor("/wanix.wasm"),
+        wasm: null,
         network: params.get('network') || "wss://apptron.dev/x/net"
     });
+    w._bundle = getCachedOrFetch("/bundle.tgz", true);
+    getCachedOrFetch("/wanix.wasm").then(wasm => w._loadWasm(wasm));
     return w;
 }
 
@@ -21,20 +27,16 @@ export async function getAuth() {
     if (!getMeta("auth-url")) {
         throw new Error("auth-url meta tag not found");
     }
-    if (isLocalhost()) {
-        const { hanko } = await register(getMeta("auth-url"));
-        auth = hanko;
-        return auth;
-    }
-    const { hanko } = await register(getMeta("auth-url"), {
-        cookieDomain: "."+appHost()
+    const { hanko } = await register(getMeta("auth-url"), isLocalhost() ? undefined : {
+        cookieDomain: "." + appHost()
     });
     auth = hanko;
+    auth.validatedSession = auth.validateSession();
     return auth;
 }
 
 export function getMeta(name) {
-    const meta = document.querySelector('meta[name="'+name+'"]');
+    const meta = document.querySelector('meta[name="' + name + '"]');
     if (!meta) {
         return null;
     }
@@ -149,4 +151,71 @@ export function secondsSince(timestamp) {
     const now = new Date();
     const diffInMs = now - then;
     return Math.floor(diffInMs / 1000);
+}
+
+export async function getCachedOrFetch(url, gzipped = false, cacheName = "assets") {
+    try {
+        // Open the cache
+        const cache = await caches.open(cacheName);
+
+        // Check if the asset is already cached
+        const cachedResponse = await cache.match(url);
+
+        if (cachedResponse) {
+            console.log('Found in cache:', url);
+            if (gzipped) {
+                if (!("DecompressionStream" in window)) {
+                    throw new Error("DecompressionStream not supported in this browser.");
+                }
+                // Decompress stream and return as ArrayBuffer
+                const decompressed = cachedResponse.body
+                    .pipeThrough(new DecompressionStream("gzip"));
+                const decompressedBuffer = await new Response(decompressed).arrayBuffer();
+                return decompressedBuffer;
+            } else {
+                // Return ArrayBuffer from cached response
+                return await cachedResponse.arrayBuffer();
+            }
+        }
+
+        // Not in cache, fetch from network
+        console.log('Not in cache, fetching:', url);
+        const response = await fetch(url);
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        // Clone the response since we need to use it twice
+        // (once for cache, once for returning the ArrayBuffer)
+        const responseToCache = response.clone();
+
+        // Store in cache for future use
+        await cache.put(url, responseToCache);
+        console.log('Stored in cache:', url);
+
+        if (gzipped) {
+            if (!("DecompressionStream" in window)) {
+                throw new Error("DecompressionStream not supported in this browser.");
+            }
+            // Decompress stream and return as ArrayBuffer
+            const decompressed = response.body
+                .pipeThrough(new DecompressionStream("gzip"));
+            const decompressedBuffer = await new Response(decompressed).arrayBuffer();
+            return decompressedBuffer;
+        } else {
+            // Return ArrayBuffer from the original response
+            return await response.arrayBuffer();
+        }
+
+    } catch (error) {
+        console.error('Error in getCachedOrFetch:', error);
+        throw error;
+    }
+}
+
+export async function clearAllCache(cacheName = "assets") {
+    const deleted = await caches.delete(cacheName);
+    console.log('Deleted entire cache:', cacheName, deleted);
+    return deleted;
 }

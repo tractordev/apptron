@@ -8,78 +8,79 @@
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-title" content="Code">
-  <link rel="apple-touch-icon" href="/vscode/code-192.png" />
-
-  <link rel="stylesheet" href="/styles.css" />
 
   <!-- Disable pinch zooming -->
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no">
+  <meta name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no">
 
-  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <!-- Icons (disabled for now) -->
+  <!-- <link rel="apple-touch-icon" href="/vscode/code-192.png" /> -->
+  <!-- <link rel="icon" type="image/svg+xml" href="/favicon.svg" /> -->
 
+  <link rel="stylesheet" href="/styles.css" />
   <script src="/lib/html-component.js" type="module"></script>
 
   <style>
     body {
-        margin: 0;
-        height: 100vh;
-        display: flex;
-        flex-direction: column;
+      margin: 0;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
     }
+
     iframe {
-        border: 0;
-        flex: 1;
-        pointer-events: auto !important;
-        user-select: none;
+      border: 0;
+      flex: 1;
+      pointer-events: auto !important;
+      user-select: none;
     }
   </style>
 
 </head>
+
 <body>
-    <script type="module">
-        import { setupWanix, getAuth, envUUID, getMeta, redirectTo, urlFor } from "/lib/apptron.js";
-        const auth = await getAuth();
-        const origin = window.location.origin;
-        window.apptron = {
-            user: auth.getUser(), // this promise will be resolved later
-            origin: origin,
-            env: {
-                "uuid": envUUID(),
-                "name": getMeta("env-name"),
-            }
-        }
-        
-        const w = setupWanix();
-        
-        // need to register this as early as possible
-        window.addEventListener("message", async (event) => {
-            if (event.data.port) {
-                console.log("vscode waiting for apptron...");
-                await w.ready();
-                
+  <script type="module">
+    import { setupWanix, getAuth, envUUID, getMeta, redirectTo, urlFor } from "/lib/apptron.js";
 
-                console.log("creating port for vscode...");
-                const port = w.createPort();
-                event.data.port.postMessage({wanix: port}, [port]); 
-            }
-        });
+    const auth = await getAuth();
+    window.apptron = {
+      user: auth.getUser(), // this promise will be resolved later
+      origin: window.location.origin,
+      env: {
+        "uuid": envUUID(),
+        "name": getMeta("env-name"),
+      }
+    }
 
-        async function redirectIfNotSignedIn() {
-            const session = await auth.validateSession();
-            if (!session.is_valid) {
-                redirectTo(urlFor("/signin"));
-            }
-        }
-        redirectIfNotSignedIn();
-        setInterval(redirectIfNotSignedIn, 60 * 1000); // 1 minute
-    </script>
-    <div class="header-container">
-        <html-component src="/com/topbar"></html-component>
-    </div>
-    <iframe src="/_vscode" 
-        allow="clipboard-read; clipboard-write; cross-origin-isolated"
-        sandbox="allow-scripts allow-same-origin allow-forms allow-modals allow-popups allow-popups-to-escape-sandbox"></iframe>
-    
+    const w = await setupWanix();
+
+    // need to register this as early as possible
+    window.addEventListener("message", async (event) => {
+      if (event.data.port) {
+        console.log("vscode waiting for apptron...");
+        await w.ready();
+
+
+        console.log("creating port for vscode...");
+        const port = w.createPort();
+        event.data.port.postMessage({ wanix: port }, [port]);
+      }
+    });
+
+    async function redirectIfNotSignedIn() {
+      const session = await auth.validatedSession;
+      if (!session.is_valid) {
+        redirectTo(urlFor("/signin"));
+      }
+    }
+    redirectIfNotSignedIn();
+    setInterval(redirectIfNotSignedIn, 60 * 1000); // 1 minute
+  </script>
+  <div class="header-container">
+    <html-component src="/com/topbar"></html-component>
+  </div>
+  <iframe src="/_vscode" allow="clipboard-read; clipboard-write; cross-origin-isolated"
+    sandbox="allow-scripts allow-same-origin allow-forms allow-modals allow-popups allow-popups-to-escape-sandbox"></iframe>
 
 </body>
 </html>

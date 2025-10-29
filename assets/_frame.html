@@ -3,30 +3,49 @@
 <head>
   <meta charset="UTF-8">
   <title>Apptron</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no">
+  <meta name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no">
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <style>
     * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
     }
-    
-    html, body {
-        height: 100%;
-        width: 100%;
-        overflow: hidden;
+
+    html,
+    body {
+      height: 100%;
+      width: 100%;
+      overflow: hidden;
     }
-    
+
     iframe {
-        width: 100%;
-        height: 100%;
-        border: none;
-        display: block;
+      width: 100%;
+      height: 100%;
+      border: none;
+      display: block;
     }
   </style>
   <script type="module">
-    import { appHost } from "/lib/apptron.js";
+    // copied from apptron.js to avoid import
+    function isLocalhost() {
+        const hostname = window.location.hostname;
+        return hostname === "localhost" || hostname === "127.0.0.1" || hostname === "::1";
+    }
+    function appHost() {
+      const hostname = window.location.origin.replace("https://", "").replace("http://", "");
+      if (isLocalhost()) {
+        return hostname;
+      }
+      const parts = hostname.split(".");
+      if (parts.length >= 2) {
+        return parts.slice(-2).join(".");
+      }
+      return hostname;
+    }
+
+    // accept messages to redirect at the top level
     window.onmessage = (event) => {
       if (!event.origin.endsWith(appHost())) {
         return;
@@ -38,7 +57,9 @@
     }
   </script>
 </head>
+
 <body>
-    <!-- injected environment iframe -->
+  <!-- injected environment iframe -->
 </body>
+
 </html>

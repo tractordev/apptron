@@ -1,4 +1,4 @@
-module apptron.dev/wanix
+module apptron.dev/system
 
 go 1.25.0
 
