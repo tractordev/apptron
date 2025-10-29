@@ -62,10 +62,14 @@ func main() {
 
 	envUUID := ""
 	envName := ""
+	envOwner := ""
+	isOwner := false
 	env := apptronCfg.Get("env")
 	if !env.IsUndefined() {
 		envUUID = env.Get("uuid").String()
 		envName = env.Get("name").String()
+		envOwner = env.Get("owner").String()
+		isOwner = envOwner == userID
 	}
 
 	log.Printf("starting apptron wanix for user %s, env %s\n", username, envName)
@@ -241,7 +245,7 @@ func main() {
 	if isAdmin {
 		datafs := httpfs.New(fmt.Sprintf("%s/data", origin.String()), nil)
 		// datafs.SetLogger(slogger.New(slog.LevelDebug))
-		datafs.Ignore("MAILPATH")
+		datafs.Ignore("MAILPATH") // annoying busybox thing
 		cachedDatafs := httpfs.NewCacher(datafs)
 		go func() {
 			if _, _, err := cachedDatafs.PullNode(context.Background(), ".", true); err != nil {
@@ -281,23 +285,29 @@ func main() {
 	// setup project fs
 	if !env.IsUndefined() {
 		startTime = time.Now()
-		log.Println("setting up project fs")
-		remoteProjectFS := httpfs.New(fmt.Sprintf("%s/data/env/%s/project", origin.String(), envUUID), nil)
-		// if err := fs.MkdirAll(remoteProjectFS, ".", 0755); err != nil {
-		// 	log.Fatal(err)
-		// }
-		if err := fs.MkdirAll(opfs, path.Join("env", envUUID, "project"), 0755); err != nil {
-			log.Fatal(err)
-		}
-		localProjectFS, err := fs.Sub(opfs, path.Join("env", envUUID, "project"))
-		if err != nil {
-			log.Fatal(err)
-		}
-		sfs := syncfs.New(localProjectFS, remoteProjectFS, 3*time.Second)
 
+		var localProjectFS fs.FS
+		var err error
+		if isOwner {
+			log.Println("setting up project fs")
+			if err := fs.MkdirAll(opfs, path.Join("env", envUUID, "project"), 0755); err != nil {
+				log.Fatal(err)
+			}
+			localProjectFS, err = fs.Sub(opfs, path.Join("env", envUUID, "project"))
+			if err != nil {
+				log.Fatal(err)
+			}
+		} else {
+			log.Println("setting up temp project fs (not owner)")
+			localProjectFS = memfs.New()
+		}
+		remoteProjectFS := httpfs.New(fmt.Sprintf("%s/data/env/%s/project", origin.String(), envUUID), nil)
+
+		sfs := syncfs.New(localProjectFS, remoteProjectFS, 3*time.Second)
 		if err := sfs.Sync(); err != nil {
 			log.Fatalf("err syncing: %v %v\n", err, envUUID)
 		}
+
 		if err := root.Namespace().Bind(sfs, ".", "project"); err != nil {
 			log.Fatal(err)
 		}

@@ -5,11 +5,11 @@ export interface Context {
     tokenRaw?: string;
     tokenJWT?: Record<string, any>;
     userUUID?: string;
-    userName?: string;
+    username?: string;
+
     userDomain: boolean;
-    envUUID?: string;
-    envName?: string;
     envDomain: boolean;
+    subdomain?: string; // username or env UUID
 }
 
 export function parseContext(req: Request, env: any): Context {
@@ -34,24 +34,25 @@ export function parseContext(req: Request, env: any): Context {
     if (ctx.tokenRaw) {
         ctx.tokenJWT = parseJWT(ctx.tokenRaw);
         ctx.userUUID = ctx.tokenJWT["sub"]; // should be user_id
+        ctx.username = ctx.tokenJWT["username"];
     }
 
     if (url.host.endsWith("." + HOST_DOMAIN)) {
         const subdomain = url.host.slice(0, -("." + HOST_DOMAIN).length);
         if (subdomain.length >= 32) {
             ctx.envDomain = true;
-            ctx.envUUID = subdomain;
+            ctx.subdomain = subdomain;
         } else {
             ctx.userDomain = true;
-            ctx.userName = subdomain;
+            ctx.subdomain = subdomain;
         }
     }
 
     if (url.searchParams.get("env")) {
-        ctx.envUUID = url.searchParams.get("env") || undefined;
+        ctx.subdomain = url.searchParams.get("env") || undefined;
         ctx.envDomain = true;
     } else if (url.searchParams.get("user")) {
-        ctx.userName = url.searchParams.get("user") || undefined;
+        ctx.subdomain = url.searchParams.get("user") || undefined;
         ctx.userDomain = true;
     }
 

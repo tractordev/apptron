@@ -1,7 +1,7 @@
 import { Container, getContainer } from "@cloudflare/containers";
 import { validateToken } from "./auth";
 import { handle as handleR2FS, getAttrs } from "./r2fs";
-import { isLocal, redirectToSignin, insertMeta, insertHTML, uuidv4, mkdir } from "./util";
+import { isLocal, redirectToSignin, insertMeta, insertHTML, uuidv4, putdir } from "./util";
 import { ADMIN_USERS, HOST_DOMAIN } from "./config";
 import { Context, parseContext } from "./context";
 import * as projects from "./projects";
@@ -9,6 +9,16 @@ import * as projects from "./projects";
 export class Session extends Container {
     defaultPort = 8080;
     sleepAfter = "1h";
+}
+
+const envCache = new Map<string, Record<string, string>>();
+async function getEnvByUUID(env: any, uuid: string) {
+    if (envCache.has(uuid)) {
+        return envCache.get(uuid);
+    }
+    const projectEnv = await projects.getByUUID(env, uuid);
+    envCache.set(uuid, projectEnv);
+    return projectEnv;
 }
 
 export default {
@@ -20,9 +30,18 @@ export default {
             return new Response("", { status: 200 });
         }
 
+        if (url.searchParams.get("cache") === "clear") {
+            envCache.clear();
+        }
+
         if (ctx.envDomain && url.pathname.startsWith("/edit/")) {
-            const parts = url.pathname.split("/");
-            const envName = parts[2];
+            const project = await getEnvByUUID(env, ctx.subdomain);
+            if (project === null) {
+                return new Response("Not Found", { status: 404 });
+            }
+            if (project["visibility"] !== "public" && project["owner"] !== ctx.userUUID) {
+                return new Response("Forbidden", { status: 403 });
+            }
 
             const envReq = new Request(new URL("/_env", req.url).toString(), req);
             const resp = await env.assets.fetch(envReq);
@@ -34,7 +53,8 @@ export default {
 
             return insertMeta(resp, {
                 "auth-url": env.AUTH_URL,
-                "env-name": envName,
+                "env-name": project["name"],
+                "env-owner": project["owner"],
             });
         }
 
@@ -48,23 +68,57 @@ export default {
             if (!await validateToken(env.AUTH_URL, ctx.tokenRaw)) {
                 return new Response("Forbidden", { status: 403 });
             }
-            if (url.pathname.includes("/:attr/")) {
+            let dataPath = url.pathname.slice(5);
+            if (dataPath.endsWith("/...")) {
+                dataPath = dataPath.slice(0, -4);
+            }
+            // admin data urls
+            if (dataPath.includes("/:attr/") || 
+                dataPath.startsWith("/etc/") ||
+                ["","/etc","/env","/usr"].indexOf(dataPath) !== -1) {
                 if (!ADMIN_USERS.includes(ctx.tokenJWT?.username)) {
                     return new Response("Forbidden", { status: 403 });
                 }
             }
-            // todo: validate user access to data path!
+            // user data urls
+            if (dataPath.startsWith("/usr/")) {
+                const parts = dataPath.split("/");
+                if (!parts[2] || parts[2] !== ctx.userUUID) {
+                    return new Response("Forbidden", { status: 403 });
+                }
+            }
+            // env data urls
+            if (dataPath.startsWith("/env/")) {
+                const envUUID = dataPath.split("/")[2];
+                const project = await getEnvByUUID(env, envUUID);
+                if (project === null) {
+                    return new Response("Not Found", { status: 404 });
+                }
+                // not public and not owner
+                if (project["visibility"] !== "public" && project["owner"] !== ctx.userUUID) {
+                    return new Response("Forbidden", { status: 403 });
+                }
+                // public, not owner, and not GET or HEAD request
+                if (project["visibility"] === "public" && project["owner"] !== ctx.userUUID && ["GET", "HEAD"].indexOf(req.method) === -1) {
+                    return new Response("Forbidden", { status: 403 });
+                }
+            }
             return handleR2FS(req, env, "/data");
         }
 
+        // <username>.apptron.dev/edit/<env-name>
         if (url.pathname.startsWith("/edit/")) {
             const parts = url.pathname.split("/");
             const envName = parts[2];
-            const envUUID = await lookupEnvUUID(env, ctx, envName);
-            if (envUUID === null) {
+            const project = await projects.getByName(env, ctx.subdomain, envName);
+            if (project === null) {
                 return new Response("Not Found", { status: 404 });
             }
-            return await envPage(req, env, envUUID, "/edit/"+envName);
+            if (project["visibility"] !== "public" && project["owner"] !== ctx.userUUID) {
+                return new Response("Not Found", { status: 404 });
+                // return new Response("Forbidden", { status: 403 });
+            }
+            return await envPage(req, env, project["uuid"], "/edit/"+envName);
         }
 
         if (url.pathname === "/" && req.method === "GET") {
@@ -79,24 +133,16 @@ export default {
             }
             const user = await req.json();
             
-            const usrURL = new URL(req.url);
-            usrURL.pathname = `/data/usr/${user["user_id"]}/`;
-            usrURL.host = (isLocal(env) ? env.LOCALHOST : HOST_DOMAIN);
-            const usrReq = new Request(usrURL.toString(), {method: "PUT"});
-            const usrResp = await handleR2FS(usrReq, env, "/data");
+            const usrResp = await putdir(req, env, `/usr/${user["user_id"]}`, {
+                "username": user["username"],
+            });
             if (!usrResp.ok) {
                 return usrResp;
             }
-
-            usrURL.pathname = `/data/etc/index/${user["username"]}/`;
-            const idxReq = new Request(usrURL.toString(), {
-                method: "PUT", 
-                headers: {
-                    "Content-Type": "application/x-directory",
-                    "Attribute-UUID": user["user_id"],
-                },
+            
+            const idxResp = await putdir(req, env, `/etc/index/${user["username"]}`, {
+                "uuid": user["user_id"],
             });
-            const idxResp = await handleR2FS(idxReq, env, "/data");
             if (!idxResp.ok) {
                 return idxResp;
             }
@@ -138,28 +184,14 @@ export default {
 function ensureSystemDirs(req: Request, env: any) {
     console.log("Ensuring system directories exist...");
     return Promise.all([
-        mkdir(req, env, "/"),
-        mkdir(req, env, "/etc"),
-        mkdir(req, env, "/etc/index"),
-        mkdir(req, env, "/usr"),
-        mkdir(req, env, "/env"),
+        putdir(req, env, "/"),
+        putdir(req, env, "/etc"),
+        putdir(req, env, "/etc/index"),
+        putdir(req, env, "/usr"),
+        putdir(req, env, "/env"),
     ]);
 }
 
-
-async function lookupEnvUUID(env: any, ctx: Context, envName: string) {
-    if (!envName) {
-        return null;
-    }
-    const envObject = await env.bucket.get(`/etc/index/${ctx.userName}/${envName}`);
-    if (envObject === null) {
-        return null;
-    }
-    if (envObject.customMetadata["Attribute-uuid"] === undefined) {
-        return null;
-    }
-    return envObject.customMetadata["Attribute-uuid"];
-}
 
 async function envPage(req: Request, env: any, envUUID: string, path: string) {
     const url = new URL(req.url);
