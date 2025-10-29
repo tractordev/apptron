@@ -3,18 +3,18 @@ import { register } from "/hanko/elements.js";
 
 export async function setupWanix() {
     const params = new URLSearchParams(window.location.search);
-    if (params.get("cache") === "clear") {
+    if (params.get("cache") === "clear" || (isLocalhost() && !params.get("cache"))) {
         await clearAllCache();
     }
     const w = new WanixRuntime({
         helpers: true,
-        debug9p: false,
-        // bundle: params.get('bundle') || urlFor("/bundle.tgz"),
-        // wasm: params.get('wasm') || urlFor("/wanix.wasm"),
+        debug9p: params.get('debug9p') === "true",
         wasm: null,
         network: params.get('network') || "wss://apptron.dev/x/net"
     });
+    // getting the bundle ourselves
     w._bundle = getCachedOrFetch("/bundle.tgz", true);
+    // getting then loading the wasm ourselves
     getCachedOrFetch("/wanix.wasm").then(wasm => w._loadWasm(wasm));
     return w;
 }
@@ -32,6 +32,11 @@ export async function getAuth() {
     });
     auth = hanko;
     auth.validatedSession = auth.validateSession();
+    auth.validatedSession.then(session => {
+        if (session.is_valid) {
+            console.log("valid session for user", session.claims.username);
+        }
+    });
     return auth;
 }
 
