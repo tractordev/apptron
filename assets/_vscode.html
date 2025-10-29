@@ -39,7 +39,6 @@
         const ch = new MessageChannel();
         ch.port2.onmessage = (event) => {
             if (event.data.port) {
-                console.log("port passed to parent:", event.data);
                 window.parent.postMessage(event.data, "*", [event.data.port]);
             }
         };

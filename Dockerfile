@@ -13,7 +13,6 @@ COPY ./system/etc/* /etc/
 FROM alpine:3.22 AS bundle
 COPY --from=rootfs / /bundle/rootfs
 COPY --from=kernel /bzImage /bundle/kernel/bzImage
-COPY --from=v86 /libv86.js /bundle/v86/libv86.js
 COPY --from=v86 /v86.wasm /bundle/v86/v86.wasm
 COPY --from=v86 /bios/seabios.bin /bundle/v86/seabios.bin
 COPY --from=v86 /bios/vgabios.bin /bundle/v86/vgabios.bin

@@ -10,7 +10,7 @@
     import { getAuth, redirectTo, urlFor } from "/lib/apptron.js";
 
     const auth = await getAuth();
-    auth.validateSession().then((session) => {
+    auth.validatedSession.then((session) => {
         if (!session.is_valid) return;
         
         $("#header-bar").classList.add("signedin");
@@ -78,7 +78,7 @@
     </div>
     <div class="dialog-body">
         <div class="auth-container">
-            <hanko-profile></hanko-profile>
+            <!-- <hanko-profile></hanko-profile> -->
         </div>
     </div>
 </dialog>
