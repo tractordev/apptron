@@ -44,7 +44,7 @@ export function uuidv4() {
 
 
 
-export async function rm(req: Request, env: any, path: string): Promise<Response> {
+export async function deletepath(req: Request, env: any, path: string): Promise<Response> {
     // Ensure path starts with a "/" and does not end with one (unless path is just "/")
     if (!path.startsWith("/")) {
         path = "/" + path;
@@ -59,7 +59,7 @@ export async function rm(req: Request, env: any, path: string): Promise<Response
     return handleR2FS(delReq, env, "/data");
 }
 
-export async function mkdir(req: Request, env: any, path: string, attrs?: Record<string, string>): Promise<Response> {
+export async function putdir(req: Request, env: any, path: string, attrs?: Record<string, string>): Promise<Response> {
     // Ensure path starts with a "/" and does not end with one (unless path is just "/")
     if (!path.startsWith("/")) {
         path = "/" + path;
