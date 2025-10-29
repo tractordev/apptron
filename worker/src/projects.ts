@@ -1,6 +1,6 @@
 import { Context } from "./context";
 import { validateToken } from "./auth";
-import { uuidv4, mkdir, rm } from "./util";
+import { uuidv4, putdir, deletepath } from "./util";
 import { getAttrs } from "./r2fs";
 
 export async function handle(req: Request, env: any, ctx: Context) {
@@ -24,30 +24,7 @@ export async function handle(req: Request, env: any, ctx: Context) {
 }
 
 export async function handleGet(req: Request, env: any, ctx: Context) {
-    const projects: Record<string, string>[] = [];
-    let cursor: string | undefined = undefined;
-    do {
-        const prefix = `/etc/index/${ctx.userName}/`;
-        const page = await env.bucket.list({
-            prefix,
-            include: ["customMetadata"],
-            cursor,
-            limit: 1000,
-        });
-        for (const obj of page.objects || []) {
-            const project = {
-                name: obj.key.slice(prefix.length)
-            };
-            for (const [key, value] of Object.entries(obj.customMetadata)) {
-                if (key.startsWith("Attribute-")) {
-                    project[key.slice(10)] = value;
-                }
-            }
-            projects.push(project);
-        }
-        cursor = page.truncated ? page.cursor : undefined;
-    } while (cursor);
-
+    const projects = await list(env, ctx.username);
     return new Response(JSON.stringify(projects), { status: 200 });
 }
 
@@ -63,7 +40,7 @@ export async function handlePost(req: Request, env: any, ctx: Context) {
     project["uuid"] = uuidv4();
 
     let resp;
-    resp = await mkdir(req, env, `/env/${project["uuid"]}`, {
+    resp = await putdir(req, env, `/env/${project["uuid"]}`, {
         "name": project["name"],
         "owner": ctx.userUUID,
     });
@@ -71,19 +48,21 @@ export async function handlePost(req: Request, env: any, ctx: Context) {
         return resp;
     }
 
-    resp = await mkdir(req, env, `/env/${project["uuid"]}/project`);
+    resp = await putdir(req, env, `/env/${project["uuid"]}/project`);
     if (!resp.ok) {
-        await rm(req, env, `/env/${project["uuid"]}`);
+        await deletepath(req, env, `/env/${project["uuid"]}`);
         return resp;
     }
 
-    resp = await mkdir(req, env, `/etc/index/${ctx.userName}/${project["name"]}`, {
+    resp = await putdir(req, env, `/etc/index/${ctx.username}/${project["name"]}`, {
         "uuid": project["uuid"],
+        "name": project["name"],
         "description": project["description"] || "",
         "owner": ctx.userUUID,
+        "visibility": project["visibility"] || "private",
     });
     if (!resp.ok) {
-        await rm(req, env, `/env/${project["uuid"]}`);
+        await deletepath(req, env, `/env/${project["uuid"]}`);
         return resp;
     }
 
@@ -107,7 +86,7 @@ export async function handlePut(req: Request, env: any, ctx: Context) {
     const update = await req.json();
 
     // Look up existing project metadata
-    const attrs = await getAttrs(env.bucket, `/etc/index/${ctx.userName}/${projectName}`);
+    const attrs = await getAttrs(env.bucket, `/etc/index/${ctx.username}/${projectName}`);
     if (!attrs) {
         return new Response("Not Found", { status: 404 });
     }
@@ -116,12 +95,13 @@ export async function handlePut(req: Request, env: any, ctx: Context) {
     const newAttrs = {
         "uuid": attrs["uuid"],
         "owner": ctx.userUUID,
+        "name": projectName,
         "description": update["description"] || attrs["description"] || "",
-        "name": attrs["name"] || projectName,
+        "visibility": update["visibility"] || attrs["visibility"] || "private",
     };
 
     // Write updated attributes back using mkdir (idempotent PUT)
-    const updateResp = await mkdir(req, env, `/etc/index/${ctx.userName}/${projectName}`, newAttrs);
+    const updateResp = await putdir(req, env, `/etc/index/${ctx.username}/${projectName}`, newAttrs);
 
     if (!updateResp.ok) {
         return updateResp;
@@ -145,20 +125,75 @@ export async function handleDelete(req: Request, env: any, ctx: Context) {
         return new Response("Not Found", { status: 404 });
     }
 
-    const attrs = await getAttrs(env.bucket, `/etc/index/${ctx.userName}/${projectName}`);
+    const attrs = await getAttrs(env.bucket, `/etc/index/${ctx.username}/${projectName}`);
     if (!attrs) {
         return new Response("Not Found", { status: 404 });
     }
 
-    resp = await rm(req, env, `/etc/index/${ctx.userName}/${projectName}`);
+    resp = await deletepath(req, env, `/etc/index/${ctx.username}/${projectName}`);
     if (!resp.ok) {
         return resp;
     }
 
-    resp = await rm(req, env, `/env/${attrs["uuid"]}`);
+    resp = await deletepath(req, env, `/env/${attrs["uuid"]}`);
     if (!resp.ok) {
         return resp;
     }
 
     return new Response(null, { status: 204 });
+}
+
+export async function list(env: any, username: string): Promise<Record<string, string>[]> {
+    const projects: Record<string, string>[] = [];
+    let cursor: string | undefined = undefined;
+    do {
+        const prefix = `/etc/index/${username}/`;
+        const page = await env.bucket.list({
+            prefix,
+            include: ["customMetadata"],
+            cursor,
+            limit: 1000,
+        });
+        for (const obj of page.objects || []) {
+            const project = {
+                name: obj.key.slice(prefix.length),
+                visibility: "private", // default
+            };
+            for (const [key, value] of Object.entries(obj.customMetadata)) {
+                if (key.startsWith("Attribute-")) {
+                    project[key.slice(10)] = value;
+                }
+            }
+            projects.push(project);
+        }
+        cursor = page.truncated ? page.cursor : undefined;
+    } while (cursor);
+    return projects;
+}
+
+export async function getByName(env: any, username: string, projectName: string): Promise<Record<string, string> | null> {
+    const attrs = await getAttrs(env.bucket, `/etc/index/${username}/${projectName}`);
+    if (!attrs) {
+        return null;
+    }
+    return attrs;
+}
+
+export async function getByUUID(env: any, uuid: string): Promise<Record<string, string> | null> {
+    const envAttrs = await getAttrs(env.bucket, `/env/${uuid}`);
+    if (!envAttrs) {
+        return null;
+    }
+    const userAttrs = await getAttrs(env.bucket, `/usr/${envAttrs["owner"]}`);
+    if (!userAttrs) {
+        return null;
+    }
+    const project = await getByName(env, userAttrs["username"], envAttrs["name"]);
+    if (!project) {
+        return null;
+    }
+    if (!project["name"]) {
+        project["name"] = envAttrs["name"];
+    }
+    return project;
 }
