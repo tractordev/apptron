@@ -255,7 +255,7 @@ header h1 {
   gap: 2rem;
 }
 
-#header-bar #nav-links button {
+#header-bar #nav-links > button, #header-bar #nav-links > apptron-dropdown > button {
   all: unset;
   cursor: pointer;
 }
@@ -414,14 +414,13 @@ bc the account settings modal is a hanko component with its own padding and styl
 }
 
 /* Menu items */
-.card-menu .menu-item {
+.menu-item {
   font: inherit;
   color: inherit;
   cursor: pointer;
   display: block;
   width: 100%;
   text-align: left;
-  padding: 1rem;
   background: transparent;
   border: 0;
   border-radius: var(--border-radius);
