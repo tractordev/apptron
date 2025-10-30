@@ -62,6 +62,27 @@
 
       <label for="project-desc">Description</label>
       <textarea id="project-desc" name="description" rows="4"></textarea>
+
+      <fieldset class="visibility-group" role="radiogroup" aria-labelledby="visibility-legend">
+        <legend id="visibility-legend">Visibility</legend>
+
+        <label class="radio-option" for="vis-public">
+          <input type="radio" id="vis-public" name="visibility" value="public"
+                 aria-describedby="vis-public-help">
+          <span class="option-title">Public</span>
+          <span id="vis-public-help" class="option-help">
+            Anyone with a link has View access
+          </span>
+        </label>
+        <label class="radio-option" for="vis-private">
+          <input type="radio" id="vis-private" name="visibility" value="private" checked
+                 aria-describedby="vis-private-help">
+          <span class="option-title">Private 🔒</span>
+          <span id="vis-private-help" class="option-help">
+            Only people you've directly invited can access this project
+          </span>
+        </label>
+      </fieldset>
     </div>
 
       <div class="dialog-footer">
