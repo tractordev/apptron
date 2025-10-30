@@ -147,6 +147,7 @@ func main() {
 	// IDBFS is still origin-private if not exactly OPFS.
 	// Not only does it work in older Safari, but it's 50% faster than OPFS.
 	opfs := idbfs.New("apptron")
+	// opfs.SetLogger(log.Default())
 	if err := root.Namespace().Bind(opfs, ".", "web/idbfs/apptron"); err != nil {
 		log.Fatal(err)
 	}
@@ -271,7 +272,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	sfs := syncfs.New(localHomeFS, remoteHomeFS, 3*time.Second)
+	sfs := syncfs.New(localHomeFS, remoteHomeFS, 5*time.Second)
 
 	if err := sfs.Sync(); err != nil {
 		log.Printf("err syncing: %v\n", err)
@@ -303,7 +304,7 @@ func main() {
 		}
 		remoteProjectFS := httpfs.New(fmt.Sprintf("%s/data/env/%s/project", origin.String(), envUUID), nil)
 
-		sfs := syncfs.New(localProjectFS, remoteProjectFS, 3*time.Second)
+		sfs := syncfs.New(localProjectFS, remoteProjectFS, 5*time.Second)
 		if err := sfs.Sync(); err != nil {
 			log.Fatalf("err syncing: %v %v\n", err, envUUID)
 		}
