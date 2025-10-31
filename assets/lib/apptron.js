@@ -224,3 +224,20 @@ export async function clearAllCache(cacheName = "assets") {
     console.log('Deleted entire cache:', cacheName, deleted);
     return deleted;
 }
+
+export function modalDialog(el) {
+    el.querySelectorAll('[data-action="close"]').forEach(closer => {
+        closer.addEventListener("click", () => el.close());
+    });
+    el.addEventListener("click", (e) => {
+        const r = el.getBoundingClientRect();
+        const inBounds = (
+            e.clientX >= r.left &&
+            e.clientX <= r.right &&
+            e.clientY >= r.top &&
+            e.clientY <= r.bottom
+        );
+        if (!inBounds) el.close();
+    });
+    return el;
+}
