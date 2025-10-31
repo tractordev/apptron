@@ -9,15 +9,17 @@
     import { modalDialog } from "/lib/helpers.js";
     import { getAuth, redirectTo, urlFor } from "/lib/apptron.js";
 
+    window.modal = modalDialog($("#modal"));
+
     const auth = await getAuth();
     auth.validatedSession.then((session) => {
         if (!session.is_valid) return;
         
         $("#header-bar").classList.add("signedin");
 
-        const accountDialog = modalDialog($("#account-dialog"));
         $("#account").addEventListener("click", () => {
-            accountDialog.showModal();
+            $("#modal html-component").load("/com/account");
+            $("#modal").showModal();
         });
 
         $("#dashboard").addEventListener("click", () => {
@@ -81,16 +83,8 @@
 </div>
 
 
-<dialog id="account-dialog">
-    <div class="dialog-header">
-        <h2>Account</h2>
-        <button class="dialog-close" data-action="close" type="button">&times;</button>
-    </div>
-    <div class="dialog-body">
-        <div class="auth-container">
-            <!-- <hanko-profile></hanko-profile> -->
-        </div>
-    </div>
+<dialog id="modal">
+<html-component></html-component>
 </dialog>
 
 </html>
