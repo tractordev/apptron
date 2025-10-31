@@ -294,7 +294,7 @@ dialog::backdrop {
   align-items: center;
 }
 /* this should match the hanko h1 that is used in the sign in dialog header */
-#account-dialog .dialog-header h2 {
+#modal .dialog-header h2 {
   margin: 0;
   font-size: 24px;
   padding: 1rem 1rem 0 1rem;
