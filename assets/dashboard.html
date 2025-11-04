@@ -44,63 +44,23 @@
     </div>
   </div>
 
-
-  <dialog id="project-dialog">
-    <form id="project-form" method="dialog" class="dialog">
-      <div class="dialog-header">
-        <h2 id="project-dialog-title">New Project</h2>
-        <button class="dialog-close" type="button" data-action="close" aria-label="Close">&times;</button>
-      </div>
-
-    <div class="dialog-body">
-      <label for="project-name">Project name</label>
-      <input id="project-name" name="project-name" type="text"
-             pattern="[A-Za-z][A-Za-z0-9_\-]{1,23}"
-             oninput="this.value = this.value.replace(/[^A-Za-z0-9_\-]/g, '')"
-             title="Names can only contain letters, numbers, dashes, and underscores"
-             required />
-
-      <label for="project-desc">Description</label>
-      <textarea id="project-desc" name="description" rows="4"></textarea>
-
-      <fieldset class="visibility-group" role="radiogroup" aria-labelledby="visibility-legend">
-        <legend id="visibility-legend">Visibility</legend>
-
-        <label class="radio-option" for="vis-public">
-          <input type="radio" id="vis-public" name="visibility" value="public"
-                 aria-describedby="vis-public-help">
-          <span class="option-title">Public</span>
-          <span id="vis-public-help" class="option-help">
-            Anyone with a link has View access
-          </span>
-        </label>
-        <label class="radio-option" for="vis-private">
-          <input type="radio" id="vis-private" name="visibility" value="private" checked
-                 aria-describedby="vis-private-help">
-          <span class="option-title">Private 🔒</span>
-          <span id="vis-private-help" class="option-help">
-            Only people you've directly invited can access this project
-          </span>
-        </label>
-      </fieldset>
-    </div>
-
-      <div class="dialog-footer">
-        <button class="btn" type="button" data-action="close">Cancel</button>
-        <button class="btn primary" id="project-submit" type="submit">Create</button>
-      </div>
-    </form>
-  </dialog>
-
-
-
 <script type="module">
-  import { urlFor, redirectTo, modalDialog } from "/lib/apptron.js";
+  import { urlFor, redirectTo, modalDialog, $, $$ } from "/lib/apptron.js";
   
+  $("#create-btn").addEventListener("click", async () => {
+    const resp = await window.modal.show("/com/project", {});
+    if (!resp) return; // canceled
+    if (!resp.ok) {
+      alert("Failed to create project");
+      return;
+    }
+    redirectTo(resp.headers.get("Location"));
+  });
+
   // Template function to create a project card
   function createProjectCard(project, index) {
     const menuId = `menu-${index}`;
-    const description = project.description || project.desc || 'No description available';
+    const description = project.description || 'No description available';
     const timeText = formatProjectTime(project);
 
     return `
@@ -111,8 +71,8 @@
               <button class="ellipsis-btn" type="button"
                       style="padding: 4px;">⋮</button>
               <div class="card-menu" popover role="menu" aria-label="Project menu">
-                <button class="menu-item" role="menuitem" data-action="edit" data-project="${project.name}">Edit Settings</button>
-                <button class="menu-item danger" role="menuitem" data-action="delete" data-project="${project.name}">Delete Project</button>
+                <button class="menu-item" role="menuitem" data-action="edit" data-project="${escapeJSON(JSON.stringify(project))}">Edit Settings</button>
+                <button class="menu-item danger" role="menuitem" data-action="delete" data-project="${escapeJSON(JSON.stringify(project))}">Delete Project</button>
               </div>
             </apptron-dropdown>
           </div>
@@ -122,14 +82,16 @@
     `;
   }
 
-  // Escape HTML
   function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
   }
 
-  // Format project time
+  function escapeJSON(json) {
+    return json.replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
   function formatProjectTime(project) {
     if (project.updated_at || project.modified || project.lastModified) {
       const date = new Date(project.updated_at || project.modified || project.lastModified);
@@ -173,149 +135,45 @@
     const cardsHtml = projects.map((project, index) => createProjectCard(project, index)).join('');
     grid.innerHTML = cardsHtml;
 
-      document.querySelectorAll('.project-card .menu-item').forEach(btn => {
-        btn.addEventListener('click', async (e) => {
-          const action = e.target.dataset.action;
-          const projectName = e.target.dataset.project;
-          
-          
-          if (action === 'edit') {
+    $$('.project-card .menu-item').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        const action = e.target.dataset.action;
+        const project = JSON.parse(e.target.dataset.project);
+        const projectName = project.name;
+        
+        if (action === 'edit') {
+          const resp = await window.modal.show("/com/project", {project});
+          if (!resp) return; // canceled
+          if (!resp.ok) {
+            alert("Failed to update project");
+            return;
+          }
+          // Refresh list so the new description shows
+          const listResp = await fetch(urlFor("/projects", {}, window.user.username));
+          const projects = await listResp.json();
+          populateProjectsGrid(projects);
 
-            // 1) Compute description first
-            const card = e.target.closest('.project-card');
-            const rawDesc = card?.querySelector('.desc')?.textContent?.trim() || '';
-            const description = (rawDesc === 'No description available') ? '' : rawDesc;
-
-            // 2) Set originalName before using it anywhere
-            originalName = projectName;
-
-            // 3) Prefill + open dialog
-            form.reset();
-            dlg.dataset.mode = "edit";
-            titleEl.textContent  = "Edit Project";
-            submitEl.textContent = "Save";
-            nameInput.disabled = true;        // lock rename for now (optional)
-            nameInput.value    = projectName;
-            descInput.value    = description;
-
-            dlg.showModal();
-            setTimeout(() => descInput.focus(), 0);
-
-          } else if (action === 'delete') {
-            const confirmed = confirm("Are you sure you want to delete this project?");
-            if (confirmed) {
-              const resp = await fetch(urlFor(`/projects/${projectName}`, {}, window.user.username), {
-                method: "DELETE",
-              });
-              if (resp.ok) {
-                const resp = await fetch(urlFor("/projects", {}, window.user.username));
-                const projects = await resp.json();
-                populateProjectsGrid(projects);
-              }
+        } else if (action === 'delete') {
+          const confirmed = confirm("Are you sure you want to delete this project?");
+          if (confirmed) {
+            const resp = await fetch(urlFor(`/projects/${projectName}`, {}, window.user.username), {
+              method: "DELETE",
+            });
+            if (resp.ok) {
+              const resp = await fetch(urlFor("/projects", {}, window.user.username));
+              const projects = await resp.json();
+              populateProjectsGrid(projects);
             }
           }
-          e.target.parentElement.hidePopover();
+        }
+        e.target.parentElement.hidePopover();
       });
     });
   }
-
-  // Expose globally
+  // Expose globally (used in another script)
   window.populateProjectsGrid = populateProjectsGrid;
 
-  // === Project dialog controller (create + edit) ===
-  const createBtn   = document.getElementById("create-btn");
-  const dlg         = document.getElementById("project-dialog");
-  const form        = document.getElementById("project-form");
-  const titleEl     = document.getElementById("project-dialog-title");
-  const submitEl    = document.getElementById("project-submit");
-  const nameInput   = document.getElementById("project-name");
-  const descInput   = document.getElementById("project-desc");
-
-  // set up close button behavior
-  modalDialog(dlg);
-
-  // track which project we’re editing (for PATCH/PUT)
-  let originalName = null;
-
-  // open in CREATE mode
-  function openCreateDialog() {
-    form.reset();
-    dlg.dataset.mode = "create";
-    originalName = null;
-    titleEl.textContent  = "New Project";
-    submitEl.textContent = "Create";
-    nameInput.disabled = false; // allow naming on create
-    dlg.showModal();
-    setTimeout(() => nameInput.focus(), 0);
-  }
-
-  // open in EDIT mode (prefill fields)
-  function openEditDialog(project) {
-    form.reset();
-    dlg.dataset.mode = "edit";
-    originalName = project.name;
-    titleEl.textContent  = "Edit Project";
-    submitEl.textContent = "Save";
-    nameInput.value = project.name;
-    descInput.value = project.description || project.desc || "";
-    // If you DON’T allow renaming in edit, lock it:
-    // nameInput.disabled = true;
-    dlg.showModal();
-    setTimeout(() => descInput.focus(), 0);
-  }
-
-  createBtn.addEventListener("click", openCreateDialog);
-
-  
-
-// === Submit handler for create AND edit === //
-  form.addEventListener("submit", async (e) => {
-    e.preventDefault();
-
-    const name = (nameInput.value || "").trim();
-    const description = (descInput.value || "").trim();
-    if (!name || !nameInput.checkValidity()) { nameInput.focus(); return; }
-
-    try {
-      if (dlg.dataset.mode === "edit") {
-        const targetName = originalName || (nameInput.value || "").trim();
-        if (!targetName) { alert("No project name to update."); return; }
-
-        // troubleshooting whether the new description is in the put request...
-        console.log('PUT →', originalName, (descInput.value || '').trim());
-
-        const resp = await fetch(
-          urlFor(`/projects/${encodeURIComponent(targetName)}`, {}, window.user.username),
-          {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ description: (descInput.value || "").trim() })
-          }
-        );
-
-        if (!resp.ok) throw new Error("Failed to update project");
-
-        dlg.close();
-        // Refresh list so the new description shows
-        const listResp = await fetch(urlFor("/projects", {}, window.user.username));
-        const projects = await listResp.json();
-        populateProjectsGrid(projects);
-        return;
-      } else {
-        // === Create new project ===
-        const resp = await fetch(urlFor("/projects", {}, window.user.username), {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name, description })
-        });
-        if (!resp.ok) throw new Error("Failed to create project");
-        redirectTo(resp.headers.get("Location"));
-      }
-    } catch (err) {
-      alert(err.message || "Something went wrong");
-    }
-  });
-  </script>
+</script>
 
 </body>
 </html>

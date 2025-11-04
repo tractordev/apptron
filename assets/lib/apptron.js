@@ -1,6 +1,11 @@
 import { WanixRuntime } from "/wanix.js";
 import { register } from "/hanko/elements.js";
 
+// querySelector conveniences, but dont import these in html components
+// because they have their own that work differently for shadowRoot
+export function $(selector) { return document.querySelector(selector); }
+export function $$(selector) { return document.querySelectorAll(selector); }
+
 export async function setupWanix() {
     const params = new URLSearchParams(window.location.search);
     if (params.get("cache") === "clear" || (isLocalhost() && !params.get("cache"))) {
