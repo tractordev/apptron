@@ -5,21 +5,23 @@
   <title>Apptron</title>
   <link rel="stylesheet" href="styles.css" />
   <script type="module">
-    import { getAuth, authRedirect } from "/lib/apptron.js";
+    import { getAuth, authRedirect, clearAllCache } from "/lib/apptron.js";
 
     const auth = await getAuth();
 
     auth.onSessionCreated(async () => {
-      // on sign-in 
+      // on sign-in clear the cache
+      await clearAllCache();
       const session = await auth.validateSession();
       authRedirect("/dashboard", session.claims.username);
     });
 
     // already signed in
-    const session = await auth.validateSession();    
-    if (session.is_valid) {
-      authRedirect("/dashboard", session.claims.username);
-    }
+    auth.validatedSession.then(session => {
+      if (session.is_valid) {
+        authRedirect("/dashboard", session.claims.username);
+      }
+    });
   </script>
 </head>
 
