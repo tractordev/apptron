@@ -13,7 +13,11 @@ unset script
 
 # use nicer PS1 for bash and busybox ash
 if [ -n "$BASH_VERSION" -o "$BB_ASH_VERSION" ]; then
-	export PS1="$USER:\w $ "
+	if [ -n "$USER" ]; then
+		export PS1="$USER:\w $ "
+	else
+		export PS1="(anonymous):\w $ "
+	fi
 fi
 
 if [ -f "/home/$USER/.profile" ]; then
@@ -21,6 +25,11 @@ if [ -f "/home/$USER/.profile" ]; then
 fi
 
 if [ -n "$ENV_NAME" ]; then
-	cd ~/$ENV_NAME
+	if [ -n "$USER" ]; then
+		cd ~/$ENV_NAME
+	else
+		export HOME=/home/$ENV_NAME
+		cd ~
+	fi
 fi
 
