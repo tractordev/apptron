@@ -325,27 +325,27 @@ dialog::backdrop {
 
 /* modal styles only apply to the project settings modal for now,
 bc the account settings modal is a hanko component with its own padding and styles */
-#project-dialog {
+#project-form {
   padding: 2rem;
 }
-#project-dialog input[type=text],
-#project-dialog textarea, 
-#project-dialog label {
+#project-form input[type=text],
+#project-form textarea, 
+#project-form label {
   display: block;
   width: 100%;
 }
-#project-dialog input[type=text],
-#project-dialog textarea {
+#project-form input[type=text],
+#project-form textarea {
   margin-bottom: 1rem;
 }
-#project-dialog
+#project-form
 .dialog-footer {
   display: flex;
   justify-content: flex-end;
   gap: 0.5rem;
   margin-top: 2rem;
 }
-#project-dialog {
+#project-form {
   width: 464px;
 }
 
@@ -408,6 +408,12 @@ bc the account settings modal is a hanko component with its own padding and styl
 }
 .signedin #signin {
   display: none !important;
+}
+.project-header {
+  display: none !important;
+}
+.project .project-header {
+  display: block !important;
 }
 
 /* Dashboard popover menu */
