@@ -104,6 +104,10 @@ html, body {
   box-sizing: border-box;
 }
 
+hidden {
+  display: none;
+}
+
 label, legend {
   color: var(--gray-100);
   margin-bottom: 0.25rem;
@@ -265,8 +269,12 @@ header h1 {
 }
 
 #header-bar #nav-links > button, #header-bar #nav-links > apptron-dropdown > button {
-  all: unset;
+  /* all: unset; */
   cursor: pointer;
+  background-color: inherit;
+  color: inherit;
+  padding: 0;
+  vertical-align: middle;
 }
 
 .header-container {
@@ -275,15 +283,19 @@ header h1 {
 
 /* Dialog Styles */
 dialog {
+  position: fixed !important;
+  /* anchored to top 25% of screen, not sure why this works */
+  top: -25% !important;  
   font: inherit;
   background-color: var(--gray-600);
   border: 1px solid var(--gray-500);
   border-radius: var(--border-radius);
-  padding: 1rem;
+  padding: 2rem 3rem;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
   color: #fff;
   z-index: 1000;
   pointer-events: auto !important;
+  width: 464px;
 }
 dialog::backdrop {
   background-color: rgba(0, 0, 0, 0.6);
@@ -322,31 +334,21 @@ dialog::backdrop {
     margin-top: 0;
     color: var(--gray-100);
 }
-
-/* modal styles only apply to the project settings modal for now,
-bc the account settings modal is a hanko component with its own padding and styles */
-#project-form {
-  padding: 2rem;
-}
-#project-form input[type=text],
-#project-form textarea, 
-#project-form label {
+.dialog-body input[type=text],
+.dialog-body textarea, 
+.dialog-body label {
   display: block;
   width: 100%;
 }
-#project-form input[type=text],
-#project-form textarea {
+.dialog-body input[type=text],
+.dialog-body textarea {
   margin-bottom: 1rem;
 }
-#project-form
 .dialog-footer {
   display: flex;
   justify-content: flex-end;
   gap: 0.5rem;
   margin-top: 2rem;
-}
-#project-form {
-  width: 464px;
 }
 
 /* Create project modal */
