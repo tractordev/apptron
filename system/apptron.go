@@ -160,6 +160,7 @@ func main() {
 		envRootExists, _ = fs.DirExists(opfs, fmt.Sprintf("env/%s/root", envUUID))
 	}
 	if envRootExists {
+		updateLoader("Loading custom environment...")
 		log.Println("using custom env root")
 		if err := fs.CopyFS(opfs, fmt.Sprintf("env/%s/root", envUUID), envRoot, "."); err != nil {
 			log.Fatal(err)
@@ -258,6 +259,8 @@ func main() {
 		}
 	}
 
+	updateLoader("Syncing filesystem...")
+
 	// setup user fs
 	log.Println("setting up user fs")
 	startTime = time.Now()
@@ -324,4 +327,12 @@ func main() {
 
 	// block on serving 9p
 	run9p()
+}
+
+func updateLoader(text string) {
+	loader := js.Global().Get("document").Call("getElementById", "loader")
+	if loader.IsUndefined() {
+		return
+	}
+	loader.Call("querySelector", "p").Set("textContent", text)
 }
