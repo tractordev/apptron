@@ -9,51 +9,51 @@
 <script type="module">
   import { redirectTo, urlFor } from "/lib/apptron.js";
 
-  const form        = $("#project-form");
-  const titleEl     = $("#project-dialog-title");
-  const submitEl    = $("#project-submit");
-  const nameInput   = $("#project-name");
-  const descInput   = $("#project-desc");
-
-  form.reset();
+  $("#project-form").reset();
 
   const project = component.context.project;
   // todo: should probably fetch the project from 
   // the server to get the latest description to avoid stale data
   // and avoid the need to reload the page
   if (project) {
-    titleEl.innerText = "Edit Project";
-    submitEl.innerText = "Save";
-    nameInput.value = project.name;
-    descInput.value = project.description || project.desc || "";
-    nameInput.disabled = true;
-    setTimeout(() => descInput.focus(), 0);
+    $("#project-dialog-title").innerText = "Edit Project";
+    $("#project-submit").innerText = "Save";
+    $("#project-name").value = project.name;
+    $("#project-desc").value = project.description || project.desc || "";
+    if (project.visibility === "public") {
+      $("#vis-public").checked = true;
+    } else {
+      $("#vis-private").checked = true;
+    }
+    $("#project-name").disabled = true;
+    setTimeout(() => $("#project-desc").focus(), 0);
 
   } else {
-    titleEl.innerText = "New Project";
-    submitEl.innerText = "Create";
-    nameInput.disabled = false; // allow naming on create
-    setTimeout(() => nameInput.focus(), 0);
+    $("#project-dialog-title").innerText = "New Project";
+    $("#project-submit").innerText = "Create";
+    $("#project-name").disabled = false; // allow naming on create
+    setTimeout(() => $("#project-name").focus(), 0);
     
   }
 
-  form.addEventListener("submit", async (e) => {
+  $("#project-form").addEventListener("submit", async (e) => {
     e.preventDefault();
 
-    const name = (nameInput.value || "").trim();
-    const description = (descInput.value || "").trim();
-    if (!name || !nameInput.checkValidity()) { nameInput.focus(); return; }
+    const name = ($("#project-name").value || "").trim();
+    const description = ($("#project-desc").value || "").trim();
+    const visibility = ($('input[name="visibility"]:checked').value || "private").trim();
+    if (!name || !$("#project-name").checkValidity()) { $("#project-name").focus(); return; }
 
     const resp = (project) 
       ? await fetch(urlFor(`/projects/${encodeURIComponent(project.name)}`, {}, window.session.claims.username), {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ description: (descInput.value || "").trim() })
+            body: JSON.stringify({ description, visibility })
         })
       : await fetch(urlFor("/projects", {}, window.session.claims.username), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name, description })
+          body: JSON.stringify({ name, description, visibility })
         });
     
     window.modal.finish(resp);
