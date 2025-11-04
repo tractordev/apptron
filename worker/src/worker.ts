@@ -11,15 +11,6 @@ export class Session extends Container {
     sleepAfter = "1h";
 }
 
-const envCache = new Map<string, Record<string, string>>();
-async function getEnvByUUID(env: any, uuid: string) {
-    if (envCache.has(uuid)) {
-        return envCache.get(uuid);
-    }
-    const projectEnv = await projects.getByUUID(env, uuid);
-    envCache.set(uuid, projectEnv);
-    return projectEnv;
-}
 
 export default {
     async fetch(req: Request, env: any) {
@@ -30,12 +21,8 @@ export default {
             return new Response("", { status: 200 });
         }
 
-        if (url.searchParams.get("cache") === "clear") {
-            envCache.clear();
-        }
-
         if (ctx.envDomain && url.pathname.startsWith("/edit/")) {
-            const project = await getEnvByUUID(env, ctx.subdomain);
+            const project = await projects.getByUUID(env, ctx.subdomain);
             if (project === null) {
                 return new Response("Not Found", { status: 404 });
             }
@@ -91,7 +78,7 @@ export default {
             // env data urls
             if (dataPath.startsWith("/env/")) {
                 const envUUID = dataPath.split("/")[2];
-                const project = await getEnvByUUID(env, envUUID);
+                const project = await projects.getByUUID(env, envUUID);
                 if (project === null) {
                     return new Response("Not Found", { status: 404 });
                 }
