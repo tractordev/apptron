@@ -52,15 +52,33 @@
       }, 200);
     };
 
+    const project = JSON.parse(getMeta("project"));
     const auth = await getAuth();
     window.apptron = {
-      user: auth.getUser(), // this promise will be resolved later
+      user: new Promise(async (resolve, reject) => {
+        try {
+          const session = await auth.validatedSession;
+          if (!session.is_valid) {
+            if (project["visibility"] !== "public") {
+              redirectTo(urlFor("/signin"));
+              return;
+            }
+            resolve(null);
+            return;
+          }
+          setInterval(async () => {
+            const session = await auth.validateSession();
+            if (!session.is_valid) {
+              redirectTo(urlFor("/signin"));
+            }
+          }, 60 * 1000); // every 1 minute
+          resolve(await auth.getUser());
+        } catch (error) {
+          resolve(null);
+        }
+      }),
       origin: window.location.origin,
-      env: {
-        "uuid": envUUID(),
-        "name": getMeta("env-name"),
-        "owner": getMeta("env-owner"),
-      }
+      env: project
     }
 
     const w = await setupWanix();
@@ -76,14 +94,6 @@
       }
     });
 
-    async function redirectIfNotSignedIn() {
-      const session = await auth.validatedSession;
-      if (!session.is_valid) {
-        redirectTo(urlFor("/signin"));
-      }
-    }
-    redirectIfNotSignedIn();
-    setInterval(redirectIfNotSignedIn, 60 * 1000); // 1 minute
   </script>
   <div class="header-container">
     <html-component src="/com/topbar"></html-component>
