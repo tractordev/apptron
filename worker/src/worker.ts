@@ -55,6 +55,7 @@ export default {
                 "auth-url": env.AUTH_URL,
                 "env-name": project["name"],
                 "env-owner": project["owner"],
+                "project": escapeJSON(JSON.stringify(project)),
             });
         }
 
@@ -118,7 +119,7 @@ export default {
                 return new Response("Not Found", { status: 404 });
                 // return new Response("Forbidden", { status: 403 });
             }
-            return await envPage(req, env, project["uuid"], "/edit/"+envName);
+            return await envPage(req, env, project, "/edit/"+envName);
         }
 
         if (url.pathname === "/" && req.method === "GET") {
@@ -181,6 +182,10 @@ export default {
     },
 };
 
+function escapeJSON(json: string) {
+    return json.replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
 function ensureSystemDirs(req: Request, env: any) {
     console.log("Ensuring system directories exist...");
     return Promise.all([
@@ -193,13 +198,13 @@ function ensureSystemDirs(req: Request, env: any) {
 }
 
 
-async function envPage(req: Request, env: any, envUUID: string, path: string) {
+async function envPage(req: Request, env: any, project: any, path: string) {
     const url = new URL(req.url);
     if (isLocal(env)) {
-        url.searchParams.set("env", envUUID);
+        url.searchParams.set("env", project["uuid"]);
         url.host = env.LOCALHOST;
     } else {
-        url.host = envUUID + "." + HOST_DOMAIN;
+        url.host = project["uuid"] + "." + HOST_DOMAIN;
     }
     url.pathname = path;
     const envReq = new Request(new URL("/_frame", req.url).toString(), req);
