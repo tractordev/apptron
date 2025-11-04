@@ -400,17 +400,23 @@ dialog#modal::backdrop {
 
 
 /* Top bar login state */
-#logout, #account, #dashboard {
+#logout, #account, #dashboard, #account-dropdown, #edit-project {
   display: none !important;
 }
 .signedin #account,
 .signedin #logout,
-.signedin #dashboard {
+.signedin #dashboard,
+.signedin #account-dropdown {
   display: block !important;
+}
+.signedin #edit-project {
+  display: inline !important;
 }
 .signedin #signin {
   display: none !important;
 }
+
+/* Project header, if on project page state */
 .project-header {
   display: none !important;
 }
