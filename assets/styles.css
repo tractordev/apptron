@@ -437,3 +437,52 @@ bc the account settings modal is a hanko component with its own padding and styl
 .card-menu .menu-item:hover { background: var(--gray-500); }
 .card-menu .menu-item.danger { color: #ffb4b4; }
 .card-menu .menu-item.danger:hover { background: rgba(255, 80, 80, 0.12); }
+
+#loader {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  outline: none;
+  pointer-events: none;
+}
+
+#loader .spinner {
+  width: 200px;
+  height: 200px;
+  background-image: url("/img/loader.svg");
+}
+
+#loader.fade-out, #loader.fade-out::backdrop {
+  animation: fadeOut 0.2s ease forwards;
+}
+
+#loader > * {
+  pointer-events: none;
+  user-select: none;
+}
+
+
+#loader::backdrop {
+  background-color: var(--gray-700);
+}
+
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
