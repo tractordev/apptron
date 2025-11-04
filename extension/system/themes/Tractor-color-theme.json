@@ -30,6 +30,7 @@
         "badge.background": "#F0B80E",
         "activityBarBadge.background":"#F0B80E",
         "sideBarSectionHeader.foreground": "#F0B80E", 
+		"terminal.ansiYellow": "#F0B80E",
 
         "button.foreground": "#000000", 
         "badge.foreground": "#000000",
