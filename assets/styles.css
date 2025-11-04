@@ -104,6 +104,10 @@ html, body {
   box-sizing: border-box;
 }
 
+hidden {
+  display: none;
+}
+
 label, legend {
   color: var(--gray-100);
   margin-bottom: 0.25rem;
@@ -265,8 +269,12 @@ header h1 {
 }
 
 #header-bar #nav-links > button, #header-bar #nav-links > apptron-dropdown > button {
-  all: unset;
+  /* all: unset; */
   cursor: pointer;
+  background-color: inherit;
+  color: inherit;
+  padding: 0;
+  vertical-align: middle;
 }
 
 .header-container {
