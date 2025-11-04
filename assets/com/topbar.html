@@ -54,6 +54,10 @@
             window.modal.show("/com/account");
         });
 
+        $("#share").addEventListener("click", () => {
+            window.modal.show("/com/share");
+        });
+        
         $("#dashboard").addEventListener("click", () => {
             redirectTo(urlFor("/dashboard", {}, session.claims.username));
         });

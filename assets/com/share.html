@@ -1,0 +1,23 @@
+<html>
+<style>
+    @import url("/styles.css");
+    :host {
+        display: block;
+    }
+</style>
+<div class="dialog-header">
+    <h2>Share</h2>
+    <button class="dialog-close" onclick="window.modal.close()" type="button">&times;</button>
+</div>
+<div class="dialog-body">
+        <label for="share-url">Share url</label>
+        <input id="share-url" type="text" spellcheck="false" />
+
+    <div class="dialog-footer">
+        <button id="copy" type="button">Copy</button>
+        <!-- also add data-action so the dialog helper can close it -->
+        <button type="button" data-action="close">Close</button>
+    </div>
+
+</div>
+</html>

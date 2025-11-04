@@ -275,6 +275,9 @@ header h1 {
 
 /* Dialog Styles */
 dialog {
+  position: fixed !important;
+  /* anchored to top 25% of screen, not sure why this works */
+  top: -50% !important;  
   font: inherit;
   background-color: var(--gray-600);
   border: 1px solid var(--gray-500);
