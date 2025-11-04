@@ -56,8 +56,10 @@ func main() {
 			apptronCfg.Set("user", jsutil.Await(user))
 			user = apptronCfg.Get("user")
 		}
-		username = user.Get("username").String()
-		userID = user.Get("user_id").String()
+		if !user.IsNull() {
+			username = user.Get("username").String()
+			userID = user.Get("user_id").String()
+		}
 	}
 
 	envUUID := ""
@@ -72,7 +74,11 @@ func main() {
 		isOwner = envOwner == userID
 	}
 
-	log.Printf("starting apptron wanix for user %s, env %s\n", username, envName)
+	if username == "" {
+		log.Printf("starting apptron wanix for anonymous, env %s\n", envName)
+	} else {
+		log.Printf("starting apptron wanix for user %s, env %s\n", username, envName)
+	}
 
 	inst := runtime.Instance()
 
@@ -200,11 +206,16 @@ func main() {
 
 	profile := []string{
 		fmt.Sprintf("export USER=%s", username),
-		fmt.Sprintf("export HOME=/home/%s", username),
+	}
+	if username != "" {
+		profile = append(profile, fmt.Sprintf("export HOME=/home/%s", username))
 	}
 	if !env.IsUndefined() {
 		profile = append(profile, fmt.Sprintf("export ENV_NAME=%s", envName))
 		profile = append(profile, fmt.Sprintf("export ENV_UUID=%s", envUUID))
+		if username == "" {
+			profile = append(profile, fmt.Sprintf("export HOME=/home/%s", envName))
+		}
 	}
 	profile = append(profile, "")
 	if err := fs.WriteFile(root.Namespace(), "#env/etc/profile.d/apptron.sh", []byte(strings.Join(profile, "\n")), 0644); err != nil {
@@ -262,29 +273,31 @@ func main() {
 	updateLoader("Syncing filesystem...")
 
 	// setup user fs
-	log.Println("setting up user fs")
-	startTime = time.Now()
-	remoteHomeFS := httpfs.New(fmt.Sprintf("%s/data/usr/%s", origin.String(), userID), nil)
-	// if err := fs.MkdirAll(remoteHomeFS, ".", 0755); err != nil {
-	// 	log.Fatal(err)
-	// }
-	if err := fs.MkdirAll(opfs, path.Join("usr", userID), 0755); err != nil {
-		log.Fatal(err)
-	}
-	localHomeFS, err := fs.Sub(opfs, path.Join("usr", userID))
-	if err != nil {
-		log.Fatal(err)
-	}
-	sfs := syncfs.New(localHomeFS, remoteHomeFS, 5*time.Second)
+	if username != "" {
+		log.Println("setting up user fs")
+		startTime = time.Now()
+		remoteHomeFS := httpfs.New(fmt.Sprintf("%s/data/usr/%s", origin.String(), userID), nil)
+		// if err := fs.MkdirAll(remoteHomeFS, ".", 0755); err != nil {
+		// 	log.Fatal(err)
+		// }
+		if err := fs.MkdirAll(opfs, path.Join("usr", userID), 0755); err != nil {
+			log.Fatal(err)
+		}
+		localHomeFS, err := fs.Sub(opfs, path.Join("usr", userID))
+		if err != nil {
+			log.Fatal(err)
+		}
+		sfs := syncfs.New(localHomeFS, remoteHomeFS, 5*time.Second)
 
-	if err := sfs.Sync(); err != nil {
-		log.Printf("err syncing: %v\n", err)
-	}
+		if err := sfs.Sync(); err != nil {
+			log.Printf("err syncing: %v\n", err)
+		}
 
-	if err := root.Namespace().Bind(sfs, ".", fmt.Sprintf("home/%s", username)); err != nil {
-		log.Fatal(err)
+		if err := root.Namespace().Bind(sfs, ".", fmt.Sprintf("home/%s", username)); err != nil {
+			log.Fatal(err)
+		}
+		log.Printf("user fs ready in %v\n", time.Since(startTime))
 	}
-	log.Printf("user fs ready in %v\n", time.Since(startTime))
 
 	// setup project fs
 	if !env.IsUndefined() {
