@@ -282,7 +282,7 @@ header h1 {
 }
 
 /* Dialog Styles */
-dialog {
+dialog#modal {
   position: fixed !important;
   /* anchored to top 25% of screen, not sure why this works */
   top: -25% !important;  
@@ -297,7 +297,7 @@ dialog {
   pointer-events: auto !important;
   width: 464px;
 }
-dialog::backdrop {
+dialog#modal::backdrop {
   background-color: rgba(0, 0, 0, 0.6);
 }
 .dialog-header {
@@ -464,6 +464,8 @@ dialog::backdrop {
   justify-content: center;
   outline: none;
   pointer-events: none;
+  font: inherit;
+  color: #fff;
 }
 
 #loader .spinner {
