@@ -53,9 +53,8 @@ export default {
         }
 
         if (url.pathname.startsWith("/data")) {
-            if (!await validateToken(env.AUTH_URL, ctx.tokenRaw)) {
-                return new Response("Forbidden", { status: 403 });
-            }
+            const authenticated = await validateToken(env.AUTH_URL, ctx.tokenRaw);
+
             let dataPath = url.pathname.slice(5);
             if (dataPath.endsWith("/...")) {
                 dataPath = dataPath.slice(0, -4);
@@ -64,12 +63,18 @@ export default {
             if (dataPath.includes("/:attr/") || 
                 dataPath.startsWith("/etc/") ||
                 ["","/etc","/env","/usr"].indexOf(dataPath) !== -1) {
+                if (!authenticated) {
+                    return new Response("Forbidden", { status: 403 });
+                }
                 if (!ADMIN_USERS.includes(ctx.tokenJWT?.username)) {
                     return new Response("Forbidden", { status: 403 });
                 }
             }
             // user data urls
             if (dataPath.startsWith("/usr/")) {
+                if (!authenticated) {
+                    return new Response("Forbidden", { status: 403 });
+                }
                 const parts = dataPath.split("/");
                 if (!parts[2] || parts[2] !== ctx.userUUID) {
                     return new Response("Forbidden", { status: 403 });
