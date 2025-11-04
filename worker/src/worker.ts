@@ -40,8 +40,6 @@ export default {
 
             return insertMeta(resp, {
                 "auth-url": env.AUTH_URL,
-                "env-name": project["name"],
-                "env-owner": project["owner"],
                 "project": escapeJSON(JSON.stringify(project)),
             });
         }
