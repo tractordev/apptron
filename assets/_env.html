@@ -42,6 +42,16 @@
   <script type="module">
     import { setupWanix, getAuth, envUUID, getMeta, redirectTo, urlFor } from "/lib/apptron.js";
 
+    const loader = document.getElementById("loader");
+    loader.showModal();
+    loader.loaded = () => {
+      loader.classList.add("fade-out");
+      setTimeout(() => {
+        loader.close();
+        loader.remove();
+      }, 200);
+    };
+
     const auth = await getAuth();
     window.apptron = {
       user: auth.getUser(), // this promise will be resolved later
@@ -60,9 +70,7 @@
       if (event.data.port) {
         console.log("vscode waiting for apptron...");
         await w.ready();
-
-
-        console.log("creating port for vscode...");
+        loader.loaded();
         const port = w.createPort();
         event.data.port.postMessage({ wanix: port }, [port]);
       }
@@ -83,5 +91,9 @@
   <iframe src="/_vscode" allow="clipboard-read; clipboard-write; cross-origin-isolated"
     sandbox="allow-scripts allow-same-origin allow-forms allow-modals allow-popups allow-popups-to-escape-sandbox"></iframe>
 
+  <dialog id="loader">
+    <div class="spinner"></div>
+    <p>Loading...</p>
+  </dialog>
 </body>
 </html>
