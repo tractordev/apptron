@@ -1,0 +1,66 @@
+<html>
+<style>
+    @import url("/styles.css");
+    :host {
+        display: block;
+    }
+</style>
+
+<div class="dialog-header">
+    <h2>Share</h2>
+    <button class="dialog-close" type="button" onclick="window.modal.finish()" aria-label="Close">&times;</button>
+</div>
+<div class="dialog-body">
+        <label for="share-url">Share url</label>
+        <input id="share-url" type="text" spellcheck="false" />
+
+    <div class="dialog-footer">
+        <button type="button" class="btn" onclick="window.modal.finish()">Cancel</button>
+        <button id="copy" type="button" class="btn primary">Copy</button>
+    </div>
+</div>
+
+<script type="module">
+  // Use the component-scoped helpers
+  const input   = $("#share-url");
+  const copyBtn = $("#copy");
+
+  // Get URL from the context passed by: window.modal.show("/com/share", { url })
+  const ctx = component?.context || {};
+  input.value = ctx.url || window.location.href;
+
+  // Focus/select after it’s in the DOM
+  queueMicrotask(() => input.select());
+
+  // Copy with fallback for stricter environments
+  async function copyText(text) {
+    try {
+      await navigator.clipboard.writeText(text);     // modern path
+      return true;
+    } catch {
+      try {                                          // fallback
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        ta.setAttribute("readonly", "");
+        ta.style.position = "absolute";
+        ta.style.left = "-9999px";
+        document.body.appendChild(ta);
+        ta.select();
+        const ok = document.execCommand("copy");
+        document.body.removeChild(ta);
+        return ok;
+      } catch { return false; }
+    }
+  }
+
+  copyBtn.addEventListener("click", async () => {
+    const ok = await copyText(input.value);
+    copyBtn.textContent = ok ? "Copied!" : "Copy failed";
+    setTimeout(() => (copyBtn.textContent = "Copy"), 1200);
+
+    // Optional: close & resolve back to caller
+    // if (ok) window.modal.finish({ copied: true, url: input.value });
+  });
+</script>
+
+</html>
