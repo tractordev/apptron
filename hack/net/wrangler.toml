@@ -1,0 +1,16 @@
+name = "apptron-debug-cfnet"
+compatibility_date = "2025-08-21"
+main = "./worker.ts"
+
+[[containers]]
+class_name = "Gateway"
+image = "./Dockerfile"
+max_instances = 1
+
+[[durable_objects.bindings]]
+class_name = "Gateway"
+name = "gateway"
+
+[[migrations]]
+new_sqlite_classes = [ "Gateway" ]
+tag = "v1"
