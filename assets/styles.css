@@ -268,7 +268,13 @@ header h1 {
   gap: 2rem;
 }
 
-#header-bar #nav-links > button, #header-bar #nav-links > apptron-dropdown > button {
+#header-bar .project-header button#edit-project {
+  padding: 0 0.25rem;
+}
+
+#header-bar #nav-links > button,
+#header-bar #nav-links > apptron-dropdown > button,
+#header-bar .project-header button {
   /* all: unset; */
   cursor: pointer;
   background-color: inherit;
