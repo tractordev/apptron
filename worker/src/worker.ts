@@ -39,6 +39,7 @@ export default {
             });
             resp.headers.set("Cross-Origin-Opener-Policy", "same-origin");
             resp.headers.set("Cross-Origin-Embedder-Policy", "require-corp");
+            resp.headers.set("Cross-Origin-Resource-Policy", "cross-origin");
             
             const contentType = resp.headers.get('content-type');
             if (!contentType || !contentType.includes('text/html')) {
@@ -213,6 +214,7 @@ async function envPage(req: Request, env: any, project: any, path: string) {
     });
     resp.headers.set("Cross-Origin-Opener-Policy", "same-origin");
     resp.headers.set("Cross-Origin-Embedder-Policy", "require-corp");
+    resp.headers.set("Cross-Origin-Resource-Policy", "cross-origin");
     return insertHTML(resp, "body", `<iframe src="${url.toString()}" allow="usb; serial; hid; clipboard-read; clipboard-write; cross-origin-isolated"
         sandbox="allow-scripts allow-same-origin allow-forms allow-modals allow-popups allow-popups-to-escape-sandbox"></iframe>`);
 }
