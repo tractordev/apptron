@@ -2,3 +2,9 @@
   Access-Control-Allow-Origin: *
 /*.tgz
   Access-Control-Allow-Origin: *
+/_vscode
+  Cross-Origin-Opener-Policy: same-origin
+  Cross-Origin-Embedder-Policy: require-corp
+/vscode/*
+  Cross-Origin-Opener-Policy: same-origin
+  Cross-Origin-Embedder-Policy: require-corp
