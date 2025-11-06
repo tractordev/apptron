@@ -2,6 +2,11 @@
 
 mount -t proc proc /proc
 mount -t sysfs sysfs /sys
+mount -t tmpfs tmpfs /tmp
+mount -t binfmt_misc none /proc/sys/fs/binfmt_misc
+
+# register wasm binary format
+echo ':wasm:M::\x00\x61\x73\x6d::/bin/wexec:' > /proc/sys/fs/binfmt_misc/register
 
 # configure networking
 ifconfig eth0 up
