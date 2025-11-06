@@ -30,8 +30,15 @@
 
     const project = JSON.parse(getMeta("project"));
     if (project) {
+        if (project["visibility"] == "private") {
+            console.log("this project is private!")
+        }
+
         $("#header-bar").classList.add("project");
         $(".project-header .name").innerText = project["name"];
+
+        project["visibility"] === "private" && $(".project-header")?.classList.add("private");
+
         $(".project-header button").addEventListener("click", async () => {
             const resp = await window.modal.show("/com/project", {project});
             if (!resp) return; // canceled

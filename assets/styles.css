@@ -237,7 +237,7 @@ header h1 {
   color: #fff;
 }
 
-/* HEADER BAR */
+/* HEADER BAR -----------------------*/
 #header-bar {
   height: 35px;
   box-sizing: border-box;
@@ -287,7 +287,18 @@ header h1 {
   height: 35px;
 }
 
-/* Dialog Styles */
+.project-header.private .name::before {
+  content: "";
+  display: inline-block;
+  width: 14px; height: 14px;
+  vertical-align: middle;
+  margin-right: 6px;
+  background: currentColor;
+  -webkit-mask: url('data:image/svg+xml;utf8,<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M13 7H12V5C12 3.93913 11.5786 2.92172 10.8284 2.17157C10.0783 1.42143 9.06087 1 8 1C6.93913 1 5.92172 1.42143 5.17157 2.17157C4.42143 2.92172 4 3.93913 4 5V7H3L2 8V14L3 15H13L14 14V8L13 7ZM5 5C5 4.20435 5.31607 3.44129 5.87868 2.87868C6.44129 2.31607 7.20435 2 8 2C8.79565 2 9.55871 2.31607 10.1213 2.87868C10.6839 3.44129 11 4.20435 11 5V7H5V5ZM13 14H3V8H13V14Z" fill="currentColor"/></svg>') no-repeat center / contain;
+  mask: url('data:image/svg+xml;utf8,<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M13 7H12V5C12 3.93913 11.5786 2.92172 10.8284 2.17157C10.0783 1.42143 9.06087 1 8 1C6.93913 1 5.92172 1.42143 5.17157 2.17157C4.42143 2.92172 4 3.93913 4 5V7H3L2 8V14L3 15H13L14 14V8L13 7ZM5 5C5 4.20435 5.31607 3.44129 5.87868 2.87868C6.44129 2.31607 7.20435 2 8 2C8.79565 2 9.55871 2.31607 10.1213 2.87868C10.6839 3.44129 11 4.20435 11 5V7H5V5ZM13 14H3V8H13V14Z" fill="currentColor"/></svg>') no-repeat center / contain;
+}
+
+/* Dialog Styles ---------------------------*/
 dialog#modal {
   position: fixed !important;
   /* anchored to top 25% of screen, not sure why this works */
