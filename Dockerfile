@@ -6,7 +6,18 @@ ARG LINUX_AMD64=linux/amd64
 FROM --platform=$LINUX_AMD64 ghcr.io/tractordev/apptron:kernel AS kernel
 FROM --platform=$LINUX_AMD64 ghcr.io/progrium/v86:latest AS v86
 
+FROM golang:1.24.5-alpine AS wexec-go
+WORKDIR /build
+COPY system/cmd/wexec/main.go .
+RUN GOOS=linux GOARCH=386 CGO_ENABLED=0 go build -o wexec main.go
+
+FROM tinygo/tinygo:0.36.0 AS wexec-tinygo
+WORKDIR /build
+COPY system/cmd/wexec/main.go .
+RUN GOOS=linux GOARCH=386 tinygo build -o wexec main.go
+
 FROM --platform=$LINUX_386 docker.io/i386/alpine:latest AS rootfs
+COPY --from=wexec-go /build/wexec /bin/wexec
 COPY ./system/bin/* /bin/
 COPY ./system/etc/* /etc/
 
