@@ -30,10 +30,6 @@
 
     const project = JSON.parse(getMeta("project"));
     if (project) {
-        if (project["visibility"] == "private") {
-            console.log("this project is private!")
-        }
-
         $("#header-bar").classList.add("project");
         $(".project-header .name").innerText = project["name"];
 
