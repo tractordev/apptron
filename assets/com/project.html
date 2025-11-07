@@ -7,7 +7,7 @@
   }
 </style>
 <script type="module">
-  import { redirectTo, urlFor } from "/lib/apptron.js";
+  import { redirectTo, urlFor, getAuth } from "/lib/apptron.js";
 
   $("#project-form").reset();
 
@@ -44,8 +44,9 @@
     const visibility = ($('input[name="visibility"]:checked').value || "private").trim();
     if (!name || !$("#project-name").checkValidity()) { $("#project-name").focus(); return; }
 
-    const resp = (project) 
-      ? await fetch(urlFor(`/projects/${encodeURIComponent(project.name)}`, {}, window.session.claims.username), {
+    const tokenParam = { token: (await getAuth()).getSessionToken() };
+    const resp = (project)  
+      ? await fetch(urlFor(`/projects/${encodeURIComponent(project.name)}`, tokenParam, window.session.claims.username), {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ description, visibility })
