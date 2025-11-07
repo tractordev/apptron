@@ -5,6 +5,7 @@ import { getAttrs } from "./r2fs";
 
 export async function handle(req: Request, env: any, ctx: Context) {
 
+    // todo: keep in mind cross origin possibility
     if (!await validateToken(env.AUTH_URL, ctx.tokenRaw)) {
         return new Response("Forbidden", { status: 403 });
     }
