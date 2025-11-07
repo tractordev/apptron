@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"io"
 	"log"
@@ -21,12 +22,17 @@ func debug(format string, a ...any) {
 
 func main() {
 	log.SetFlags(log.Lshortfile)
-	if len(os.Args) < 2 {
+
+	var taskType string
+	flag.StringVar(&taskType, "type", "wasi", "Type of task")
+	flag.Parse()
+
+	if len(flag.Args()) < 1 {
 		log.Fatal("usage: wexec <wasm> [args...]")
 	}
 
 	// fake /env program to print environment for debugging
-	if os.Args[1] == "/env" {
+	if flag.Arg(0) == "/env" {
 		fmt.Println(os.Environ())
 		fmt.Println("---")
 		for _, env := range os.Environ() {
@@ -41,11 +47,13 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	args := os.Args[1:]
-	args[0] = strings.TrimPrefix(filepath.Join("vm/1/fsys", wd, args[0]), "/")
+	args := flag.Args()
+	// ultimately we shouldn't need to prefix the path with vm/1/fsys,
+	// it should be relative to the task namespace
+	args[0] = strings.TrimPrefix(filepath.Join("vm/1/fsys", wd, flag.Arg(0)), "/")
 
 	debug("allocating pid")
-	pidRaw, err := os.ReadFile("/task/new/wasi")
+	pidRaw, err := os.ReadFile(fmt.Sprintf("/task/new/%s", taskType))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -53,6 +61,11 @@ func main() {
 
 	debug("writing cmd")
 	if err := appendFile(fmt.Sprintf("/task/%s/cmd", pid), []byte(strings.Join(args, " "))); err != nil {
+		log.Fatal(err)
+	}
+
+	debug("writing dir")
+	if err := appendFile(fmt.Sprintf("/task/%s/dir", pid), []byte(wd)); err != nil {
 		log.Fatal(err)
 	}
 
