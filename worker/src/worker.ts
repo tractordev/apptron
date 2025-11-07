@@ -11,11 +11,36 @@ export class Session extends Container {
     sleepAfter = "1h";
 }
 
+const CORS_HEADERS = {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "GET, HEAD, PUT, POST, PATCH, DELETE, MOVE, COPY, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization",
+    "Vary": "Origin",
+};
+
+function applyCORS(resp: Response) {
+    const newresp = new Response(resp.body, {
+        status: resp.status,
+        statusText: resp.statusText,
+        headers: new Headers(resp.headers)
+    });
+    for (const [key, value] of Object.entries(CORS_HEADERS)) {
+        newresp.headers.set(key, value);
+    }
+    return newresp;
+}
 
 export default {
     async fetch(req: Request, env: any) {
         const url = new URL(req.url);
         const ctx = parseContext(req, env);
+
+        if (req.method === "OPTIONS") {
+            return new Response("", { 
+                status: 200,
+                headers: {...CORS_HEADERS},
+            });
+        }
 
         if (url.pathname.endsWith(".map")) {
             return new Response("", { status: 200 });
@@ -150,7 +175,7 @@ export default {
         }
         
         if (ctx.userDomain && url.pathname.startsWith("/projects")) {
-            return projects.handle(req, env, ctx);
+            return applyCORS(await projects.handle(req, env, ctx));
         }
 
         if (url.pathname.startsWith("/x/local")) {
