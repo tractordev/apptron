@@ -1,6 +1,9 @@
 package main
 
 import (
+	"bytes"
+	"encoding/binary"
+	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -22,14 +25,17 @@ func debug(format string, a ...any) {
 
 func main() {
 	log.SetFlags(log.Lshortfile)
-
-	var taskType string
-	flag.StringVar(&taskType, "type", "wasi", "Type of task")
 	flag.Parse()
 
 	if len(flag.Args()) < 1 {
 		log.Fatal("usage: wexec <wasm> [args...]")
 	}
+
+	taskType, err := detectWASMType(flag.Arg(0))
+	if err != nil {
+		log.Fatal(err)
+	}
+	debug("detected WASM type: %s", taskType)
 
 	// fake /env program to print environment for debugging
 	if flag.Arg(0) == "/env" {
@@ -48,9 +54,13 @@ func main() {
 		log.Fatal(err)
 	}
 	args := flag.Args()
+	absArg0, err := filepath.Abs(flag.Arg(0))
+	if err != nil {
+		log.Fatal(err)
+	}
 	// ultimately we shouldn't need to prefix the path with vm/1/fsys,
 	// it should be relative to the task namespace
-	args[0] = strings.TrimPrefix(filepath.Join("vm/1/fsys", wd, flag.Arg(0)), "/")
+	args[0] = strings.TrimPrefix(filepath.Join("vm/1/fsys", absArg0), "/")
 
 	debug("allocating pid")
 	pidRaw, err := os.ReadFile(fmt.Sprintf("/task/new/%s", taskType))
@@ -160,4 +170,55 @@ func appendFile(path string, data []byte) error {
 	defer f.Close()
 	_, err = f.Write(data)
 	return err
+}
+
+func detectWASMType(path string) (string, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return "", err
+	}
+	defer f.Close()
+
+	// Skip WASM header (8 bytes: magic + version)
+	f.Seek(8, 0)
+
+	// Read sections until we find imports (section ID 2)
+	for {
+		var sectionID byte
+		if err := binary.Read(f, binary.LittleEndian, &sectionID); err != nil {
+			return "", err
+		}
+
+		size := readVarUint(f)
+
+		if sectionID == 2 { // Import section
+			buf := make([]byte, size)
+			f.Read(buf)
+
+			if bytes.Contains(buf, []byte("wasi_snapshot_preview1")) {
+				return "wasi", nil
+			}
+			if bytes.Contains(buf, []byte("gojs")) {
+				return "gojs", nil
+			}
+			return "", errors.New("unknown WASM type")
+		}
+
+		f.Seek(int64(size), io.SeekCurrent)
+	}
+}
+
+func readVarUint(r io.Reader) uint64 {
+	var v uint64
+	var s uint
+	b := []byte{0}
+	for {
+		r.Read(b)
+		v |= uint64(b[0]&0x7f) << s
+		if b[0]&0x80 == 0 {
+			break
+		}
+		s += 7
+	}
+	return v
 }
