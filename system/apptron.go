@@ -152,7 +152,7 @@ func main() {
 
 	// IDBFS is still origin-private if not exactly OPFS.
 	// Not only does it work in older Safari, but it's 50% faster than OPFS.
-	opfs := idbfs.New("apptron")
+	opfs := idbfs.New("apptron-rev1")
 	// opfs.SetLogger(log.Default())
 	if err := root.Namespace().Bind(opfs, ".", "web/idbfs/apptron"); err != nil {
 		log.Fatal(err)
@@ -226,7 +226,7 @@ func main() {
 		"rw",
 		"root=host9p",
 		"rootfstype=9p",
-		fmt.Sprintf("rootflags=trans=virtio,version=9p2000.L,aname=vm/%s/fsys,cache=none", vm),
+		fmt.Sprintf("rootflags=trans=virtio,version=9p2000.L,aname=vm/%s/fsys,cache=loose,msize=32768", vm), // 32KB max message size
 	}
 	ctlcmd := []string{
 		"start",
