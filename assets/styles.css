@@ -271,16 +271,19 @@ header h1 {
 #header-bar .project-header button#edit-project {
   padding: 0 0.25rem;
 }
-
 #header-bar #nav-links > button,
 #header-bar #nav-links > apptron-dropdown > button,
 #header-bar .project-header button {
-  /* all: unset; */
   cursor: pointer;
   background-color: inherit;
   color: inherit;
   padding: 0;
   vertical-align: middle;
+}
+#header-bar #nav-links > button:focus,
+#header-bar #nav-links > apptron-dropdown > button:focus,
+#header-bar .project-header button:focus {
+  box-shadow: none;
 }
 
 .header-container {
