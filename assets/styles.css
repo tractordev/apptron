@@ -133,6 +133,9 @@ button:focus {
   outline: none; 
   box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.2);
 }
+input[type="text"]:disabled {
+  border: none;
+}
 button {
   border-radius: var(--border-radius);
   border: none;
