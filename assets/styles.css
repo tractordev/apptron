@@ -72,6 +72,7 @@
     /* Button Styles */
     --button-min-width: max-content;
     /* END HANKO DEFAULT STYLES ---------------------------*/
+
 }
 
 hanko-profile::part(headline1) {
@@ -99,6 +100,10 @@ html, body {
     font-size: var(--font-size);
 }
 
+button, input, select, textarea {
+  font: inherit;
+}
+
 /* global styles --------------------- */
 * {
   box-sizing: border-box;
@@ -116,7 +121,6 @@ input[type="text"], textarea {
   border-radius: var(--border-radius);
   border: 1px solid var(--gray-300);
   background-color: inherit;
-  font: inherit;
   color: inherit;
   padding: 0.5rem;
 }
@@ -131,14 +135,23 @@ button:focus {
 }
 button {
   border-radius: var(--border-radius);
-  border: 0px solid;
-  background-color: var(--gray-100);
-  padding-left: 1rem;
-  padding-right: 1rem;
+  border: none;
+  background-color: var(--gray-400);
+  color: inherit;
+  padding: 0.6rem 1rem;
+  transition: background 0.2s ease;
+  font-weight: 500;
+  cursor: pointer;
+}
+button:hover {
+  background-color: var(--gray-500);
 }
 button.primary {
-  background-color: var(--yellow);
+  background: var(--yellow);
   color: #000;
+}
+button.primary:hover {
+  background: var(--yellow-shade);
 }
 
 /* DASHBOARD ----------------- */
@@ -158,20 +171,6 @@ header {
 header h1 {
   margin: 0;
   font-size: 1.5rem;
-}
-
-.create-btn {
-  background: var(--yellow);
-  border: none;
-  padding: 0.6rem 1rem;
-  border-radius: var(--border-radius);
-  font-weight: bold;
-  cursor: pointer;
-  color: #000;
-  transition: background 0.2s ease;
-}
-.create-btn:hover {
-  background: var(--yellow-shade);
 }
 
 .projects-grid {
@@ -285,11 +284,9 @@ header h1 {
 #header-bar .project-header button:focus {
   box-shadow: none;
 }
-
 .header-container {
   height: 35px;
 }
-
 .project-header .name {
   vertical-align: middle;
 }
