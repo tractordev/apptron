@@ -58,14 +58,9 @@
         });
 
         $("#share").addEventListener("click", () => {
-        // build a sensible URL and pass project + url to the modal
-            const url =
-                project
-                    ? urlFor(`/view/${encodeURIComponent(project.name)}`, {}, session.claims.username)
-                    : window.location.href;
-            window.modal.show("/com/share", { url, project });
+            window.modal.show("/com/share", { project });
         });
-        
+
         $("#dashboard").addEventListener("click", () => {
             redirectTo(urlFor("/dashboard", {}, session.claims.username));
         });
