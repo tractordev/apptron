@@ -24,6 +24,7 @@ enabled = true
 class_name = "Session"
 image = "./Dockerfile"
 max_instances = 1
+instance_type = "standard-4"
 
 [[durable_objects.bindings]]
 class_name = "Session"
