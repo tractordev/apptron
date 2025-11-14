@@ -107,7 +107,7 @@ export async function handlePatch(req, env, key) {
                             deleteBatch.length = 0;
                         }
                     } else {
-                        let buf = await new Response(entry.body).arrayBuffer();
+                        let buf: ArrayBuffer|Uint8Array = await new Response(entry.body).arrayBuffer();
                         if (entry.header.type === "symlink") {
                             buf = encode(entry.header.linkname);
                         }

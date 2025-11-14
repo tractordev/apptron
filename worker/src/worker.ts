@@ -2,10 +2,10 @@ import { Container, getContainer } from "@cloudflare/containers";
 import { validateToken } from "./auth";
 import { handle as handleR2FS, getAttrs } from "./r2fs";
 import { isLocal, redirectToSignin, insertMeta, insertHTML, uuidv4, putdir } from "./util";
-import { ADMIN_USERS, HOST_DOMAIN } from "./config";
+import { ADMIN_USERS, HOST_DOMAIN, PUBLISH_DOMAINS } from "./config";
 import { Context, parseContext } from "./context";
 import * as projects from "./projects";
-
+import * as publicsite from "./public";
 export class Session extends Container {
     defaultPort = 8080;
     sleepAfter = "1h";
@@ -40,6 +40,13 @@ export default {
                 status: 200,
                 headers: {...CORS_HEADERS},
             });
+        }
+
+        for (const domain of PUBLISH_DOMAINS) {
+            if ((isLocal(env) && (url.pathname.split("/")[1]||"").endsWith("."+domain)) 
+                || url.host.endsWith("."+domain)) {
+                return publicsite.handle(req, env, ctx);
+            }
         }
 
         if (url.pathname.endsWith(".map")) {
@@ -182,9 +189,12 @@ export default {
             return new Response("OK", { status: 200 });
         }
         
-        if (url.pathname.startsWith("/x/net") || 
+        if (
+            url.pathname.startsWith("/x/net") || 
             url.host.startsWith("_") ||
-            url.pathname === "/bundle.tgz") {
+            url.pathname === "/bundle.tgz" ||
+            url.pathname === "/gobundle.tgz"
+        ) {
             return getContainer(env.session).fetch(req);
         }
 

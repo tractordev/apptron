@@ -1,6 +1,6 @@
 import { Context } from "./context";
 import { validateToken } from "./auth";
-import { uuidv4, putdir, deletepath } from "./util";
+import { uuidv4, putdir, deletepath, copypath, checkpath } from "./util";
 import { getAttrs } from "./r2fs";
 
 export async function handle(req: Request, env: any, ctx: Context) {
@@ -10,19 +10,65 @@ export async function handle(req: Request, env: any, ctx: Context) {
         return new Response("Forbidden", { status: 403 });
     }
 
+    const url = new URL(req.url);
+    const urlParts = url.pathname.split("/");
+    const pathParts = urlParts.slice(urlParts.indexOf("projects"));
+
     switch (req.method) {
     case "GET":
-        return handleGet(req, env, ctx);
+        if (pathParts.length === 1) {
+            // /projects
+            return handleGet(req, env, ctx);
+        }
     case "POST":
-        return handlePost(req, env, ctx);
+        if (pathParts.length === 1) {
+            // /projects
+            return handlePost(req, env, ctx);
+        }
+        // if (pathParts.length === 3 && pathParts[2] === "publish") {
+        //     // /projects/:project/publish
+        //     return handlePostPublish(req, env, ctx);
+        // }
     case "PUT":
-        return handlePut(req, env, ctx);
+        if (pathParts.length === 2) {
+            // /projects/:project
+            return handlePut(req, env, ctx);
+        }
     case "DELETE":
-        return handleDelete(req, env, ctx);
-    default:
-        return new Response("Method Not Allowed", { status: 405 });
+        if (pathParts.length === 2) {
+            // /projects/:project
+            return handleDelete(req, env, ctx);
+        }
     }
+    return new Response("Method Not Allowed", { status: 405 });
 }
+
+// export async function handlePostPublish(req: Request, env: any, ctx: Context) {
+//     const url = new URL(req.url);
+//     const pathParts = url.pathname.split("/");
+//     const projectName = pathParts.slice(-2)[0];
+
+//     const project = await getByName(env, ctx.username, projectName);
+//     if (!project) {
+//         return new Response("Not Found", { status: 404 });
+//     }
+
+//     if (!project["publish_source"]) {
+//         return new Response("Bad Request", { status: 400 });
+//     }
+
+//     const checkResp = await checkpath(req, env, `/env/${project["uuid"]}/project/${project["publish_source"]}`);
+//     if (checkResp.ok) {
+//         return new Response("Not Found", { status: 404 });
+//     }
+
+//     const resp = await copypath(req, env, `/env/${project["uuid"]}/public`, `/env/${project["uuid"]}/publish`);
+//     if (!resp.ok) {
+//         return resp;
+//     }
+
+//     return new Response(projectName, { status: 200 });
+// }
 
 export async function handleGet(req: Request, env: any, ctx: Context) {
     const projects = await list(env, ctx.username);
@@ -99,13 +145,21 @@ export async function handlePut(req: Request, env: any, ctx: Context) {
         "name": projectName,
         "description": update["description"] || attrs["description"] || "",
         "visibility": update["visibility"] || attrs["visibility"] || "private",
+        "publish_source": update["publish_source"] || attrs["publish_source"] || "",
     };
 
     // Write updated attributes back using mkdir (idempotent PUT)
     const updateResp = await putdir(req, env, `/etc/index/${ctx.username}/${projectName}`, newAttrs);
-
     if (!updateResp.ok) {
         return updateResp;
+    }
+
+    // Create environment public directory if publish_source changed
+    if (attrs["publish_source"] !== newAttrs["publish_source"]) {
+        const publicResp = await putdir(req, env, `/env/${attrs["uuid"]}/public`);
+        if (!publicResp.ok) {
+            return publicResp;
+        }
     }
 
     return new Response(JSON.stringify({ name: projectName, description: newAttrs.description }), {
