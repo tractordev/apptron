@@ -45,6 +45,12 @@ func handler(vn *vnet.VirtualNetwork) http.Handler {
 			return
 		}
 
+		if r.URL.Path == "/gobundle.tgz" {
+			w.Header().Set("Access-Control-Allow-Origin", "*")
+			http.ServeFile(w, r, "gobundle.tgz")
+			return
+		}
+
 		if vn == nil {
 			http.Error(w, "network not available", http.StatusNotFound)
 			return
