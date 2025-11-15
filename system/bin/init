@@ -21,4 +21,6 @@ if [ -f /project/.apptron/envbuild ]; then
     fi
 fi
 
+# /bin/wexec fuse &
+
 exec /bin/start
