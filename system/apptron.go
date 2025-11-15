@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 	"slices"
 	"strings"
+	"sync"
 	"syscall/js"
 	"time"
 
@@ -65,12 +66,16 @@ func main() {
 	envUUID := ""
 	envName := ""
 	envOwner := ""
+	envPublishSource := ""
 	isOwner := false
 	env := apptronCfg.Get("env")
 	if !env.IsUndefined() {
 		envUUID = env.Get("uuid").String()
 		envName = env.Get("name").String()
 		envOwner = env.Get("owner").String()
+		if !env.Get("publish_source").IsUndefined() {
+			envPublishSource = env.Get("publish_source").String()
+		}
 		isOwner = envOwner == userID
 	}
 
@@ -226,10 +231,13 @@ func main() {
 		"rw",
 		"root=host9p",
 		"rootfstype=9p",
-		fmt.Sprintf("rootflags=trans=virtio,version=9p2000.L,aname=vm/%s/fsys,cache=loose,msize=32768", vm), // 32KB max message size
+		fmt.Sprintf("rootflags=trans=virtio,version=9p2000.L,aname=vm/%s/fsys,cache=loose,msize=131072", vm),
+		"mem=1008M",
+		"memmap=16M$1008M",
 	}
 	ctlcmd := []string{
 		"start",
+		"-m", "1G",
 		"-append", fmt.Sprintf("'%s'", strings.Join(cmdline, " ")),
 	}
 	if !inst.Get("config").Get("network").IsUndefined() {
@@ -252,23 +260,6 @@ func main() {
 	root.Namespace().Bind(envBuild, ".", "envbuild")
 	envBuildTime := time.Since(startTime)
 	log.Printf("env build loaded in %v\n", envBuildTime)
-
-	// setup datafs for admins
-	isAdmin := slices.Contains(admins, username)
-	if isAdmin {
-		datafs := httpfs.New(fmt.Sprintf("%s/data", origin.String()), nil)
-		// datafs.SetLogger(slogger.New(slog.LevelDebug))
-		datafs.Ignore("MAILPATH") // annoying busybox thing
-		cachedDatafs := httpfs.NewCacher(datafs)
-		go func() {
-			if _, _, err := cachedDatafs.PullNode(context.Background(), ".", true); err != nil {
-				log.Printf("err pulling datafs: %v\n", err)
-			}
-		}()
-		if err := root.Namespace().Bind(cachedDatafs, ".", "root/data"); err != nil {
-			log.Fatal(err)
-		}
-	}
 
 	updateLoader("Syncing filesystem...")
 
@@ -299,40 +290,103 @@ func main() {
 		log.Printf("user fs ready in %v\n", time.Since(startTime))
 	}
 
-	// setup project fs
-	if !env.IsUndefined() {
-		startTime = time.Now()
+	var wg sync.WaitGroup
 
-		var localProjectFS fs.FS
-		var err error
-		if isOwner {
-			log.Println("setting up project fs")
-			if err := fs.MkdirAll(opfs, path.Join("env", envUUID, "project"), 0755); err != nil {
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		// setup datafs for admins
+		isAdmin := slices.Contains(admins, username)
+		if isAdmin {
+			datafs := httpfs.New(fmt.Sprintf("%s/data", origin.String()), nil)
+			// datafs.SetLogger(slogger.New(slog.LevelDebug))
+			datafs.Ignore("MAILPATH") // annoying busybox thing
+			cachedDatafs := httpfs.NewCacher(datafs)
+			go func() {
+				if _, _, err := cachedDatafs.PullNode(context.Background(), ".", true); err != nil {
+					log.Printf("err pulling datafs: %v\n", err)
+				}
+			}()
+			if err := root.Namespace().Bind(cachedDatafs, ".", "root/data"); err != nil {
 				log.Fatal(err)
 			}
-			localProjectFS, err = fs.Sub(opfs, path.Join("env", envUUID, "project"))
+		}
+	}()
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		// setup project fs
+		if !env.IsUndefined() {
+			startTime = time.Now()
+
+			var localProjectFS fs.FS
+			var err error
+			if isOwner {
+				log.Println("setting up project fs")
+				if err := fs.MkdirAll(opfs, path.Join("env", envUUID, "project"), 0755); err != nil {
+					log.Fatal(err)
+				}
+				localProjectFS, err = fs.Sub(opfs, path.Join("env", envUUID, "project"))
+				if err != nil {
+					log.Fatal(err)
+				}
+			} else {
+				log.Println("setting up temp project fs (not owner)")
+				localProjectFS = memfs.New()
+			}
+			remoteProjectFS := httpfs.New(fmt.Sprintf("%s/data/env/%s/project", origin.String(), envUUID), nil)
+
+			sfs := syncfs.New(localProjectFS, remoteProjectFS, 5*time.Second)
+			if err := sfs.Sync(); err != nil {
+				log.Fatalf("err syncing: %v %v\n", err, envUUID)
+			}
+
+			if err := root.Namespace().Bind(sfs, ".", "project"); err != nil {
+				log.Fatal(err)
+			}
+			if err := root.Bind("project", filepath.Join("home", username, envName)); err != nil {
+				log.Fatal(err)
+			}
+			log.Printf("project fs ready in %v\n", time.Since(startTime))
+		}
+	}()
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		// setup publish fs
+		if envPublishSource != "" && isOwner {
+			log.Println("checking for public directory")
+			remotePublicFS := httpfs.New(fmt.Sprintf("%s/data/env/%s/public", origin.String(), envUUID), nil)
+			exists, err := fs.Exists(remotePublicFS, ".")
 			if err != nil {
 				log.Fatal(err)
 			}
-		} else {
-			log.Println("setting up temp project fs (not owner)")
-			localProjectFS = memfs.New()
-		}
-		remoteProjectFS := httpfs.New(fmt.Sprintf("%s/data/env/%s/project", origin.String(), envUUID), nil)
+			if exists {
+				log.Println("setting up publish fs")
+				startTime = time.Now()
+				if err := fs.MkdirAll(opfs, path.Join("env", envUUID, "public"), 0755); err != nil {
+					log.Fatal(err)
+				}
+				localPublicFS, err := fs.Sub(opfs, path.Join("env", envUUID, "public"))
+				if err != nil {
+					log.Fatal(err)
+				}
+				publicSyncFS := syncfs.New(localPublicFS, remotePublicFS, 3*time.Second)
+				if err := publicSyncFS.Sync(); err != nil {
+					log.Printf("err syncing: %v\n", err)
+				}
 
-		sfs := syncfs.New(localProjectFS, remoteProjectFS, 5*time.Second)
-		if err := sfs.Sync(); err != nil {
-			log.Fatalf("err syncing: %v %v\n", err, envUUID)
+				if err := root.Namespace().Bind(publicSyncFS, ".", "public"); err != nil {
+					log.Fatal(err)
+				}
+				log.Printf("publish fs ready in %v\n", time.Since(startTime))
+			}
 		}
+	}()
 
-		if err := root.Namespace().Bind(sfs, ".", "project"); err != nil {
-			log.Fatal(err)
-		}
-		if err := root.Bind("project", filepath.Join("home", username, envName)); err != nil {
-			log.Fatal(err)
-		}
-		log.Printf("project fs ready in %v\n", time.Since(startTime))
-	}
+	wg.Wait()
 
 	// done
 	inst.Call("_wasmReady")
