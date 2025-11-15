@@ -3,9 +3,11 @@ ARG TARGETPLATFORM
 ARG LINUX_386=linux/386
 ARG LINUX_AMD64=linux/amd64
 ARG GO_VERSION=1.25.0
+ARG TINYGO_VERSION=0.36.0
 
 FROM --platform=$LINUX_AMD64 ghcr.io/tractordev/apptron:kernel AS kernel
 FROM --platform=$LINUX_AMD64 ghcr.io/progrium/v86:latest AS v86
+
 
 FROM golang:$GO_VERSION-alpine AS wexec-go
 WORKDIR /build
@@ -14,16 +16,19 @@ RUN go mod download
 COPY system/cmd/wexec ./
 RUN GOOS=linux GOARCH=386 CGO_ENABLED=0 go build -o wexec *.go
 
-FROM tinygo/tinygo:0.36.0 AS wexec-tinygo
+
+FROM tinygo/tinygo:$TINYGO_VERSION AS wexec-tinygo
 WORKDIR /build
 COPY system/cmd/wexec ./
 RUN GOOS=linux GOARCH=386 tinygo build -o wexec *.go
+
 
 FROM --platform=$LINUX_386 docker.io/i386/alpine:latest AS rootfs
 RUN apk add --no-cache fuse
 COPY --from=wexec-go /build/wexec /bin/wexec
 COPY ./system/bin/* /bin/
 COPY ./system/etc/* /etc/
+
 
 FROM alpine:3.22 AS bundle
 ARG GO_VERSION
@@ -41,15 +46,14 @@ COPY --from=v86 /bios/seabios.bin /bundle/v86/seabios.bin
 COPY --from=v86 /bios/vgabios.bin /bundle/v86/vgabios.bin
 RUN tar -C /bundle -czf /bundle.tgz .
 
-FROM golang:1.24.5-alpine AS golang-build
-WORKDIR /build
-RUN apk add --no-cache git
 
-FROM golang-build AS session-build
+FROM golang:$GO_VERSION-alpine AS session-build
+RUN apk add --no-cache git
 COPY session/go.mod session/go.sum ./
 RUN go mod download
 COPY session/main.go ./
 RUN CGO_ENABLED=0 go build -o /session .
+
 
 FROM scratch AS session
 COPY --from=bundle /bundle.tgz /bundle.tgz
