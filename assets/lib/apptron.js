@@ -17,8 +17,9 @@ export async function setupWanix() {
         wasm: null,
         network: params.get('network') || "wss://apptron.dev/x/net"
     });
-    // getting the bundle ourselves
+    // getting the bundle(s) ourselves
     w._bundle = getCachedOrFetch("/bundle.tgz", true);
+    w._gobundle = getCachedOrFetch("/gobundle.tgz", true, "gobundle");
     // getting then loading the wasm ourselves
     getCachedOrFetch("/wanix.wasm").then(wasm => w._loadWasm(wasm));
     return w;
