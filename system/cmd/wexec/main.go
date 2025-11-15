@@ -15,6 +15,7 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+	// "tractor.dev/wanix/fs/p9kit"
 )
 
 func debug(format string, a ...any) {
@@ -24,6 +25,16 @@ func debug(format string, a ...any) {
 }
 
 func main() {
+	if len(os.Args) > 1 && os.Args[1] == "shmtest" {
+		runShmTest()
+		os.Exit(0)
+	}
+
+	if len(os.Args) > 1 && os.Args[1] == "fuse" {
+		setupFuseFS()
+		os.Exit(0)
+	}
+
 	log.SetFlags(log.Lshortfile)
 	flag.Parse()
 
