@@ -10,8 +10,33 @@
     <h2>Share</h2>
     <button class="dialog-close" type="button" onclick="window.modal.finish()" aria-label="Close">&times;</button>
 </div>
+
 <div class="dialog-body">
-    <div id="share-block">
+
+    <!-- Visibility settings -->
+    <fieldset class="visibility-group" role="radiogroup" aria-labelledby="visibility-legend">
+        <legend id="visibility-legend">Visibility</legend>
+
+        <label class="radio-option" for="vis-public">
+            <input type="radio" id="vis-public" name="visibility" value="public"
+                   aria-describedby="vis-public-help">
+            <span class="option-title">Public</span>
+            <span id="vis-public-help" class="option-help">
+                Anyone with a link has View access
+            </span>
+        </label>
+
+        <label class="radio-option" for="vis-private">
+            <input type="radio" id="vis-private" name="visibility" value="private" checked
+                   aria-describedby="vis-private-help">
+            <span class="option-title">Private 🔒</span>
+            <span id="vis-private-help" class="option-help">
+                Only people you've directly invited can access this project
+            </span>
+        </label>
+    </fieldset>
+
+     <div id="share-block">
         <label for="share-url">Share url</label>
         <input id="share-url" type="text" spellcheck="false" />
         <button id="copy" type="button" class="btn secondary">Copy</button>
@@ -19,16 +44,19 @@
 
     <div class="dialog-footer">
         <button type="button" class="btn secondary" onclick="window.modal.finish()">Cancel</button>
+        <button id="save" type="button" class="btn primary">Save</button>
     </div>
 </div>
 
 <script type="module">
+    import { urlFor, getAuth } from "/lib/apptron.js";
+
     async function copyText(text) {
         try {
-            await navigator.clipboard.writeText(text);     // modern path
+            await navigator.clipboard.writeText(text);
             return true;
         } catch {
-            try {                                          // fallback
+            try {
                 const ta = document.createElement("textarea");
                 ta.value = text;
                 ta.setAttribute("readonly", "");
@@ -39,36 +67,108 @@
                 const ok = document.execCommand("copy");
                 document.body.removeChild(ta);
                 return ok;
-            } catch { return false; }
+            } catch {
+                return false;
+            }
         }
     }
 
-    // Defer until the component’s DOM is stamped
-    queueMicrotask(() => {
-        const input   = $("#share-url");
-        const shareBlock   = $('#share-block');
-        const copyBtn = $('#copy');
+    queueMicrotask(() => init());
+
+    async function init() {
+        const input        = $("#share-url");
+        const shareBlock   = $("#share-block");
+        const copyBtn      = $("#copy");
+        const saveBtn      = $("#save");
+
+        const visPublic    = $("#vis-public");
+        const visPrivate   = $("#vis-private");
+
         const { project } = component?.context || {};
-        
-        // set the share url
+
+        // Build share URL (strip query params)
         const u = new URL(window.location.href);
         u.searchParams.delete("env");
+        u.searchParams.delete("user");
         input.value = u.toString();
 
-        // Hide controls if project is not public
-        if (project?.visibility !== "public") {
-            shareBlock?.toggleAttribute("hidden", true);
+        if (!project) {
+            // No project in context; nothing else to do
+            copyBtn?.addEventListener("click", async () => {
+                const ok = await copyText(input.value || "");
+                copyBtn.textContent = ok ? "Copied!" : "Copy failed";
+                setTimeout(() => (copyBtn.textContent = "Copy"), 1200);
+            });
+            return;
         }
 
-        // Wire up Copy button if visible
+        // ----- INITIAL VISIBILITY -----
+        if (project.visibility === "public") {
+            visPublic.checked = true;
+        } else {
+            visPrivate.checked = true;
+        }
+
+        // Internal state to track pending changes
+        let pendingVisibility = project.visibility;
+
+        // Update pending selection when user clicks a radio
+        visPublic?.addEventListener("change", () => {
+            pendingVisibility = "public";
+            updateShareBlockVisibility();
+        });
+        visPrivate?.addEventListener("change", () => {
+            pendingVisibility = "private";
+            updateShareBlockVisibility();
+        });
+
+        function updateShareBlockVisibility() {
+            const isPublic = pendingVisibility === "public";
+            shareBlock.toggleAttribute("hidden", !isPublic);
+        }
+
+        updateShareBlockVisibility();
+
+        // ----- COPY BUTTON -----
         copyBtn?.addEventListener("click", async () => {
-            const ok = await copyText(input?.value || "");
+            const ok = await copyText(input.value || "");
             copyBtn.textContent = ok ? "Copied!" : "Copy failed";
             setTimeout(() => (copyBtn.textContent = "Copy"), 1200);
         });
 
-        // Optional: focus/select when visible
-        if (input && !input.hidden) queueMicrotask(() => input.select());
-    });
+        // ----- SAVE BUTTON -----
+        saveBtn?.addEventListener("click", async () => {
+            // Only save if something changed
+            if (pendingVisibility !== project.visibility) {
+                try {
+                    const tokenParam = { token: (await getAuth()).getSessionToken() };
+                    const username   = window.session?.claims?.username;
+
+                    const resp = await fetch(
+                        urlFor(`/projects/${encodeURIComponent(project.name)}`, tokenParam, username),
+                        {
+                            method: "PUT",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                                description: project.description || project.desc || "",
+                                visibility: pendingVisibility
+                            })
+                        }
+                    );
+
+                    if (!resp.ok) {
+                        console.error("Failed to update visibility", resp.status);
+                    } else {
+                        project.visibility = pendingVisibility; // keep local in sync
+                    }
+                } catch (err) {
+                    console.error("Error updating visibility", err);
+                }
+            }
+
+            // Close and resolve
+            window.modal.finish({ saved: true });
+        });
+    }
 </script>
 </html>
