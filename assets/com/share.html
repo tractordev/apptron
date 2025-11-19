@@ -6,6 +6,12 @@
     }
 </style>
 
+<div class="dialog-tabs">
+    <button id="tab-share"   class="dialog-tab dialog-tab-active">Share</button>
+    <!-- <button id="tab-embed"   class="dialog-tab">Embed</button> -->
+    <button id="tab-publish" class="dialog-tab">Publish</button>
+</div>
+
 <div class="dialog-header">
     <h2>Share</h2>
     <button class="dialog-close" type="button" onclick="window.modal.finish()" aria-label="Close">&times;</button>
@@ -84,7 +90,24 @@
         const visPublic    = $("#vis-public");
         const visPrivate   = $("#vis-private");
 
+        const tabShare     = $("#tab-share");
+        // const tabEmbed     = $("#tab-embed");
+        const tabPublish   = $("#tab-publish");
+
         const { project } = component?.context || {};
+
+        // Simple tab navigation between modals
+        tabShare.addEventListener("click", () => {
+            /* already here, do nothing */
+        });
+
+        // tabEmbed.addEventListener("click", () => {
+        //     window.modal.show("/com/embed", { project });
+        // });
+
+        tabPublish.addEventListener("click", () => {
+            window.modal.show("/com/publish", { project });
+        });
 
         // Build share URL (strip query params)
         const u = new URL(window.location.href);
