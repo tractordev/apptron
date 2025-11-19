@@ -67,7 +67,7 @@
         });
 
         $("#share").addEventListener("click", () => {
-            window.modal.show("/com/share");
+            window.modal.show("/com/share", { project });
         });
 
         $("#dashboard").addEventListener("click", () => {
@@ -142,7 +142,7 @@
         <button id="signin">Sign in</button>
         
         <apptron-dropdown align="right" id="account-dropdown">
-            <!-- 1) Trigger: the clickable button -->
+            <!-- Trigger: the clickable button -->
             <button id="username" type="button" class="user-btn" aria-haspopup="menu" aria-controls="user-popover">
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
                     <g clip-path="url(#clip0_512_3234)">
@@ -157,7 +157,7 @@
                 <span class="label"></span>
             </button>
 
-            <!-- 2) Popover: immediate sibling with [popover] -->
+            <!-- Popover: immediate sibling with [popover] -->
             <div id="user-popover" class="card-menu" popover role="menu" aria-label="User menu">
                 <button id="account" class="menu-item" role="menuitem" data-action="account">Account</button>
                 <button id="logout" class="menu-item" role="menuitem" data-action="logout">Log out</button>
