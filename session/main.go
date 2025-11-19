@@ -39,15 +39,14 @@ func main() {
 
 func handler(vn *vnet.VirtualNetwork) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path == "/bundle.tgz" {
+		if strings.HasPrefix(r.URL.Path, "/bundles/") {
 			w.Header().Set("Access-Control-Allow-Origin", "*")
-			http.ServeFile(w, r, "bundle.tgz")
-			return
-		}
-
-		if r.URL.Path == "/gobundle.tgz" {
-			w.Header().Set("Access-Control-Allow-Origin", "*")
-			http.ServeFile(w, r, "gobundle.tgz")
+			if strings.HasSuffix(r.URL.Path, ".gz") {
+				w.Header().Set("Content-Encoding", "gzip")
+			} else {
+				w.Header().Set("Content-Encoding", "br")
+			}
+			http.StripPrefix("/bundles/", http.FileServer(http.Dir("bundles"))).ServeHTTP(w, r)
 			return
 		}
 

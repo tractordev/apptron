@@ -10,6 +10,7 @@ import (
 	"log"
 	"path"
 	"path/filepath"
+	"runtime"
 	"slices"
 	"strings"
 	"sync"
@@ -17,6 +18,7 @@ import (
 	"time"
 
 	"apptron.dev/system/virtio9p"
+	"tractor.dev/toolkit-go/engine/cli"
 	"tractor.dev/wanix"
 	"tractor.dev/wanix/fs"
 	"tractor.dev/wanix/fs/httpfs"
@@ -30,7 +32,7 @@ import (
 	"tractor.dev/wanix/web/api"
 	"tractor.dev/wanix/web/idbfs"
 	"tractor.dev/wanix/web/jsutil"
-	"tractor.dev/wanix/web/runtime"
+	wanixruntime "tractor.dev/wanix/web/runtime"
 )
 
 // todo: centralize or make based on jwt claims
@@ -85,7 +87,7 @@ func main() {
 		log.Printf("starting apptron wanix for user %s, env %s\n", username, envName)
 	}
 
-	inst := runtime.Instance()
+	inst := wanixruntime.Instance()
 
 	k := wanix.New()
 	k.AddModule("#web", web.New(k))
@@ -144,6 +146,7 @@ func main() {
 	jsBuf := js.Global().Get("Uint8Array").New(bundleBytes)
 	b := make([]byte, jsBuf.Length())
 	js.CopyBytesToGo(b, jsBuf)
+	inst.Set("_bundle", js.Undefined())
 	buf := bytes.NewBuffer(b)
 	bundleFS := tarfs.From(tar.NewReader(buf))
 	if err := root.Namespace().Bind(bundleFS, ".", "#bundle"); err != nil {
@@ -197,10 +200,10 @@ func main() {
 		src string
 	}{
 		{"#console/data1", fmt.Sprintf("vm/%s/ttyS0", vm)},
-		{".", fmt.Sprintf("vm/%s/fsys", vm)},
 		{"#ramfs", fmt.Sprintf("vm/%s/fsys/#ramfs", vm)},
 		{"#pipe", fmt.Sprintf("vm/%s/fsys/#pipe", vm)},
 		{"#|", fmt.Sprintf("vm/%s/fsys/#|", vm)},
+		{".", fmt.Sprintf("vm/%s/fsys", vm)},
 		{"#env", fmt.Sprintf("vm/%s/fsys", vm)},
 	}
 	for _, b := range vmBindings {
@@ -248,6 +251,79 @@ func main() {
 	// boot vm as early as possible
 	log.Println("booting vm")
 	if err := fs.WriteFile(root.Namespace(), fmt.Sprintf("vm/%s/ctl", vm), []byte(strings.Join(ctlcmd, " ")), 0755); err != nil {
+		log.Fatal(err)
+	}
+
+	// setup control file
+	setupBundle := func(name string, rw bool) {
+		startTime := time.Now()
+		bundle := jsutil.Await(inst.Call("_getBundle", name))
+		if bundle.IsUndefined() {
+			log.Printf("bundle %s not found\n", name)
+			return
+		}
+		jsBuf := js.Global().Get("Uint8Array").New(bundle)
+		b := make([]byte, jsBuf.Length())
+		js.CopyBytesToGo(b, jsBuf)
+		buf := bytes.NewBuffer(b)
+		var fsys fs.FS
+		if rw {
+			runtime.GC()
+			rwfs := memfs.New()
+			if err := fs.CopyFS(tarfs.From(tar.NewReader(buf)), ".", rwfs, "."); err != nil {
+				log.Fatal(err)
+			}
+			buf.Reset()
+			fsys = rwfs
+		} else {
+			fsys = tarfs.From(tar.NewReader(buf))
+		}
+		mountname := filepath.Base(name)
+		// Remove any suffix after a dot (including the dot)
+		if dot := strings.IndexByte(mountname, '.'); dot != -1 {
+			mountname = mountname[:dot]
+		}
+		if err := root.Namespace().Bind(fsys, ".", "#"+mountname); err != nil {
+			log.Fatal(err)
+		}
+		bundleTime := time.Since(startTime)
+		runtime.GC() // free memory
+		log.Printf("%s bundle loaded in %v\n", mountname, bundleTime)
+	}
+
+	if err := root.Namespace().Bind(wanix.ControlFile(&cli.Command{
+		Usage: "ctl",
+		Run: func(_ *cli.Context, args []string) {
+			switch args[0] {
+			case "bind":
+				if len(args) < 2 {
+					fmt.Println("usage: bind <oldname> <newname>")
+					return
+				}
+				if err := root.Bind(args[1], args[2]); err != nil {
+					log.Fatal(err)
+				}
+			case "bundle":
+				if len(args) < 1 {
+					fmt.Println("usage: bundle <name>")
+					return
+				}
+				rw := false
+				if len(args) > 2 {
+					rw = args[2] == "rw"
+				}
+				setupBundle(fmt.Sprintf("bundles/%s.tar.br", args[1]), rw)
+			case "cp":
+				if len(args) < 2 {
+					fmt.Println("usage: cp <src> <dst>")
+					return
+				}
+				if err := fs.CopyAll(root.Namespace(), args[1], args[2]); err != nil {
+					log.Fatal(err)
+				}
+			}
+		},
+	}), ".", "ctl"); err != nil {
 		log.Fatal(err)
 	}
 

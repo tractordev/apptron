@@ -45,7 +45,7 @@
   </div>
 
 <script type="module">
-  import { urlFor, redirectTo, modalDialog, $, $$ } from "/lib/apptron.js";
+  import { urlFor, redirectTo, modalDialog, $, $$, getBundle } from "/lib/apptron.js";
   
   $("#create-btn").addEventListener("click", async () => {
     const resp = await window.modal.show("/com/project", {});
@@ -173,6 +173,9 @@
   // Expose globally (used in another script)
   window.populateProjectsGrid = populateProjectsGrid;
 
+
+  // start pre-loading bundles
+  getBundle("/bundles/sys.tar.gz");
 </script>
 
 </body>

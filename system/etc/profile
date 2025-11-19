@@ -2,12 +2,6 @@ export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 export PAGER=less
 umask 022
 
-if [ -d /go ]; then
-	export GOCACHE=/go/cache
-	export GOMODCACHE=/web/idbfs/apptron/go/modcache
-	export PATH=/go/bin:$PATH
-fi
-
 export SESSION_IP=$(ifconfig eth0 | grep "inet addr" | cut -d: -f2 | cut -d' ' -f1)
 
 for script in /etc/profile.d/*.sh ; do

@@ -1,0 +1,66 @@
+<html>
+<script type="module">
+export async function getCachedOrFetch(url, cacheName = "assets") {
+    try {
+        // Open the cache
+        const cache = await caches.open(cacheName);
+
+        // Check if the asset is already cached
+        const cachedResponse = await cache.match(url);
+
+        if (cachedResponse) {
+            console.log('Found in cache:', url);
+            return await cachedResponse.arrayBuffer();
+        }
+
+        // Not in cache, fetch from network
+        console.log('Not in cache, fetching:', url);
+        const response = await fetch(url);
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        // Clone the response since we need to use it twice
+        // (once for cache, once for returning the ArrayBuffer)
+        const responseToCache = response.clone();
+
+        // Store in cache for future use
+        await cache.put(url, responseToCache);
+        console.log('Stored in cache:', url);
+
+        return await response.arrayBuffer();
+
+    } catch (error) {
+        console.error('Error in getCachedOrFetch:', error);
+        throw error;
+    }
+}
+
+// prefetch/cache bundles
+let loading = new Map();
+[
+    "/bundles/sys.tar.gz",    
+    "/bundles/goroot.tar.br",
+    "/bundles/gocache.tar.br",
+].forEach(async (name) => {
+    loading.set(name, new Promise(async (resolve) => {
+        await getCachedOrFetch(name, "bundles")
+        resolve();
+    }));
+});
+    
+window.addEventListener("message", async (event) => {
+    if (event.data.type !== "bundle") return;
+
+    const res = loading.get(event.data.name);
+    if (res) {
+        await res;
+        loading.delete(event.data.name);
+    }
+    
+    const buf = await getCachedOrFetch(event.data.name, "bundles");
+    event.data.port.postMessage({ bundle: buf }, [buf]);
+});
+</script>
+</html>

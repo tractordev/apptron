@@ -5,13 +5,11 @@
   <title>Apptron</title>
   <link rel="stylesheet" href="styles.css" />
   <script type="module">
-    import { getAuth, authRedirect, clearAllCache } from "/lib/apptron.js";
+    import { getAuth, authRedirect, clearAllCache, getBundle } from "/lib/apptron.js";
 
     const auth = await getAuth();
 
     auth.onSessionCreated(async () => {
-      // on sign-in clear the cache
-      await clearAllCache();
       const session = await auth.validateSession();
       authRedirect("/dashboard", session.claims.username);
     });
@@ -22,6 +20,12 @@
         authRedirect("/dashboard", session.claims.username);
       }
     });
+
+    // start pre-loading bundles
+    // on sign-in clear the cache
+    await clearAllCache("assets");
+    await clearAllCache("bundles");
+    getBundle("/bundles/sys.tar.gz");
   </script>
 </head>
 

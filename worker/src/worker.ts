@@ -192,8 +192,7 @@ export default {
         if (
             url.pathname.startsWith("/x/net") || 
             url.host.startsWith("_") ||
-            url.pathname === "/bundle.tgz" ||
-            url.pathname === "/gobundle.tgz"
+            url.pathname.startsWith("/bundles/")
         ) {
             return getContainer(env.session).fetch(req);
         }

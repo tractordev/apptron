@@ -11,13 +11,15 @@ mount -t sysfs sys /envbuild/sys
 
 cp /project/.apptron/envbuild /envbuild/.envbuild
 chroot /envbuild /bin/sh -c ". .envbuild"
+
 umount /envbuild/dev
 umount /envbuild/proc
 umount /envbuild/sys
+
+echo "Saving environment ..."
 rm /envbuild/.envbuild
-echo "Saving environment (this will be faster soon)..."
 rm -rf $env_root
-cp -r /envbuild $env_root
+echo cp envbuild "${env_root:1}" >> /ctl
 rm -rf /envbuild/*
 echo "Build complete"
 echo

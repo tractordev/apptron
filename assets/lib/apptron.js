@@ -9,7 +9,8 @@ export function $$(selector) { return document.querySelectorAll(selector); }
 export async function setupWanix() {
     const params = new URLSearchParams(window.location.search);
     if (params.get("cache") === "clear" || (isLocalhost() && !params.get("cache"))) {
-        await clearAllCache();
+        await clearAllCache("assets");
+        await clearAllCache("bundles");
     }
     const w = new WanixRuntime({
         helpers: true,
@@ -17,9 +18,9 @@ export async function setupWanix() {
         wasm: null,
         network: params.get('network') || "wss://apptron.dev/x/net"
     });
-    // getting the bundle(s) ourselves
-    w._bundle = getCachedOrFetch("/bundle.tgz", true);
-    w._gobundle = getCachedOrFetch("/gobundle.tgz", true, "gobundle");
+    // getting the bundle ourself, and the function to get other bundles
+    w._bundle = getBundle("/bundles/sys.tar.gz");
+    w._getBundle = getBundle;
     // getting then loading the wasm ourselves
     getCachedOrFetch("/wanix.wasm").then(wasm => w._loadWasm(wasm));
     return w;
@@ -246,4 +247,30 @@ export function modalDialog(el) {
         if (!inBounds) el.close();
     });
     return el;
+}
+
+let cacheFrame = null;
+export async function getBundle(name) {
+    if (!document) {
+        return null;
+    }
+    
+    if (!cacheFrame) {
+        cacheFrame = new Promise(resolve => {
+            const el = document.createElement("iframe");
+            el.src = "/bundles";
+            el.style.display = "none";
+            el.onload = () => {
+                resolve(el);
+            };
+            document.body.appendChild(el);
+        });
+    }
+
+    const el = await cacheFrame;
+    const channel = new MessageChannel();
+    el.contentWindow.postMessage({ type: "bundle", name: name, port: channel.port2 }, "*", [channel.port2]);
+    return await new Promise((resolve, reject) => {
+        channel.port1.onmessage = (e) => resolve(e.data.bundle);
+    });
 }
