@@ -1,4 +1,4 @@
-import { WanixRuntime } from "/wanix.js";
+import { WanixRuntime } from "/wanix.min.js";
 import { register } from "/hanko/elements.js";
 
 // querySelector conveniences, but dont import these in html components
