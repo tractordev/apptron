@@ -5,8 +5,39 @@
         display: block;
     }
 </style>
+
 <script type="module">
     import { urlFor, getAuth } from "/lib/apptron.js";
+
+    // -------------------------------------------------------
+    // TAB INITIALIZATION
+    // -------------------------------------------------------
+    queueMicrotask(() => init())
+
+    async function init() {
+        const tabShare     = $("#tab-share");
+        // const tabEmbed     = $("#tab-embed");
+        const tabPublish   = $("#tab-publish");
+
+        const { project } = component?.context || {};
+
+        // Simple tab navigation between modals
+        tabShare.addEventListener("click", () => {
+            window.modal.show("/com/share", { project });
+        });
+
+        // tabEmbed.addEventListener("click", () => {
+        //     window.modal.show("/com/embed", { project });
+        // });
+
+        tabPublish.addEventListener("click", () => {
+            /* already here, do nothing */
+        });
+    }
+
+    // -------------------------------------------------------
+    // FORM SAVE HANDLER (PUBLISH)
+    // -------------------------------------------------------
 
     $("#publish-form").addEventListener("submit", async (e) => {
         e.preventDefault();
@@ -20,6 +51,13 @@
         window.modal.finish();
     });
 </script>
+
+<div class="dialog-tabs">
+    <button id="tab-share"   class="dialog-tab">Share</button>
+    <!-- <button id="tab-embed"   class="dialog-tab">Embed</button> -->
+    <button id="tab-publish" class="dialog-tab dialog-tab-active">Publish</button>
+</div>
+
 <form id="publish-form" method="dialog" class="dialog">
 <div class="dialog-header">
     <h2>Public</h2>
@@ -40,4 +78,6 @@
     <button class="btn primary" id="project-submit" type="submit">Publish</button>
 </div>
 </form>
+
+
 </html>
