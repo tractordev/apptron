@@ -7,7 +7,10 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"log"
+	"net"
+	"os"
 	"path"
 	"path/filepath"
 	"runtime"
@@ -18,11 +21,14 @@ import (
 	"time"
 
 	"apptron.dev/system/virtio9p"
+	"github.com/hugelgupf/p9/p9"
 	"tractor.dev/toolkit-go/engine/cli"
 	"tractor.dev/wanix"
 	"tractor.dev/wanix/fs"
+	"tractor.dev/wanix/fs/fsutil"
 	"tractor.dev/wanix/fs/httpfs"
 	"tractor.dev/wanix/fs/memfs"
+	"tractor.dev/wanix/fs/p9kit"
 	"tractor.dev/wanix/fs/syncfs"
 	"tractor.dev/wanix/fs/tarfs"
 	"tractor.dev/wanix/vfs/pipe"
@@ -254,6 +260,32 @@ func main() {
 		log.Fatal(err)
 	}
 
+	go func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+		if err := fsutil.WaitFor(ctx, root.Namespace(), fmt.Sprintf("vm/%s/fsys/run/shm9p.lock", vm), true); err != nil {
+			log.Fatal(err)
+		}
+		shmpipe, err := fs.OpenFile(root.Namespace(), fmt.Sprintf("vm/%s/shmpipe0", vm), os.O_RDWR, 0)
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer shmpipe.Close()
+
+		vmfs, err := p9kit.ClientFS(&rwcConn{rwc: fs.DefaultFile{File: shmpipe}}, "/", p9.WithMessageSize(512*1024))
+		if err != nil {
+			log.Fatal(err)
+		}
+		entries, err := fs.ReadDir(vmfs, ".")
+		if err != nil {
+			log.Fatal(err)
+		}
+		for _, entry := range entries {
+			log.Println(entry.Name())
+		}
+
+	}()
+
 	// setup control file
 	setupBundle := func(name string, rw bool) {
 		startTime := time.Now()
@@ -479,3 +511,39 @@ func updateLoader(text string) {
 	}
 	loader.Call("querySelector", "p").Set("textContent", text)
 }
+
+// Conn is an adapter that implements net.Conn using an underlying io.ReadWriteCloser.
+// LocalAddr/RemoteAddr will be dummy addrs, SetDeadline/Set[Read|Write]Deadline are no-ops.
+type rwcConn struct {
+	rwc io.ReadWriteCloser
+}
+
+func (c *rwcConn) Read(b []byte) (int, error) {
+	return c.rwc.Read(b)
+}
+func (c *rwcConn) Write(b []byte) (int, error) {
+	return c.rwc.Write(b)
+}
+func (c *rwcConn) Close() error {
+	return c.rwc.Close()
+}
+func (c *rwcConn) LocalAddr() (addr net.Addr) {
+	return dummyAddr("rwc-local")
+}
+func (c *rwcConn) RemoteAddr() (addr net.Addr) {
+	return dummyAddr("rwc-remote")
+}
+func (c *rwcConn) SetDeadline(t time.Time) error {
+	return nil // not supported
+}
+func (c *rwcConn) SetReadDeadline(t time.Time) error {
+	return nil // not supported
+}
+func (c *rwcConn) SetWriteDeadline(t time.Time) error {
+	return nil // not supported
+}
+
+type dummyAddr string
+
+func (a dummyAddr) Network() string { return string(a) }
+func (a dummyAddr) String() string  { return string(a) }
