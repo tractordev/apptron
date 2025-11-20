@@ -25,13 +25,23 @@ func debug(format string, a ...any) {
 }
 
 func main() {
+	// snuck in a couple debug commands to avoid a whole new executable
+
+	// shmtest is a throughput test for the shared memory channel
 	if len(os.Args) > 1 && os.Args[1] == "shmtest" {
 		runShmTest()
 		os.Exit(0)
 	}
 
+	// fuse is a test of the fuse filesystem
 	if len(os.Args) > 1 && os.Args[1] == "fuse" {
 		setupFuseFS()
+		os.Exit(0)
+	}
+
+	// shm9p is 9p server of the root filesystem via shared memory
+	if len(os.Args) > 1 && os.Args[1] == "shm9p" {
+		runShm9P()
 		os.Exit(0)
 	}
 
