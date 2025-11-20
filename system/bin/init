@@ -21,6 +21,6 @@ if [ -f /project/.apptron/envbuild ]; then
     fi
 fi
 
-# /bin/wexec fuse &
+/bin/wexec shm9p &
 
 exec /bin/start
