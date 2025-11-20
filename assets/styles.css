@@ -98,6 +98,7 @@ html, body {
     color: #fff;
     background-color: var(--gray-700);
     font-size: var(--font-size);
+    margin: 0;
 }
 
 button, input, select, textarea {
@@ -160,7 +161,6 @@ button.primary:hover {
 
 /* DASHBOARD ----------------- */
 
-body { margin: 0; }
 .container {
   padding: 2rem;
 }
@@ -266,22 +266,32 @@ header h1 {
     vertical-align: text-bottom;
     color: inherit;
 }
-#header-bar #nav-links {
-    display: flex;
-    gap: 2rem;
+#header-bar #nav-links,
+#header-bar #header-left {
+  display: flex;
+  gap: 2rem;
+  align-items: center;
 }
 
 #header-bar .project-header button#edit-project {
   padding: 0 0.25rem;
 }
+
+/* TODO: fix button styling so that a plain button is the default,
+and we won't need these selectors */
 #header-bar #nav-links > button,
 #header-bar #nav-links > apptron-dropdown > button,
-#header-bar .project-header button {
+#header-bar .project-header button,
+#header-bar #header-left > button {
   cursor: pointer;
   background-color: inherit;
   color: inherit;
   padding: 0;
-  vertical-align: middle;
+}
+
+#header-bar > #header-left > a {
+    display: flex;
+    align-items: center;
 }
 #header-bar #nav-links > button:focus,
 #header-bar #nav-links > apptron-dropdown > button:focus,
