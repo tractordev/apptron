@@ -352,11 +352,6 @@ dialog#modal::backdrop {
     border-bottom: 1px solid #ffffff;
 }
 
-
-
-
-
-
 .dialog-header {
   display: flex;
   justify-content: space-between;
