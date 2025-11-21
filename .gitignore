@@ -5,6 +5,7 @@
 node_modules
 /assets/vscode
 /session/bundle.tgz
+/assets/wanix.debug.wasm
 /assets/wanix.wasm
 /assets/wanix.js
 kernel/bzImage

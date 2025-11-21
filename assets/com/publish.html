@@ -53,15 +53,15 @@
 </script>
 
 <div class="dialog-tabs">
-    <button id="tab-share"   class="dialog-tab">Share</button>
-    <!-- <button id="tab-embed"   class="dialog-tab">Embed</button> -->
-    <button id="tab-publish" class="dialog-tab dialog-tab-active">Publish</button>
+    <button id="tab-share" class="dialog-tab btn">Share</button>
+    <!-- <button id="tab-embed"   class="dialog-tab btn">Embed</button> -->
+    <button id="tab-publish" class="dialog-tab dialog-tab-active btn">Publish</button>
 </div>
 
 <form id="publish-form" method="dialog" class="dialog">
 <div class="dialog-header">
     <h2>Public</h2>
-    <button class="dialog-close" onclick="window.modal.close()" type="button">&times;</button>
+    <button class="dialog-close btn" onclick="window.modal.close()" type="button">&times;</button>
 </div>
 <div class="dialog-body">
     <label for="publish-source">Source</label>
@@ -74,7 +74,7 @@
 </div>
 
 <div class="dialog-footer">
-    <button class="btn" type="button" onclick="window.modal.finish()">Cancel</button>
+    <button class="btn secondary" type="button" onclick="window.modal.finish()">Cancel</button>
     <button class="btn primary" id="project-submit" type="submit">Publish</button>
 </div>
 </form>

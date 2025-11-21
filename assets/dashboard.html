@@ -68,11 +68,10 @@
           <div class="card-header">
             <h2 class="title"><a style="text-decoration: none; color: inherit;" href="${urlFor(`/edit/${project.name}`, {}, window.user.username)}">${escapeHtml(project.name)}</a></h2>
             <apptron-dropdown align="right">
-              <button class="ellipsis-btn" type="button"
-                      style="padding: 4px;">⋮</button>
+              <button class="ellipsis-btn btn" type="button">⋮</button>
               <div class="card-menu" popover role="menu" aria-label="Project menu">
-                <button class="menu-item" role="menuitem" data-action="edit" data-project="${escapeJSON(JSON.stringify(project))}">Edit Settings</button>
-                <button class="menu-item danger" role="menuitem" data-action="delete" data-project="${escapeJSON(JSON.stringify(project))}">Delete Project</button>
+                <button class="menu-item btn" role="menuitem" data-action="edit" data-project="${escapeJSON(JSON.stringify(project))}">Edit Settings</button>
+                <button class="menu-item danger btn" role="menuitem" data-action="delete" data-project="${escapeJSON(JSON.stringify(project))}">Delete Project</button>
               </div>
             </apptron-dropdown>
           </div>
