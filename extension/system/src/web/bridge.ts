@@ -67,7 +67,7 @@ export class WanixBridge implements FileSystemProvider, /*FileSearchProvider, Te
 	public wfsys: any;
 	public readonly ready: Promise<any>;
 	private readonly disposable: Disposable;
-    private readonly root: string;	
+    private root: string;	
 
 	constructor(wanixReceiver: MessagePort, root: string) {
 		this.ready = new Promise((resolve) => {
