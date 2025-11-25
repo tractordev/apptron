@@ -10,7 +10,6 @@ import (
 	"io"
 	"log"
 	"net"
-	"os"
 	"path"
 	"path/filepath"
 	"runtime"
@@ -21,14 +20,11 @@ import (
 	"time"
 
 	"apptron.dev/system/virtio9p"
-	"github.com/hugelgupf/p9/p9"
 	"tractor.dev/toolkit-go/engine/cli"
 	"tractor.dev/wanix"
 	"tractor.dev/wanix/fs"
-	"tractor.dev/wanix/fs/fsutil"
 	"tractor.dev/wanix/fs/httpfs"
 	"tractor.dev/wanix/fs/memfs"
-	"tractor.dev/wanix/fs/p9kit"
 	"tractor.dev/wanix/fs/syncfs"
 	"tractor.dev/wanix/fs/tarfs"
 	"tractor.dev/wanix/vfs/pipe"
@@ -260,31 +256,35 @@ func main() {
 		log.Fatal(err)
 	}
 
-	go func() {
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		defer cancel()
-		if err := fsutil.WaitFor(ctx, root.Namespace(), fmt.Sprintf("vm/%s/fsys/run/shm9p.lock", vm), true); err != nil {
-			log.Fatal(err)
-		}
-		shmpipe, err := fs.OpenFile(root.Namespace(), fmt.Sprintf("vm/%s/shmpipe0", vm), os.O_RDWR, 0)
-		if err != nil {
-			log.Fatal(err)
-		}
-		defer shmpipe.Close()
+	// go func() {
+	// 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	// 	defer cancel()
+	// 	if err := fsutil.WaitFor(ctx, root.Namespace(), fmt.Sprintf("vm/%s/fsys/run/shm9p.lock", vm), true); err != nil {
+	// 		log.Fatal(err)
+	// 	}
+	// 	shmpipe, err := fs.OpenFile(root.Namespace(), fmt.Sprintf("vm/%s/shmpipe0", vm), os.O_RDWR, 0)
+	// 	if err != nil {
+	// 		log.Fatal(err)
+	// 	}
+	// 	defer shmpipe.Close()
 
-		vmfs, err := p9kit.ClientFS(&rwcConn{rwc: fs.DefaultFile{File: shmpipe}}, "/", p9.WithMessageSize(512*1024))
-		if err != nil {
-			log.Fatal(err)
-		}
-		entries, err := fs.ReadDir(vmfs, ".")
-		if err != nil {
-			log.Fatal(err)
-		}
-		for _, entry := range entries {
-			log.Println(entry.Name())
-		}
+	// 	vmfs, err := p9kit.ClientFS(&rwcConn{rwc: fs.DefaultFile{File: shmpipe}}, "/", p9.WithMessageSize(512*1024))
+	// 	if err != nil {
+	// 		log.Fatal(err)
+	// 	}
+	// 	// sanity check
+	// 	entries, err := fs.ReadDir(vmfs, ".")
+	// 	if err != nil {
+	// 		log.Fatal(err)
+	// 	}
+	// 	if len(entries) == 0 {
+	// 		log.Fatal("vmfs is empty, this should not happen")
+	// 	}
+	// 	if err := root.Namespace().Bind(vmfs, ".", fmt.Sprintf("vm/%s/9proot", vm)); err != nil {
+	// 		log.Fatal(err)
+	// 	}
 
-	}()
+	// }()
 
 	// setup control file
 	setupBundle := func(name string, rw bool) {
