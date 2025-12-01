@@ -173,21 +173,7 @@ button.icon-btn {
     align-items: center;
     justify-content: center;
 }
-/* .dialog-close {
-    background: none;
-    border: none;
-    color: var(--gray-100);
-    font-size: 2rem;
-    cursor: pointer;
-    padding: 0;
-    line-height: 1;
-    width: 30px;
-    height: 30px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-left: auto;
-} */
+
 .dialog-close:hover {
     color: #fff;
 }
@@ -235,9 +221,6 @@ header h1 {
   flex-direction: column;
   justify-content: space-between;
   cursor: pointer;
-}
-.project-card .ellipsis-btn {
-    font-size: 1.5rem;
 }
 
 .project-card .title {
