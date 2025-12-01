@@ -64,7 +64,7 @@
     const timeText = formatProjectTime(project);
 
     return `
-        <div class="project-card">
+        <div class="project-card" data-url="${urlFor(`/edit/${project.name}`, {}, window.user.username)}">
           <div class="card-header">
             <h2 class="title"><a style="text-decoration: none; color: inherit;" href="${urlFor(`/edit/${project.name}`, {}, window.user.username)}">${escapeHtml(project.name)}</a></h2>
             <apptron-dropdown align="right">
@@ -171,6 +171,24 @@
   }
   // Expose globally (used in another script)
   window.populateProjectsGrid = populateProjectsGrid;
+
+   // make the whole card clickable 
+  const gridEl = $("#projects-grid");
+
+  gridEl.addEventListener("click", (e) => {
+    // Ignore clicks inside the dropdown / menu
+    if (e.target.closest("apptron-dropdown")) return;
+    if (e.target.closest(".menu-item")) return;
+
+    const card = e.target.closest(".project-card");
+    if (!card) return;
+
+    const url = card.dataset.url;
+    if (!url) return;
+
+    redirectTo(url); // or window.location.href = url;
+  });
+
 
 
   // start pre-loading bundles
