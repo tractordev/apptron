@@ -553,3 +553,11 @@ dialog#modal::backdrop {
     opacity: 0;
   }
 }
+
+/* temp fixes to be done the "right" way */
+.form-error {
+  color: var(--error-color);
+  font-size: 0.85rem;
+  position: absolute;
+  margin-top: -1.25rem; /* placement hack */
+}
