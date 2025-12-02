@@ -11,7 +11,7 @@ replace github.com/hugelgupf/p9 => github.com/progrium/p9 v0.0.0-20251108235831-
 require (
 	github.com/hugelgupf/p9 v0.3.1-0.20240118043522-6f4f11e5296e
 	github.com/u-root/uio v0.0.0-20240224005618-d2acac8f3701
-	tractor.dev/wanix v0.0.0-20251119011735-746be78ff95c
+	tractor.dev/wanix v0.0.0-20251202012200-d92345b7417e
 )
 
 require (
