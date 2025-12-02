@@ -125,7 +125,7 @@ input[type="text"], textarea {
   color: inherit;
   padding: 0.5rem;
 }
-input:not([type="radio"]), button {
+input:not([type="radio"]), button.primary, button.secondary {
   height: var(--item-height);
 }
 input[type="text"]:focus,
@@ -137,19 +137,25 @@ button:focus {
 input[type="text"]:disabled {
   border: none;
 }
-button {
-    border-radius: var(--border-radius);
-    border: none;
-    background-color: var(--gray-400);
-    color: inherit;
-    padding: 0.6rem 1rem;
-    font-weight: 500;
-    cursor: pointer;
-}
-button:hover {
-    background-color: var(--gray-500);
-    /* transition: background 0.2s ease; */
 
+/* BUTTONS ----------------- */
+
+/* resets all buttons to plain text */
+button {
+    border: none;
+    color: inherit;
+    cursor: pointer;
+    background-color: transparent;
+    padding: 0.6rem 1rem;
+}
+/* .btn is for all buttons that should look/behave like a button,
+even if they don't have a background color. includes menu items. */
+.btn {
+    border-radius: var(--border-radius);
+    font-weight: 500;
+}
+.btn:hover {
+    background-color: var(--gray-500);
 }
 button.primary {
     background: var(--yellow);
@@ -157,6 +163,19 @@ button.primary {
 }
 button.primary:hover {
     background: var(--yellow-shade);
+}
+button.secondary {
+    background-color: var(--gray-400);
+}
+button.icon-btn {
+    font-size: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.dialog-close:hover {
+    color: #fff;
 }
 
 /* DASHBOARD ----------------- */
@@ -201,6 +220,7 @@ header h1 {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+  cursor: pointer;
 }
 
 .project-card .title {
@@ -224,20 +244,6 @@ header h1 {
     justify-content: space-between;
     align-items: center;
     margin-bottom: 0.5rem;
-}
-
-.ellipsis-btn {
-    background: none;
-    border: none;
-    color: #aaa;
-    font-size: 1.2rem;
-    cursor: pointer;
-    padding: 0;
-    line-height: 1;
-}
-
-.ellipsis-btn:hover {
-    color: #fff;
 }
 
 /* HEADER BAR -----------------------*/
@@ -372,24 +378,6 @@ dialog#modal::backdrop {
   margin: 0;
   font-size: 24px;
   padding: 0;
-}
-.dialog-close {
-    background: none;
-    border: none;
-    color: var(--gray-100);
-    font-size: 2rem;
-    cursor: pointer;
-    padding: 0;
-    line-height: 1;
-    width: 30px;
-    height: 30px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-left: auto;
-}
-.dialog-close:hover {
-    color: #fff;
 }
 
 .dialog-body p {
