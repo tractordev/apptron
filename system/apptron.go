@@ -326,6 +326,7 @@ func main() {
 	if err := root.Namespace().Bind(wanix.ControlFile(&cli.Command{
 		Usage: "ctl",
 		Run: func(_ *cli.Context, args []string) {
+			log.Println("ctl:", args)
 			switch args[0] {
 			case "bind":
 				if len(args) < 2 {
@@ -352,6 +353,51 @@ func main() {
 				}
 				if err := fs.CopyAll(root.Namespace(), args[1], args[2]); err != nil {
 					log.Fatal(err)
+				}
+			case "sync":
+				if len(args) < 2 {
+					fmt.Println("usage: sync <src> <dst>")
+					return
+				}
+				src := args[1]
+				dst := args[2]
+				if err := fs.CopyAll(root.Namespace(), src, dst); err != nil {
+					log.Fatal(err)
+				}
+				var toRemove []string
+				isRemovedSubpath := func(candidate string) bool {
+					for _, parent := range toRemove {
+						if parent == candidate {
+							return true
+						}
+						if strings.HasPrefix(candidate, parent+"/") {
+							return true
+						}
+					}
+					return false
+				}
+				fs.WalkDir(root.Namespace(), dst, func(path string, info fs.DirEntry, err error) error {
+					if err != nil {
+						return nil // skip errors
+					}
+					relPath, err := filepath.Rel(dst, path)
+					if err != nil || relPath == "." {
+						return nil // skip root itself or error
+					}
+					srcPath := filepath.Join(src, relPath)
+					ok, err := fs.Exists(root.Namespace(), srcPath)
+					if err != nil || !ok {
+						fullPath := filepath.Join(dst, relPath)
+						if !isRemovedSubpath(fullPath) {
+							toRemove = append(toRemove, fullPath)
+						}
+					}
+					return nil
+				})
+				for _, p := range toRemove {
+					if err := fs.RemoveAll(root.Namespace(), p); err != nil {
+						log.Fatal(err)
+					}
 				}
 			}
 		},
