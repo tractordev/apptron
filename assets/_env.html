@@ -81,15 +81,15 @@
       env: project
     }
 
-    const w = await setupWanix();
+    window.apptron.instance = await setupWanix();
 
     // need to register this as early as possible
     window.addEventListener("message", async (event) => {
       if (event.data.port) {
         console.log("vscode waiting for apptron...");
-        await w.ready();
+        await window.apptron.instance.ready();
         loader.loaded();
-        const port = w.createPort();
+        const port = window.apptron.instance.createPort();
         event.data.port.postMessage({ wanix: port }, [port]);
       }
     });
