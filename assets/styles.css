@@ -479,7 +479,7 @@ dialog#modal::backdrop {
 .card-menu[popover] {
   color: inherit;
   font: inherit;
-  min-width: 220px;
+  min-width: 150px;
   padding: 0.5rem;
   background: var(--gray-600);
   border: 1px solid var(--gray-500);
