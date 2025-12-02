@@ -107,6 +107,15 @@ export function envUUID() {
     return subdomain;
 }
 
+export async function envUsername() {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("user")) {
+        return params.get("user");
+    }
+    const hostname = new URL(await currentURL()).hostname;
+    return hostname.split(".").slice(0, -2).join(".");
+}
+
 export function appHost() {
     const hostname = window.location.origin.replace("https://", "").replace("http://", "");
     if (isLocalhost()) {
@@ -137,16 +146,31 @@ export function urlFor(path, params = {}, user = null) {
     return url.toString()
 }
 
+export function currentURL() {
+    if (isEnvDomain()) {
+        const reply = new MessageChannel();
+        top.postMessage({ self: true, reply: reply.port2 }, getOrigin(), [reply.port2]);
+        return new Promise((resolve, reject) => {
+            reply.port1.onmessage = (e) => resolve(e.data);
+        });
+    }
+    return Promise.resolve(window.location.href);
+}
+
+export function getOrigin() {
+    let origin = window.location.protocol + "//" + appHost();
+    if (window.apptron) {
+        origin = window.location.protocol + "//" + window.apptron.user.username + "." + appHost();
+    }
+    if (isLocalhost()) {
+        origin = "*";
+    }
+    return origin;
+}
+
 export function redirectTo(url) {
     if (isEnvDomain()) {
-        let origin = window.location.protocol + "//" + appHost();
-        if (window.apptron) {
-            origin = window.location.protocol + "//" + window.apptron.user.username + "." + appHost();
-        }
-        if (isLocalhost()) {
-            origin = "*";
-        }
-        top.postMessage({ redirect: url }, origin);
+        top.postMessage({ redirect: url }, getOrigin());
         return;
     }
     window.location.href = url;
@@ -273,4 +297,26 @@ export async function getBundle(name) {
     return await new Promise((resolve, reject) => {
         channel.port1.onmessage = (e) => resolve(e.data.bundle);
     });
+}
+
+export async function copyText(text) {
+    try {
+        await navigator.clipboard.writeText(text);
+        return true;
+    } catch {
+        try {
+            const ta = document.createElement("textarea");
+            ta.value = text;
+            ta.setAttribute("readonly", "");
+            ta.style.position = "absolute";
+            ta.style.left = "-9999px";
+            document.body.appendChild(ta);
+            ta.select();
+            const ok = document.execCommand("copy");
+            document.body.removeChild(ta);
+            return ok;
+        } catch {
+            return false;
+        }
+    }
 }

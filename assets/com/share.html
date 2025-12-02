@@ -43,40 +43,26 @@
     </fieldset>
 
      <div id="share-block">
-        <label for="share-url">Share url</label>
-        <input id="share-url" type="text" spellcheck="false" />
-        <button id="copy" type="button" class="btn secondary">Copy</button>
+        <label for="share-url">Share URL</label>
+        <input id="share-url" type="text" readonly spellcheck="false" />
     </div>
 
     <div class="dialog-footer">
+        <div style="flex-grow: 2;">
+            <button id="copy" type="button" class="btn secondary">Copy URL</button>
+        </div>
         <button type="button" class="btn secondary" onclick="window.modal.finish()">Cancel</button>
         <button id="save" type="button" class="btn primary">Save</button>
     </div>
 </div>
 
 <script type="module">
-    import { urlFor, getAuth } from "/lib/apptron.js";
+    import { urlFor, getAuth, copyText, isLocalhost, currentURL } from "/lib/apptron.js";
+    const { project } = component?.context || {};
 
-    async function copyText(text) {
-        try {
-            await navigator.clipboard.writeText(text);
-            return true;
-        } catch {
-            try {
-                const ta = document.createElement("textarea");
-                ta.value = text;
-                ta.setAttribute("readonly", "");
-                ta.style.position = "absolute";
-                ta.style.left = "-9999px";
-                document.body.appendChild(ta);
-                ta.select();
-                const ok = document.execCommand("copy");
-                document.body.removeChild(ta);
-                return ok;
-            } catch {
-                return false;
-            }
-        }
+    async function shareURL() {
+        // not much to it, the share url is just the current url
+        return await currentURL();
     }
 
     queueMicrotask(() => init());
@@ -94,7 +80,6 @@
         // const tabEmbed     = $("#tab-embed");
         const tabPublish   = $("#tab-publish");
 
-        const { project } = component?.context || {};
 
         // Simple tab navigation between modals
         tabShare.addEventListener("click", () => {
@@ -109,19 +94,11 @@
             window.modal.show("/com/publish", { project });
         });
 
-        // Build share URL (strip query params)
-        const u = new URL(window.location.href);
-        u.searchParams.delete("env");
-        u.searchParams.delete("user");
-        input.value = u.toString();
+        // Build share URL
+        input.value = await shareURL();
 
         if (!project) {
             // No project in context; nothing else to do
-            copyBtn?.addEventListener("click", async () => {
-                const ok = await copyText(input.value || "");
-                copyBtn.textContent = ok ? "Copied!" : "Copy failed";
-                setTimeout(() => (copyBtn.textContent = "Copy"), 1200);
-            });
             return;
         }
 
@@ -148,6 +125,7 @@
         function updateShareBlockVisibility() {
             const isPublic = pendingVisibility === "public";
             shareBlock.toggleAttribute("hidden", !isPublic);
+            copyBtn.toggleAttribute("hidden", !isPublic);
         }
 
         updateShareBlockVisibility();
@@ -155,8 +133,9 @@
         // ----- COPY BUTTON -----
         copyBtn?.addEventListener("click", async () => {
             const ok = await copyText(input.value || "");
+            const oldText = copyBtn.textContent;
             copyBtn.textContent = ok ? "Copied!" : "Copy failed";
-            setTimeout(() => (copyBtn.textContent = "Copy"), 1200);
+            setTimeout(() => (copyBtn.textContent = oldText), 1200);
         });
 
         // ----- SAVE BUTTON -----

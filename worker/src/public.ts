@@ -4,7 +4,6 @@ import { isLocal } from "./util";
 import * as projects from "./projects";
 
 export async function handle(req: Request, env: any, ctx: Context) {
-    
     const url = new URL(req.url);
     let domain = undefined;
     let username = undefined;

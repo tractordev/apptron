@@ -54,6 +54,10 @@
         window.location.href = event.data.redirect;
         return;
       }
+      if (event.data.self && event.data.reply) {
+        event.data.reply.postMessage(window.location.href);
+        return;
+      }
     }
   </script>
 </head>
