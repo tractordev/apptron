@@ -16,19 +16,15 @@ export async function handle(req: Request, env: any, ctx: Context) {
 
     switch (req.method) {
     case "GET":
+    case "HEAD":
         if (pathParts.length === 1) {
             // /projects
-            return handleGet(req, env, ctx);
+            return handleGetAll(req, env, ctx);
         }
-    case "POST":
-        if (pathParts.length === 1) {
-            // /projects
-            return handlePost(req, env, ctx);
+        if (pathParts.length === 2) {
+            // /projects/:project
+            return handleGetOne(req, env, ctx);
         }
-        // if (pathParts.length === 3 && pathParts[2] === "publish") {
-        //     // /projects/:project/publish
-        //     return handlePostPublish(req, env, ctx);
-        // }
     case "PUT":
         if (pathParts.length === 2) {
             // /projects/:project
@@ -70,9 +66,22 @@ export async function handle(req: Request, env: any, ctx: Context) {
 //     return new Response(projectName, { status: 200 });
 // }
 
-export async function handleGet(req: Request, env: any, ctx: Context) {
+export async function handleGetAll(req: Request, env: any, ctx: Context) {
     const projects = await list(env, ctx.username);
     return new Response(JSON.stringify(projects), { status: 200 });
+}
+
+export async function handleGetOne(req: Request, env: any, ctx: Context) {
+    const url = new URL(req.url);
+    const projectName = url.pathname.split("/").pop() || "";
+    if (!projectName) {
+        return new Response("Bad Request", { status: 400 });
+    }
+    const project = await getByName(env, ctx.username, projectName);
+    if (!project) {
+        return new Response("Not Found", { status: 404 });
+    }
+    return new Response(JSON.stringify(project), { status: 200 });
 }
 
 export async function handlePost(req: Request, env: any, ctx: Context) {
