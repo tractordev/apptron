@@ -10,14 +10,9 @@
     import { urlFor, getAuth, copyText, currentURL, envUsername, isLocalhost } from "/lib/apptron.js";
     const { project } = component?.context || {};
 
-    async function publishURL() {
-        const username = await envUsername();
-        // todo: dont hardcode the publish domain for prod
-        const publicURL = `${username}.aptn.pub/${project.name}`;
-        if (isLocalhost()) {
-            return `http://${window.location.host}/${publicURL}`;
-        }
-        return `https://${publicURL}`;
+    async function embedSource() {
+        // not much to it, the current url in an iframe
+        return `<iframe src="${await currentURL()}"></iframe>`;
     }
 
 
@@ -48,7 +43,7 @@
             setTimeout(() => ($("#copy").textContent = oldText), 1200);
         });
 
-        // $("#embed-src").value = await publishURL();
+        $("#embed-src").value = await embedSource();
 
     }
 
