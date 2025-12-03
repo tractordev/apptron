@@ -14,11 +14,19 @@ deploy: all
 .PHONY: deploy
 
 wasm: boot.go
-	GOOS=js GOARCH=wasm go build -o ./assets/wanix.wasm ./boot.go
+	GOOS=js GOARCH=wasm go build -o ./assets/wanix.wasm .
 .PHONY: wasm
 
-live-install: wasm
-	echo "todo"
+live-install: ./assets/wanix.wasm
+	@if [ -z "$$ENV_UUID" ]; then \
+		echo "ERROR: This is expected to run in an Apptron environment"; \
+		exit 1; \
+	fi
+	@if [ -d /web/caches/assets/localhost:8788 ]; then \
+		cp ./assets/wanix.wasm /web/caches/assets/localhost:8788/wanix.wasm; \
+	else \
+		cp ./assets/wanix.wasm /web/caches/assets/$(ENV_UUID).apptron.dev/wanix.wasm; \
+	fi
 .PHONY: live-install
 
 clean:
