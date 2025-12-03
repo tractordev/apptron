@@ -3,8 +3,9 @@
 }
 
 :root {
-    --yellow: #F0B80E;
-    --yellow-shade: #D49B0D;
+    /* yellows are the same hue, mostly lightness changes and chroma gets lower for darker colors */
+    --yellow: oklch(0.8113 0.1641 86.09);     /* #f0b80e */
+    --yellow-shade: oklch(0.7313 0.1641 86.09);
 
     --gray-900: #191919;
     --gray-800: #212121;
@@ -149,23 +150,34 @@ button {
     padding: 0.6rem 1rem;
 }
 /* .btn is for all buttons that should look/behave like a button,
-even if they don't have a background color. includes menu items. */
+even if they don't have a background color. includes menu items. 
+button.primary and button.secondary are a subset of .btn */
 .btn {
     border-radius: var(--border-radius);
     font-weight: 500;
 }
-.btn:hover {
+.btn:not(:disabled):hover {
     background-color: var(--gray-500);
+}
+.btn:disabled {
+    cursor: not-allowed;
 }
 button.primary {
     background: var(--yellow);
     color: #000;
 }
-button.primary:hover {
+button.primary:not(:disabled):hover {
     background: var(--yellow-shade);
+}
+button.primary:disabled{
+    color: var(--gray-600);
+    background: color-mix(in oklch, var(--yellow) 25%, transparent);
 }
 button.secondary {
     background-color: var(--gray-400);
+}
+button.secondary:disabled {
+    color: var(--gray-600);
 }
 button.icon-btn {
     font-size: 1.5rem;
