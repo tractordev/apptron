@@ -8,8 +8,8 @@
 
 <div class="dialog-tabs">
     <button id="tab-share"   class="dialog-tab dialog-tab-active btn">Share</button>
-    <!-- <button id="tab-embed"   class="dialog-tab">Embed</button> -->
     <button id="tab-publish" class="dialog-tab btn">Publish</button>
+    <button id="tab-embed"   class="dialog-tab btn">Embed</button>
 </div>
 
 <div class="dialog-header">
@@ -86,9 +86,9 @@
             /* already here, do nothing */
         });
 
-        // tabEmbed.addEventListener("click", () => {
-        //     window.modal.show("/com/embed", { project });
-        // });
+        $("#tab-embed").addEventListener("click", () => {
+            window.modal.show("/com/embed", { project });
+        });
 
         tabPublish.addEventListener("click", () => {
             window.modal.show("/com/publish", { project });

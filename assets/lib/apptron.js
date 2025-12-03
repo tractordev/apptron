@@ -282,6 +282,7 @@ export async function getBundle(name) {
     if (!cacheFrame) {
         cacheFrame = new Promise(resolve => {
             const el = document.createElement("iframe");
+            // todo: use apptron.dev/bundles
             el.src = "/bundles";
             el.style.display = "none";
             el.onload = () => {

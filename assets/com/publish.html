@@ -48,9 +48,9 @@
             window.modal.show("/com/share", { project });
         });
 
-        // tabEmbed.addEventListener("click", () => {
-        //     window.modal.show("/com/embed", { project });
-        // });
+        $("#tab-embed").addEventListener("click", () => {
+            window.modal.show("/com/embed", { project });
+        });
 
         $("#tab-publish").addEventListener("click", () => {
             /* already here, do nothing */
@@ -100,8 +100,8 @@
 
 <div class="dialog-tabs">
     <button id="tab-share" class="dialog-tab btn">Share</button>
-    <!-- <button id="tab-embed"   class="dialog-tab btn">Embed</button> -->
     <button id="tab-publish" class="dialog-tab dialog-tab-active btn">Publish</button>
+    <button id="tab-embed"   class="dialog-tab btn">Embed</button>
 </div>
 
 <form id="publish-form" method="dialog" class="dialog">
