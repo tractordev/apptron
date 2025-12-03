@@ -25,6 +25,11 @@ export async function handle(req: Request, env: any, ctx: Context) {
             // /projects/:project
             return handleGetOne(req, env, ctx);
         }
+    case "POST":
+        if (pathParts.length === 1) {
+            // /projects
+            return handlePost(req, env, ctx);
+        }
     case "PUT":
         if (pathParts.length === 2) {
             // /projects/:project
