@@ -25,7 +25,7 @@ RUN GOOS=linux GOARCH=386 tinygo build -o wexec *.go
 
 
 FROM --platform=$LINUX_386 docker.io/i386/alpine:$ALPINE_VERSION AS rootfs
-RUN apk add --no-cache fuse
+RUN apk add --no-cache fuse make git
 COPY --from=wexec-go /build/wexec /bin/wexec
 COPY ./system/bin/* /bin/
 COPY ./system/etc/* /etc/
@@ -59,18 +59,18 @@ COPY --from=v86 /bios/vgabios.bin /bundle/v86/vgabios.bin
 RUN tar -C /bundle -czf /bundles/sys.tar.gz .
 
 
-FROM golang:$GO_VERSION-alpine AS session-build
+FROM golang:$GO_VERSION-alpine AS worker-build
 RUN apk add --no-cache git
-COPY session/go.mod session/go.sum ./
+COPY worker/go.mod worker/go.sum ./
 RUN go mod download
-COPY session/main.go ./
-RUN CGO_ENABLED=0 go build -o /session .
+COPY worker .
+RUN CGO_ENABLED=0 go build -o /worker ./cmd/worker
 
 
 FROM scratch AS session
 COPY --from=bundle-sys /bundles/* /bundles/
 COPY --from=bundle-goroot /bundles/* /bundles/
 COPY --from=bundle-gocache /bundles/* /bundles/
-COPY --from=session-build /session /session
+COPY --from=worker-build /worker /worker
 EXPOSE 8080
-CMD ["/session"]
+CMD ["/worker"]
