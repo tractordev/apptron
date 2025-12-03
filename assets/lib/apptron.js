@@ -16,7 +16,7 @@ export async function setupWanix() {
         helpers: true,
         debug9p: params.get('debug9p') === "true",
         wasm: null,
-        network: params.get('network') || "wss://apptron.dev/x/net"
+        network: params.get('network') || `${isLocalhost() ? "ws" : "wss"}://${appHost()}/x/net`
     });
     // getting the bundle ourself, and the function to get other bundles
     w._bundle = getBundle("/bundles/sys.tar.gz");
