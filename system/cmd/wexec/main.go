@@ -45,6 +45,12 @@ func main() {
 		os.Exit(0)
 	}
 
+	// ports runs port monitoring
+	if len(os.Args) > 1 && os.Args[1] == "ports" {
+		monitorNewPorts(1 * time.Second)
+		os.Exit(0)
+	}
+
 	log.SetFlags(log.Lshortfile)
 	flag.Parse()
 

@@ -10,7 +10,6 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -39,6 +38,7 @@ func main() {
 
 func handler(vn *vnet.VirtualNetwork) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// handle bundles
 		if strings.HasPrefix(r.URL.Path, "/bundles/") {
 			w.Header().Set("Access-Control-Allow-Origin", "*")
 			if strings.HasSuffix(r.URL.Path, ".gz") {
@@ -50,26 +50,43 @@ func handler(vn *vnet.VirtualNetwork) http.Handler {
 			return
 		}
 
+		// rest are network requests, so make sure the network is available
 		if vn == nil {
 			http.Error(w, "network not available", http.StatusNotFound)
 			return
 		}
 
-		if strings.HasPrefix(r.Host, "_") {
-			parts := strings.Split(r.Host, ".")
-			host, err := DecodeAddr(parts[0][1:])
-			if err != nil {
-				http.Error(w, err.Error(), http.StatusBadRequest)
-				return
+		// handle port tunnel requests
+		porthost := r.Host
+		if r.URL.Query().Has("port") {
+			porthost = r.URL.Query().Get("port")
+			q := r.URL.Query()
+			q.Del("port")
+			r.URL.RawQuery = q.Encode()
+		}
+		if strings.HasPrefix(porthost, "tcp-") {
+			parts := strings.Split(porthost, ".")
+			port := strings.TrimPrefix(parts[0], "tcp-")
+			ip := parts[1]
+			if strings.Contains(ip, "-") {
+				ip = strings.Replace(ip, "-", ".", -1)
+			} else {
+				var err error
+				ip, err = DecodeIP(ip)
+				if err != nil {
+					http.Error(w, err.Error(), http.StatusBadRequest)
+					return
+				}
 			}
-			conn, err := vn.Dial("tcp", host)
+
+			conn, err := vn.Dial("tcp", net.JoinHostPort(ip, port))
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusBadRequest)
 				return
 			}
 			defer conn.Close()
 
-			u, err := url.Parse(fmt.Sprintf("http://%s", host))
+			u, err := url.Parse(fmt.Sprintf("http://%s", net.JoinHostPort(ip, port)))
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusBadRequest)
 				return
@@ -184,27 +201,27 @@ func (c *qemuAdapter) SetWriteDeadline(t time.Time) error {
 	return nil
 }
 
-// DecodeAddr converts "HHHHHHHH-PPPP" back to "IP:port"
-func DecodeAddr(encoded string) (string, error) {
-	parts := strings.Split(encoded, "-")
-	if len(parts) != 2 {
-		return "", fmt.Errorf("invalid format: expected HHHHHHHH-PPPP")
-	}
-
-	// Decode IP
-	ipBytes, err := hex.DecodeString(parts[0])
+// DecodeIP converts "HHHHHHHH" hex to "IP"
+func DecodeIP(encoded string) (string, error) {
+	ipBytes, err := hex.DecodeString(encoded)
 	if err != nil || len(ipBytes) != 4 {
 		return "", fmt.Errorf("invalid IP hex")
 	}
-
-	// Decode port
-	port, err := strconv.ParseUint(parts[1], 16, 16)
-	if err != nil {
-		return "", fmt.Errorf("invalid port hex")
-	}
-
 	ip := net.IPv4(ipBytes[0], ipBytes[1], ipBytes[2], ipBytes[3])
-	return fmt.Sprintf("%s:%d", ip.String(), port), nil
+	return ip.String(), nil
+}
+
+// EncodeIP converts an IPv4 string (e.g. "127.0.0.1") to its "HHHHHHHH" hex format.
+func EncodeIP(ipstr string) (string, error) {
+	ip := net.ParseIP(ipstr)
+	if ip == nil {
+		return "", fmt.Errorf("invalid IP address")
+	}
+	ipv4 := ip.To4()
+	if ipv4 == nil {
+		return "", fmt.Errorf("not an IPv4 address")
+	}
+	return hex.EncodeToString(ipv4), nil
 }
 
 // CustomDialer wraps a specific net.Conn to be used by the HTTP transport

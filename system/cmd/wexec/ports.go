@@ -2,7 +2,9 @@ package main
 
 import (
 	"bufio"
+	"encoding/hex"
 	"fmt"
+	"net"
 	"os"
 	"strconv"
 	"strings"
@@ -74,7 +76,10 @@ func monitorNewPorts(interval time.Duration) {
 		// Check for new ports
 		for port := range currentPorts {
 			if !knownPorts[port] {
-				fmt.Printf("🔴 NEW PORT LISTENING: %d\n", port)
+				url := portURL(port)
+				if url != "" {
+					fmt.Printf("\n=> Apptron public URL: %s\n\n", url)
+				}
 				knownPorts[port] = true
 			}
 		}
@@ -82,9 +87,38 @@ func monitorNewPorts(interval time.Duration) {
 		// Check for closed ports
 		for port := range knownPorts {
 			if !currentPorts[port] {
-				fmt.Printf("⚪ PORT CLOSED: %d\n", port)
+				// fmt.Printf("=> Apptron port closed: %d\n", port)
 				delete(knownPorts, port)
 			}
 		}
 	}
+}
+
+// encodeIP converts an IPv4 string (e.g. "127.0.0.1") to its "HHHHHHHH" hex format.
+func encodeIP(ipstr string) (string, error) {
+	ip := net.ParseIP(ipstr)
+	if ip == nil {
+		return "", fmt.Errorf("invalid IP address")
+	}
+	ipv4 := ip.To4()
+	if ipv4 == nil {
+		return "", fmt.Errorf("not an IPv4 address")
+	}
+	return hex.EncodeToString(ipv4), nil
+}
+
+func portURL(port int) string {
+	sessionIP := os.Getenv("SESSION_IP")
+	if sessionIP == "" {
+		return ""
+	}
+	user := os.Getenv("USER")
+	if user == "" {
+		return ""
+	}
+	ip, err := encodeIP(sessionIP)
+	if err != nil {
+		return ""
+	}
+	return fmt.Sprintf("https://tcp-%d.%s.%s.apptron.dev", port, ip, user)
 }

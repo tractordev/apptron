@@ -35,6 +35,14 @@ export default {
         const url = new URL(req.url);
         const ctx = parseContext(req, env);
 
+        if (
+            ctx.portDomain ||
+            url.pathname.startsWith("/x/net") || 
+            url.pathname.startsWith("/bundles/")
+        ) {
+            return getContainer(env.session).fetch(req);
+        }
+
         if (req.method === "OPTIONS") {
             return new Response("", { 
                 status: 200,
@@ -183,18 +191,6 @@ export default {
         
         if (ctx.userDomain && url.pathname.startsWith("/projects")) {
             return applyCORS(await projects.handle(req, env, ctx));
-        }
-
-        if (url.pathname.startsWith("/x/local")) {
-            return new Response("OK", { status: 200 });
-        }
-        
-        if (
-            url.pathname.startsWith("/x/net") || 
-            url.host.startsWith("_") ||
-            url.pathname.startsWith("/bundles/")
-        ) {
-            return getContainer(env.session).fetch(req);
         }
 
         if (["/signin", "/signout", "/shell", "/dashboard", "/debug"].includes(url.pathname)) {

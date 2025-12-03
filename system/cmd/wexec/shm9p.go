@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"time"
 
 	"github.com/hugelgupf/p9/p9"
 	"tractor.dev/wanix/fs/localfs"
@@ -19,8 +18,6 @@ func runShm9P() {
 		os.Exit(1)
 	}
 	defer sch.Close()
-
-	go monitorNewPorts(1 * time.Second)
 
 	dirfs, err := localfs.New("/")
 	if err != nil {

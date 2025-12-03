@@ -9,6 +9,7 @@ export interface Context {
 
     userDomain: boolean;
     envDomain: boolean;
+    portDomain: boolean;
     subdomain?: string; // username or env UUID
 }
 
@@ -17,6 +18,7 @@ export function parseContext(req: Request, env: any): Context {
     const ctx: Context = {
         userDomain: false,
         envDomain: false,
+        portDomain: false,
     };
 
     ctx.tokenRaw = url.searchParams.get("token") || undefined;
@@ -39,13 +41,14 @@ export function parseContext(req: Request, env: any): Context {
 
     if (url.host.endsWith("." + HOST_DOMAIN)) {
         const subdomain = url.host.slice(0, -("." + HOST_DOMAIN).length);
-        if (subdomain.length >= 32) {
+        if (subdomain.includes(".")) {
+            ctx.portDomain = true;
+        } else if (subdomain.length >= 32) {
             ctx.envDomain = true;
-            ctx.subdomain = subdomain;
         } else {
             ctx.userDomain = true;
-            ctx.subdomain = subdomain;
         }
+        ctx.subdomain = subdomain;
     }
 
     if (url.searchParams.get("env")) {
@@ -54,6 +57,9 @@ export function parseContext(req: Request, env: any): Context {
     } else if (url.searchParams.get("user")) {
         ctx.subdomain = url.searchParams.get("user") || undefined;
         ctx.userDomain = true;
+    } else if (url.searchParams.get("port")) {
+        ctx.portDomain = true;
+        ctx.subdomain = url.searchParams.get("port") || undefined;
     }
 
     return ctx;

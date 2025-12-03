@@ -11,7 +11,7 @@ echo ':wasm:M::\x00\x61\x73\x6d::/bin/wexec:' > /proc/sys/fs/binfmt_misc/registe
 ifconfig eth0 up
 udhcpc -i eth0 -s /bin/post-dhcp
 
-source /etc/profile # loads apptron.sh for ENV_UUID
+source /etc/profile # loads apptron.sh for ENV_UUID, SESSION_IP
 
 if [ -f /project/.apptron/envbuild ]; then
     env_root=/web/idbfs/apptron/env/$ENV_UUID/root
@@ -21,6 +21,6 @@ if [ -f /project/.apptron/envbuild ]; then
     fi
 fi
 
-/bin/wexec shm9p &
+/bin/wexec ports &
 
 exec /bin/start
