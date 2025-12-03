@@ -67,7 +67,7 @@ COPY worker .
 RUN CGO_ENABLED=0 go build -o /worker ./cmd/worker
 
 
-FROM scratch AS session
+FROM scratch AS worker
 COPY --from=bundle-sys /bundles/* /bundles/
 COPY --from=bundle-goroot /bundles/* /bundles/
 COPY --from=bundle-gocache /bundles/* /bundles/

@@ -13,6 +13,13 @@ deploy: all
 	wrangler deploy
 .PHONY: deploy
 
+wasm: assets/wanix.wasm
+.PHONY: wasm
+
+live-install: wasm
+	echo "todo"
+.PHONY: live-install
+
 clean:
 	rm -rf assets/vscode
 	rm -rf worker/node_modules
@@ -46,7 +53,7 @@ worker/node_modules: worker/package.json
 	cd worker && npm ci
 
 assets/wanix.wasm:
-	cd system && GOOS=js GOARCH=wasm go build -o ../assets/wanix.wasm
+	GOOS=js GOARCH=wasm go build -o ./assets/wanix.wasm
 
 assets/wanix.min.js:
 	$(DOCKER_CMD) rm -f apptron-wanix

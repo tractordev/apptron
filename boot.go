@@ -19,7 +19,6 @@ import (
 	"syscall/js"
 	"time"
 
-	"apptron.dev/system/virtio9p"
 	"tractor.dev/toolkit-go/engine/cli"
 	"tractor.dev/wanix"
 	"tractor.dev/wanix/fs"
@@ -30,6 +29,7 @@ import (
 	"tractor.dev/wanix/vfs/pipe"
 	"tractor.dev/wanix/vfs/ramfs"
 	"tractor.dev/wanix/vm"
+	"tractor.dev/wanix/vm/v86/virtio9p"
 	"tractor.dev/wanix/web"
 	"tractor.dev/wanix/web/api"
 	"tractor.dev/wanix/web/idbfs"
@@ -40,6 +40,14 @@ import (
 // todo: centralize or make based on jwt claims
 // there is also admins defined in the cloudflare worker
 var admins = []string{"progrium"}
+
+func updateLoader(text string) {
+	loader := js.Global().Get("document").Call("getElementById", "loader")
+	if loader.IsUndefined() {
+		return
+	}
+	loader.Call("querySelector", "p").Set("textContent", text)
+}
 
 func main() {
 	mainStart := time.Now()
@@ -548,14 +556,6 @@ func main() {
 
 	// block on serving 9p
 	run9p()
-}
-
-func updateLoader(text string) {
-	loader := js.Global().Get("document").Call("getElementById", "loader")
-	if loader.IsUndefined() {
-		return
-	}
-	loader.Call("querySelector", "p").Set("textContent", text)
 }
 
 // Conn is an adapter that implements net.Conn using an underlying io.ReadWriteCloser.
