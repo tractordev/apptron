@@ -120,5 +120,5 @@ func portURL(port int) string {
 	if err != nil {
 		return ""
 	}
-	return fmt.Sprintf("https://tcp-%d.%s.%s.apptron.dev", port, ip, user)
+	return fmt.Sprintf("https://tcp-%d-%s-%s.apptron.dev", port, ip, user)
 }

@@ -41,7 +41,7 @@ export function parseContext(req: Request, env: any): Context {
 
     if (url.host.endsWith("." + HOST_DOMAIN)) {
         const subdomain = url.host.slice(0, -("." + HOST_DOMAIN).length);
-        if (subdomain.includes(".")) {
+        if (subdomain.startsWith("tcp-") && subdomain.split("-").length === 4) {
             ctx.portDomain = true;
         } else if (subdomain.length >= 32) {
             ctx.envDomain = true;

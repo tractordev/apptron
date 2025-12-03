@@ -64,19 +64,16 @@ func handler(vn *vnet.VirtualNetwork) http.Handler {
 			q.Del("port")
 			r.URL.RawQuery = q.Encode()
 		}
-		if strings.HasPrefix(porthost, "tcp-") {
-			parts := strings.Split(porthost, ".")
-			port := strings.TrimPrefix(parts[0], "tcp-")
-			ip := parts[1]
-			if strings.Contains(ip, "-") {
-				ip = strings.Replace(ip, "-", ".", -1)
-			} else {
-				var err error
-				ip, err = DecodeIP(ip)
-				if err != nil {
-					http.Error(w, err.Error(), http.StatusBadRequest)
-					return
-				}
+		parts := strings.Split(porthost, ".")
+		parts = strings.Split(parts[0], "-")
+		if parts[0] == "tcp" && len(parts) == 4 {
+			port := parts[1]
+			ip := parts[2]
+			var err error
+			ip, err = DecodeIP(ip)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
 			}
 
 			conn, err := vn.Dial("tcp", net.JoinHostPort(ip, port))
