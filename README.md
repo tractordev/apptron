@@ -1,9 +1,9 @@
-# apptron
+# Apptron
 [![Discord](https://img.shields.io/discord/415940907729420288?label=Discord)](https://discord.gg/nQbgRjEBU4) ![GitHub Sponsors](https://img.shields.io/github/sponsors/progrium?label=Sponsors)
 
 Local-first development platform
 
-"The amount of amazing technology in this project is staggering. Seriously, star this—it's amazing." —[ibuildthecloud](https://x.com/ibuildthecloud/status/1996979376106492249)
+"The amount of amazing technology in this project is staggering. Seriously, star this." —[ibuildthecloud](https://x.com/ibuildthecloud/status/1996979376106492249)
 
 "WOW there's a lot of interesting stuff in there!" —[simonw](https://x.com/simonw/status/1997064403523707299) (see [full report](https://github.com/simonw/research/blob/main/apptron-analysis/README.md))
 
