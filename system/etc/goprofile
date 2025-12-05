@@ -1,7 +1,7 @@
 echo bundle goroot >> /ctl
-echo bundle gocache rw >> /ctl
+echo bundle gocache-${GOARCH:-386} rw >> /ctl
 echo bind '#goroot' go >> /ctl
-echo bind '#gocache' go/cache >> /ctl
+echo bind '#'gocache-${GOARCH:-386} go/cache >> /ctl
 export GOCACHE=/go/cache
 export GOMODCACHE=/web/idbfs/apptron/go/modcache
 export GOPROXY=https://proxy.golang.org,direct

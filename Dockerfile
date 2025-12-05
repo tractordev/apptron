@@ -25,7 +25,7 @@ RUN GOOS=linux GOARCH=386 tinygo build -o wexec *.go
 
 
 FROM --platform=$LINUX_386 docker.io/i386/alpine:$ALPINE_VERSION AS rootfs
-RUN apk add --no-cache fuse make git
+RUN apk add --no-cache fuse make git esbuild
 COPY --from=wexec-go /build/wexec /bin/wexec
 COPY ./system/bin/* /bin/
 COPY ./system/etc/* /etc/
@@ -45,10 +45,18 @@ RUN wget https://go.dev/dl/go${GO_VERSION}.linux-386.tar.gz \
 FROM bundle-go AS bundle-goroot
 RUN tar -C /go -cf /bundles/goroot.tar . && brotli -j /bundles/goroot.tar
 
-FROM bundle-go AS bundle-gocache
+FROM bundle-go AS bundle-gocache-386
 ENV GOCACHE=/gocache
+ENV GOARCH=386
 RUN /go/bin/go telemetry off && /go/bin/go build std
-RUN tar -C /gocache -cf /bundles/gocache.tar . && brotli -j /bundles/gocache.tar
+RUN tar -C /gocache -cf /bundles/gocache-386.tar . && brotli -j /bundles/gocache-386.tar
+
+FROM bundle-go AS bundle-gocache-wasm
+ENV GOCACHE=/gocache
+ENV GOARCH=wasm
+ENV GOOS=js
+RUN /go/bin/go telemetry off && /go/bin/go build std
+RUN tar -C /gocache -cf /bundles/gocache-wasm.tar . && brotli -j /bundles/gocache-wasm.tar
 
 FROM bundle-base AS bundle-sys
 COPY --from=rootfs / /bundle/rootfs
@@ -70,7 +78,8 @@ RUN CGO_ENABLED=0 go build -o /worker ./cmd/worker
 FROM scratch AS worker
 COPY --from=bundle-sys /bundles/* /bundles/
 COPY --from=bundle-goroot /bundles/* /bundles/
-COPY --from=bundle-gocache /bundles/* /bundles/
+COPY --from=bundle-gocache-386 /bundles/* /bundles/
+COPY --from=bundle-gocache-wasm /bundles/* /bundles/
 COPY --from=worker-build /worker /worker
 EXPOSE 8080
 CMD ["/worker"]
