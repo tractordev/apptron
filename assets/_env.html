@@ -41,6 +41,13 @@
 
 <body>
   <script type="module">
+    // not ready to deploy service worker yet, can uncomment in dev
+    // import { register } from "/sw.js";
+    // const handle = await register(null, { timeout: 20000, prefix: "/:/" });
+
+    // load the iframe after service worker is ready
+    document.querySelector("#vscode-frame").src = "/_vscode";
+
     import { setupWanix, getAuth, envUUID, getMeta, redirectTo, urlFor } from "/lib/apptron.js";
 
     const loader = document.getElementById("loader");
@@ -83,6 +90,20 @@
     }
 
     window.apptron.instance = await setupWanix();
+    
+    // set service worker handler after wanix is available
+    // handle(async (req) => {
+    //   await window.apptron.instance.ready();
+    //   const url = new URL(req.url);
+    //   const path = url.pathname.slice(3); // remove the leading /:/
+    //   try {
+    //     const data = await window.apptron.instance.readFile(path);
+    //     return new Response(data, { status: 200 });
+    //   } catch (error) {
+    //     console.warn(error);
+    //     return new Response("Not found", { status: 404 });
+    //   }
+    // });
 
     // need to register this as early as possible
     window.addEventListener("message", async (event) => {
@@ -101,7 +122,7 @@
   <div class="header-container">
     <html-component src="/com/topbar"></html-component>
   </div>
-  <iframe src="/_vscode" allow="clipboard-read; clipboard-write; cross-origin-isolated"
+  <iframe id="vscode-frame" allow="clipboard-read; clipboard-write; cross-origin-isolated"
     sandbox="allow-scripts allow-same-origin allow-forms allow-modals allow-popups allow-popups-to-escape-sandbox"></iframe>
 
   <dialog id="loader">
