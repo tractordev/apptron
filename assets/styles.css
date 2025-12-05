@@ -287,8 +287,13 @@ header h1 {
 #header-bar #nav-links,
 #header-bar #header-left {
   display: flex;
-  gap: 2rem;
   align-items: center;
+}
+#header-bar #header-left {
+  gap: 1rem;
+}
+#header-bar #nav-links {
+  gap: 2rem;
 }
 
 #header-bar .project-header button#edit-project {
@@ -463,12 +468,11 @@ dialog#modal::backdrop {
 
 
 /* Top bar login state */
-#logout, #account, #dashboard, #account-dropdown, #edit-project {
+#logout, #account, #account-dropdown, #edit-project {
   display: none !important;
 }
 .signedin #account,
 .signedin #logout,
-.signedin #dashboard,
 .signedin #account-dropdown {
   display: block !important;
 }
