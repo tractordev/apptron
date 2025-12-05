@@ -3,7 +3,9 @@
 
 Local-first development platform
 
-"The amount of amazing technology in this project is staggering. Seriously, star this, it's amazing." -[ibuildthecloud](https://x.com/ibuildthecloud/status/1996979376106492249)
+"The amount of amazing technology in this project is staggering. Seriously, star this—it's amazing." —[ibuildthecloud](https://x.com/ibuildthecloud/status/1996979376106492249)
+
+"WOW there's a lot of interesting stuff in there!" —[simonw](https://x.com/simonw/status/1997064403523707299) (see [full report](https://github.com/simonw/research/blob/main/apptron-analysis/README.md))
 
 ## User Guide
 
