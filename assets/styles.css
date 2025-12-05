@@ -468,7 +468,7 @@ dialog#modal::backdrop {
 
 
 /* Top bar login state */
-#logout, #account, #account-dropdown, #edit-project {
+#logout, #account, #account-dropdown, #edit-project, #share {
   display: none !important;
 }
 .signedin #account,
@@ -481,6 +481,9 @@ dialog#modal::backdrop {
 }
 .signedin #signin {
   display: none !important;
+}
+.signedin.project #share {
+    display: inline-flex !important;
 }
 
 /* Project header, if on project page state */
