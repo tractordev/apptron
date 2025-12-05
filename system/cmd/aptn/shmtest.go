@@ -7,10 +7,19 @@ import (
 	"os"
 	"time"
 
+	"tractor.dev/toolkit-go/engine/cli"
 	"tractor.dev/wanix/vm/v86/shm"
 )
 
-func runShmTest() {
+func shmtestCmd() *cli.Command {
+	return &cli.Command{
+		Usage: "shmtest",
+		Short: "run throughput test for the shared memory pipe",
+		Run:   runShmTest,
+	}
+}
+
+func runShmTest(ctx *cli.Context, args []string) {
 	sch, err := shm.NewSharedChannel()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to create channel: %v\n", err)

@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
-	"flag"
 	"fmt"
 	"io"
 	"log"
@@ -15,8 +14,17 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
-	// "tractor.dev/wanix/fs/p9kit"
+
+	"tractor.dev/toolkit-go/engine/cli"
 )
+
+func execCmd() *cli.Command {
+	return &cli.Command{
+		Usage: "exec <wasm> [args...]",
+		Short: "execute a WASM binary",
+		Run:   execWasm,
+	}
+}
 
 func debug(format string, a ...any) {
 	if os.Getenv("DEBUG") == "1" {
@@ -24,70 +32,25 @@ func debug(format string, a ...any) {
 	}
 }
 
-func main() {
-	// snuck in a couple debug commands to avoid a whole new executable
-
-	// shmtest is a throughput test for the shared memory channel
-	if len(os.Args) > 1 && os.Args[1] == "shmtest" {
-		runShmTest()
-		os.Exit(0)
-	}
-
-	// fuse is a test of the fuse filesystem
-	if len(os.Args) > 1 && os.Args[1] == "fuse" {
-		setupFuseFS()
-		os.Exit(0)
-	}
-
-	// shm9p is 9p server of the root filesystem via shared memory
-	if len(os.Args) > 1 && os.Args[1] == "shm9p" {
-		runShm9P()
-		os.Exit(0)
-	}
-
-	// ports runs port monitoring
-	if len(os.Args) > 1 && os.Args[1] == "ports" {
-		monitorNewPorts(1 * time.Second)
-		os.Exit(0)
-	}
-
-	log.SetFlags(log.Lshortfile)
-	flag.Parse()
-
-	if len(flag.Args()) < 1 {
-		log.Fatal("usage: wexec <wasm> [args...]")
-	}
-
-	taskType, err := detectWASMType(flag.Arg(0))
+func execWasm(ctx *cli.Context, args []string) {
+	taskType, err := detectWASMType(args[0])
 	if err != nil {
 		log.Fatal(err)
 	}
 	debug("detected WASM type: %s", taskType)
 
-	// fake /env program to print environment for debugging
-	if flag.Arg(0) == "/env" {
-		fmt.Println(os.Environ())
-		fmt.Println("---")
-		for _, env := range os.Environ() {
-			fmt.Println(">", env)
-		}
-		fmt.Println("---")
-		fmt.Println(strings.Join(append(os.Environ(), ""), "\n"))
-		os.Exit(0)
-	}
-
 	wd, err := os.Getwd()
 	if err != nil {
 		log.Fatal(err)
 	}
-	args := flag.Args()
-	absArg0, err := filepath.Abs(flag.Arg(0))
+	wasmArgs := args
+	absArg0, err := filepath.Abs(args[0])
 	if err != nil {
 		log.Fatal(err)
 	}
 	// ultimately we shouldn't need to prefix the path with vm/1/fsys,
 	// it should be relative to the task namespace
-	args[0] = strings.TrimPrefix(filepath.Join("vm/1/fsys", absArg0), "/")
+	wasmArgs[0] = strings.TrimPrefix(filepath.Join("vm/1/fsys", absArg0), "/")
 
 	debug("allocating pid")
 	pidRaw, err := os.ReadFile(fmt.Sprintf("/task/new/%s", taskType))
@@ -97,7 +60,7 @@ func main() {
 	pid := strings.TrimSpace(string(pidRaw))
 
 	debug("writing cmd")
-	if err := appendFile(fmt.Sprintf("/task/%s/cmd", pid), []byte(strings.Join(args, " "))); err != nil {
+	if err := appendFile(fmt.Sprintf("/task/%s/cmd", pid), []byte(strings.Join(wasmArgs, " "))); err != nil {
 		log.Fatal(err)
 	}
 

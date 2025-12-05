@@ -6,12 +6,21 @@ import (
 	"os"
 
 	"github.com/hugelgupf/p9/p9"
+	"tractor.dev/toolkit-go/engine/cli"
 	"tractor.dev/wanix/fs/localfs"
 	"tractor.dev/wanix/fs/p9kit"
 	"tractor.dev/wanix/vm/v86/shm"
 )
 
-func runShm9P() {
+func shm9pCmd() *cli.Command {
+	return &cli.Command{
+		Usage: "shm9p",
+		Short: "run 9p server of the root filesystem via shared memory pipe",
+		Run:   runShm9P,
+	}
+}
+
+func runShm9P(ctx *cli.Context, args []string) {
 	sch, err := shm.NewSharedChannel()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to create channel: %v\n", err)

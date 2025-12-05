@@ -1,4 +1,4 @@
-module tractor.dev/apptron/system/cmd/wexec
+module tractor.dev/apptron/system/cmd/aptn
 
 go 1.25.0
 

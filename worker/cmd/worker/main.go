@@ -40,6 +40,11 @@ func handler(vn *vnet.VirtualNetwork) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// handle bundles
 		if strings.HasPrefix(r.URL.Path, "/bundles/") {
+			// some "redirects" to handle old bundles
+			if r.URL.Path == "/bundles/gocache.tar.br" {
+				r.URL.Path = "/bundles/gocache-386.tar.br"
+			}
+
 			w.Header().Set("Access-Control-Allow-Origin", "*")
 			if strings.HasSuffix(r.URL.Path, ".gz") {
 				w.Header().Set("Content-Encoding", "gzip")

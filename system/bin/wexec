@@ -1,0 +1,2 @@
+#!/bin/busybox sh
+exec /bin/aptn exec $@

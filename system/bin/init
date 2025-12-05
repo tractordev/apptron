@@ -21,6 +21,6 @@ if [ -f /project/.apptron/envbuild ]; then
     fi
 fi
 
-/bin/wexec ports &
+/bin/aptn ports &
 
 exec /bin/start

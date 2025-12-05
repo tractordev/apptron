@@ -11,12 +11,21 @@ import (
 	"time"
 
 	"github.com/hugelgupf/p9/p9"
+	"tractor.dev/toolkit-go/engine/cli"
 	"tractor.dev/wanix/fs/fusekit"
 	"tractor.dev/wanix/fs/p9kit"
 	"tractor.dev/wanix/vm/v86/shm"
 )
 
-func setupFuseFS() {
+func fuseCmd() *cli.Command {
+	return &cli.Command{
+		Usage: "fuse",
+		Short: "mount experimental fuse filesystem",
+		Run:   setupFuseFS,
+	}
+}
+
+func setupFuseFS(ctx *cli.Context, args []string) {
 	sch, err := shm.NewSharedChannel()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to create channel: %v\n", err)

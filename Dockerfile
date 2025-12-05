@@ -10,23 +10,23 @@ FROM --platform=$LINUX_AMD64 ghcr.io/tractordev/apptron:kernel AS kernel
 FROM --platform=$LINUX_AMD64 ghcr.io/progrium/v86:latest AS v86
 
 
-FROM golang:$GO_VERSION-alpine AS wexec-go
+FROM golang:$GO_VERSION-alpine AS aptn-go
 WORKDIR /build
-COPY system/cmd/wexec/go.mod system/cmd/wexec/go.sum ./
+COPY system/cmd/aptn/go.mod system/cmd/aptn/go.sum ./
 RUN go mod download
-COPY system/cmd/wexec ./
-RUN GOOS=linux GOARCH=386 CGO_ENABLED=0 go build -o wexec *.go
+COPY system/cmd/aptn ./
+RUN GOOS=linux GOARCH=386 CGO_ENABLED=0 go build -o aptn *.go
 
 
-FROM tinygo/tinygo:$TINYGO_VERSION AS wexec-tinygo
+FROM tinygo/tinygo:$TINYGO_VERSION AS aptn-tinygo
 WORKDIR /build
-COPY system/cmd/wexec ./
-RUN GOOS=linux GOARCH=386 tinygo build -o wexec *.go
+COPY system/cmd/aptn ./
+RUN GOOS=linux GOARCH=386 tinygo build -o aptn *.go
 
 
 FROM --platform=$LINUX_386 docker.io/i386/alpine:$ALPINE_VERSION AS rootfs
 RUN apk add --no-cache fuse make git esbuild
-COPY --from=wexec-go /build/wexec /bin/wexec
+COPY --from=aptn-go /build/aptn /bin/aptn
 COPY ./system/bin/* /bin/
 COPY ./system/etc/* /etc/
 

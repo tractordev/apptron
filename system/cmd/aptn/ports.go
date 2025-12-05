@@ -9,7 +9,51 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"tractor.dev/toolkit-go/engine/cli"
 )
+
+func portsCmd() *cli.Command {
+	return &cli.Command{
+		Usage: "ports",
+		Short: "monitor listening ports",
+		Run:   monitorPorts,
+	}
+}
+
+func monitorPorts(ctx *cli.Context, args []string) {
+	interval := time.Duration(1 * time.Second)
+	knownPorts, _ := getListeningPorts()
+
+	for {
+		time.Sleep(interval)
+
+		currentPorts, err := getListeningPorts()
+		if err != nil {
+			fmt.Printf("Error: %v\n", err)
+			continue
+		}
+
+		// Check for new ports
+		for port := range currentPorts {
+			if !knownPorts[port] {
+				url := portURL(port)
+				if url != "" {
+					fmt.Printf("\n=> Apptron public URL: %s\n\n", url)
+				}
+				knownPorts[port] = true
+			}
+		}
+
+		// Check for closed ports
+		for port := range knownPorts {
+			if !currentPorts[port] {
+				// fmt.Printf("=> Apptron port closed: %d\n", port)
+				delete(knownPorts, port)
+			}
+		}
+	}
+}
 
 type ListeningPort struct {
 	Port    int
@@ -59,39 +103,6 @@ func parseNetFile(filename string, ports map[int]bool) error {
 	}
 
 	return scanner.Err()
-}
-
-func monitorNewPorts(interval time.Duration) {
-	knownPorts, _ := getListeningPorts()
-
-	for {
-		time.Sleep(interval)
-
-		currentPorts, err := getListeningPorts()
-		if err != nil {
-			fmt.Printf("Error: %v\n", err)
-			continue
-		}
-
-		// Check for new ports
-		for port := range currentPorts {
-			if !knownPorts[port] {
-				url := portURL(port)
-				if url != "" {
-					fmt.Printf("\n=> Apptron public URL: %s\n\n", url)
-				}
-				knownPorts[port] = true
-			}
-		}
-
-		// Check for closed ports
-		for port := range knownPorts {
-			if !currentPorts[port] {
-				// fmt.Printf("=> Apptron port closed: %d\n", port)
-				delete(knownPorts, port)
-			}
-		}
-	}
 }
 
 // encodeIP converts an IPv4 string (e.g. "127.0.0.1") to its "HHHHHHHH" hex format.
