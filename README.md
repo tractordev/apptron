@@ -3,6 +3,8 @@
 
 Local-first development platform
 
+"The amount of amazing technology in this project is staggering. Seriously, star this, it's amazing." -[ibuildthecloud](https://x.com/ibuildthecloud/status/1996979376106492249)
+
 ## User Guide
 
 The "project environment" is the main object of Apptron. It is a full Linux 
