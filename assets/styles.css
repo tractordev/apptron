@@ -206,10 +206,10 @@ button.icon-btn {
     border-radius: 50%;
     animation: button-loading-spinner 1s ease infinite;
 }
-.button-text {
+button span {
     transition: all 0.2s;
 }
-.button--loading .button-text {
+.button--loading span {
   visibility: hidden;
   opacity: 0;
 }
