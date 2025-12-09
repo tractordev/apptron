@@ -33,7 +33,7 @@
   // and avoid the need to reload the page
   if (project) {
     $("#project-dialog-title").innerText = "Edit Project";
-    $("#project-submit .button-text").innerText = "Save";
+    $("#project-submit span").innerText = "Save";
     $("#project-name").value = project.name;
     $("#project-desc").value = project.description || project.desc || "";
     if (project.visibility === "public") {
@@ -46,7 +46,7 @@
 
   } else {
     $("#project-dialog-title").innerText = "New Project";
-    $("#project-submit .button-text").innerText = "Create";
+    $("#project-submit span").innerText = "Create";
     $("#project-name").disabled = false; // allow naming on create
     setTimeout(() => $("#project-name").focus(), 0);
     
@@ -118,7 +118,7 @@
 
   <div class="dialog-footer">
     <button class="btn secondary" type="button" onclick="window.modal.finish()">Cancel</button>
-    <button class="btn primary" id="project-submit" type="submit"><span class="button-text">Create</span></button>
+    <button class="btn primary" id="project-submit" type="submit"><span>Create</span></button>
   </div>
 </form>
 </html>
