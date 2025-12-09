@@ -9,6 +9,7 @@ echo ':wasm:M::\x00\x61\x73\x6d::/bin/wexec:' > /proc/sys/fs/binfmt_misc/registe
 
 # configure networking
 ifconfig eth0 up
+ifconfig lo up
 udhcpc -i eth0 -s /bin/post-dhcp
 
 source /etc/profile # loads apptron.sh for ENV_UUID, SESSION_IP
