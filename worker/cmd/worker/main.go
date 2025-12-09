@@ -22,10 +22,10 @@ func main() {
 	vn, err := vnet.New(&vnet.Configuration{
 		Debug:             false,
 		MTU:               1500,
-		Subnet:            "192.168.127.0/24",
-		GatewayIP:         "192.168.127.1",
+		Subnet:            "10.0.0.0/8",
+		GatewayIP:         "10.0.0.1",
 		GatewayMacAddress: "5a:94:ef:e4:0c:dd",
-		GatewayVirtualIPs: []string{"192.168.127.253"},
+		GatewayVirtualIPs: []string{},
 	})
 	if err != nil {
 		log.Fatal(err)
