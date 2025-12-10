@@ -87,7 +87,7 @@
 
   <div class="dialog-body">
     <label for="project-name">Project name</label>
-    <input id="project-name" name="project-name" type="text" pattern="[A-Za-z][A-Za-z0-9_\-]{1,23}"
+    <input id="project-name" name="project-name" type="text" pattern="[A-Za-z][A-Za-z0-9_\-]{1,63}"
       oninput="this.value = this.value.replace(/[^A-Za-z0-9_\-]/g, '')"
       title="Names can only contain letters, numbers, dashes, and underscores" required />
     <span class="form-error" id="project-name-error"></span>
