@@ -104,6 +104,7 @@ export async function handlePost(req: Request, env: any, ctx: Context) {
     resp = await putdir(req, env, `/env/${project["uuid"]}`, {
         "name": project["name"],
         "owner": ctx.userUUID,
+        "ownername": ctx.username,
     });
     if (!resp.ok) {
         return resp;
@@ -156,6 +157,7 @@ export async function handlePut(req: Request, env: any, ctx: Context) {
     const newAttrs = {
         "uuid": attrs["uuid"],
         "owner": ctx.userUUID,
+        "ownername": ctx.username,
         "name": projectName,
         "description": update["description"] || attrs["description"] || "",
         "visibility": update["visibility"] || attrs["visibility"] || "private",
@@ -260,6 +262,9 @@ export async function getByUUID(env: any, uuid: string): Promise<Record<string, 
     const project = await getByName(env, userAttrs["username"], envAttrs["name"]);
     if (!project) {
         return null;
+    }
+    if (!project["ownername"]) {
+        project["ownername"] = userAttrs["username"];
     }
     if (!project["name"]) {
         project["name"] = envAttrs["name"];
