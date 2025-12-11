@@ -160,7 +160,7 @@ export function currentURL() {
 export function getOrigin() {
     let origin = window.location.protocol + "//" + appHost();
     if (window.apptron) {
-        origin = window.location.protocol + "//" + window.apptron.user.username + "." + appHost();
+        origin = window.location.protocol + "//" + window.apptron.env.ownername + "." + appHost();
     }
     if (isLocalhost()) {
         origin = "*";
