@@ -41,8 +41,8 @@ export async function getCachedOrFetch(url, cacheName = "assets") {
 let loading = new Map();
 [
     "/bundles/sys.tar.gz",    
-    "/bundles/goroot.tar.br",
-    "/bundles/gocache-386.tar.br",
+    // "/bundles/goroot.tar.br",
+    // "/bundles/gocache-386.tar.br",
     // "/bundles/gocache-wasm.tar.br",
 ].forEach(async (name) => {
     loading.set(name, new Promise(async (resolve) => {
