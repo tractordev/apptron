@@ -79,7 +79,7 @@
             if (!session.is_valid) {
               redirectTo(urlFor("/signin"));
             }
-          }, 60 * 1000); // every 1 minute
+          }, 300 * 1000); // every 5 minutes
           resolve(await auth.getUser());
         } catch (error) {
           resolve(null);
