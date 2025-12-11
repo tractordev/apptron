@@ -140,6 +140,7 @@
 
         // ----- SAVE BUTTON -----
         saveBtn?.addEventListener("click", async () => {
+            saveBtn.classList.add("btn-loading");
             // Only save if something changed
             if (pendingVisibility !== project.visibility) {
                 try {
@@ -164,11 +165,13 @@
                         project.visibility = pendingVisibility; // keep local in sync
                     }
                 } catch (err) {
+                    saveBtn.classList.remove("btn-loading");
                     console.error("Error updating visibility", err);
                 }
             }
 
             // Close and resolve
+            saveBtn.classList.remove("btn-loading");
             window.modal.finish({ saved: true });
         });
     }
