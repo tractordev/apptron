@@ -21,11 +21,16 @@
     }
 
     async function checkPublishSource() {
-        const publishSource = $("#publish-source").value.replace(/^\/+|\/+$/g, ""); // trim slashes
+        let publishSource = $("#publish-source").value.replace(/^\/+|\/+$/g, ""); // trim slashes
+        if (publishSource === ".") {
+            publishSource = "";
+        } else {
+            publishSource = "/"+publishSource;
+        }
         // todo: use a port/handle rooted to the vm filesystem so this isn't needed
         const basePath = "vm/1/fsys"
         try {
-            await window.apptron.instance.stat(`${basePath}/project/${publishSource}`);
+            await window.apptron.instance.stat(`${basePath}/project${publishSource}`);
         } catch (error) {
             $("#publish-source-error").innerText = "Publish source does not exist";
             $("#publish-button").disabled = true;
@@ -69,7 +74,7 @@
         });
 
         $("#publish-url").value = await publishURL();
-        $("#publish-source").value = project.publish_source || "public";
+        $("#publish-source").value = project.publish_source || ".";
 
         await checkPublishSource();
 
@@ -81,13 +86,15 @@
     // -------------------------------------------------------
 
     $("#publish-form").addEventListener("submit", async (e) => {
+        $("#publish-button").classList.add("btn-loading");
         e.preventDefault();
         if (!await checkPublishSource()) {
+            $("#publish-button").classList.remove("btn-loading");
             return;
         }
         const project = component.context.project;
         const tokenParam = { token: (await getAuth()).getSessionToken() };
-        const publishSource = $("#publish-source").value.replace(/^\/+|\/+$/g, ""); // trim slashes
+        let publishSource = $("#publish-source").value.replace(/^\/+|\/+$/g, ""); // trim slashes
         await fetch(urlFor(`/projects/${encodeURIComponent(project.name)}`, tokenParam, window.session.claims.username), {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
@@ -95,7 +102,12 @@
         });
         // todo: use a port/handle rooted to the vm filesystem so this isn't needed
         const basePath = "vm/1/fsys"
-        await window.apptron.instance.appendFile("ctl", `sync ${basePath}/project/${publishSource} ${basePath}/public`);
+        if (publishSource === ".") {
+            publishSource = "";
+        } else {
+            publishSource = "/"+publishSource;
+        }
+        await window.apptron.instance.appendFile("ctl", `sync ${basePath}/project${publishSource} ${basePath}/public`);
         window.modal.finish();
     });
 </script>
