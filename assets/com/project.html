@@ -55,6 +55,7 @@
   $("#project-name").addEventListener("input", checkProjectName);
 
   $("#project-form").addEventListener("submit", async (e) => {
+    $("#project-submit").classList.add("btn-loading");
     e.preventDefault();
 
     const name = ($("#project-name").value || "").trim();

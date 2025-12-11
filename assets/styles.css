@@ -191,7 +191,7 @@ button.icon-btn {
     align-items: center;
     justify-content: center;
 }
-.button--loading::after {
+.btn-loading::after {
     content: "";
     position: absolute;
     width: 16px;
@@ -209,7 +209,7 @@ button.icon-btn {
 button span {
     transition: all 0.2s;
 }
-.button--loading span {
+.btn-loading span {
   visibility: hidden;
   opacity: 0;
 }
