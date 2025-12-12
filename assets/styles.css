@@ -14,6 +14,18 @@
     --gray-100: #A6A6A6;
     --gray-000: #BDBDBD;
 
+    --spacing: 0.25rem;
+
+    --size-2: calc(var(--spacing) * 2);
+    --size-4: calc(var(--spacing) * 4);
+    --size-8: calc(var(--spacing) * 8);
+    --size-12: calc(var(--spacing) * 12);
+    --size-16: calc(var(--spacing) * 16);
+    --size-20: calc(var(--spacing) * 20);
+    --size-24: calc(var(--spacing) * 24);
+    --size-28: calc(var(--spacing) * 28);
+    --size-32: calc(var(--spacing) * 32);
+
     /* HANKO DEFAULT STYLES, DON'T RENAME ---------------------------*/
     /* Color Scheme */
     --color: #fff;
@@ -69,7 +81,18 @@
     /* Button Styles */
     --button-min-width: max-content;
     /* END HANKO DEFAULT STYLES ---------------------------*/
+
 }
+
+/* some tailwind inspired utility classes as needed*/
+.mb-2 { margin-bottom: var(--size-2); }
+.mb-4 { margin-bottom: var(--size-4); }
+.mb-8 { margin-bottom: var(--size-8); }
+
+.p-2 { padding: var(--size-2); }
+.p-4 { padding: var(--size-4); }
+.p-8 { padding: var(--size-8); }
+
 
 hanko-profile::part(headline1) {
   font-size: 16px;
@@ -122,7 +145,7 @@ hidden {
 
 label, legend {
   color: var(--gray-100);
-  margin-bottom: 0.25rem;
+  margin-bottom: var(--spacing);
 }
 input[type="text"], textarea {
   border-radius: var(--border-radius);
@@ -417,7 +440,7 @@ dialog#modal::backdrop {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: 1.5rem;
+  margin-top: var(--size-2);
 }
 #modal .dialog-header h2 {
   margin: 0;
