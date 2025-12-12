@@ -1,4 +1,4 @@
-module apptron.dev/session
+module apptron.dev/worker
 
 go 1.24.5
 
