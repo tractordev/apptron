@@ -1,0 +1,34 @@
+<html>
+<style>
+    @import url("/styles.css");
+    :host { display: block; }
+</style>
+<script type="module">
+    import { urlFor, getAuth, copyText, currentURL, envUsername, isLocalhost } from "/lib/apptron.js";
+    const { project } = component?.context || {};
+
+    $("#copy-src").addEventListener("click", async () => {
+        const ok = await copyText($("#embed-src").value || "");
+        const oldText = $("#copy-src").textContent;
+        $("#copy-src").textContent = ok ? "Copied!" : "Copy failed";
+        setTimeout(() => ($("#copy-src").textContent = oldText), 1200);
+    });
+
+    $("#embed-src").value = `<iframe src="${await currentURL()}"></iframe>`;
+</script>
+
+<form id="embed-form" method="dialog" class="dialog">
+<div class="dialog-body">
+    <label for="embed-src">Embed HTML</label>
+    <textarea id="embed-src" name="embed-src" spellcheck="false"></textarea>
+</div>
+
+<div class="dialog-footer">
+    <div style="flex-grow: 2;">
+        <button id="copy-src" type="button" class="btn secondary">Copy Source</button>
+    </div>
+    <button class="btn secondary" type="button" onclick="window.modal.finish()">Done</button>
+</div>
+</form>
+
+</html>

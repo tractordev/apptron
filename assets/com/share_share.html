@@ -1,0 +1,107 @@
+<html>
+<style>
+    @import url("/styles.css");
+    :host { display: block; }
+</style>
+<script type="module">
+    import { urlFor, getAuth, copyText, isLocalhost, currentURL } from "/lib/apptron.js";
+    const { project } = component?.context || {};
+
+    // Build share URL
+    $("#share-url").value = await currentURL();
+
+    // toggle the share block and copy button visibility
+    function toggleShareBlock(visibility) {
+        const isPublic = visibility === "public";
+        $("#share-block").toggleAttribute("hidden", !isPublic);
+        $("#copy-url").toggleAttribute("hidden", !isPublic);
+        $("#save-btn").disabled = (visibility === project.visibility);
+    }
+
+    // set visibility and check the radio button
+    toggleShareBlock(project.visibility);
+    $(`#vis-${project.visibility}`).checked = true;
+    $("#vis-public").addEventListener("change", (e) => toggleShareBlock(e.target.value));
+    $("#vis-private").addEventListener("change", (e) => toggleShareBlock(e.target.value));
+
+    // copy the share url to the clipboard with a success/failure message
+    $("#copy-url").addEventListener("click", async () => {
+        const ok = await copyText($("#share-url").value || "");
+        const oldText = $("#copy-url").textContent;
+        $("#copy-url").textContent = ok ? "Copied!" : "Copy failed";
+        setTimeout(() => ($("#copy-url").textContent = oldText), 1200);
+    });
+
+    // save the visibility to the server
+    $("#save-btn").addEventListener("click", async () => {
+        const visibility = $('input[name="visibility"]:checked').value;
+        
+        // doubled check if anything changed
+        if (visibility === project.visibility) {
+            return;
+        }
+
+        $("#save-btn").classList.add("btn-loading");
+        try {
+            const tokenParam = { token: (await getAuth()).getSessionToken() };
+            const username   = window.session?.claims?.username;
+
+            const resp = await fetch(
+                urlFor(`/projects/${project.name}`, tokenParam, username),
+                {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({visibility})
+                }
+            );
+
+            if (!resp.ok) {
+                throw new Error(resp.status);
+            }
+        } catch (err) {
+            console.error("Error updating visibility", err);
+        }
+        $("#save-btn").classList.remove("btn-loading");
+
+        // Close and resolve
+        window.modal.finish({ saved: true });
+    });
+</script>
+<div class="dialog-body">
+
+<fieldset class="visibility-group" role="radiogroup" aria-labelledby="visibility-legend">
+    <legend id="visibility-legend">Visibility</legend>
+
+    <label class="radio-option p-2" for="vis-public">
+        <input type="radio" id="vis-public" name="visibility" value="public"
+               aria-describedby="vis-public-help">
+        <span class="option-title">Public</span>
+        <span id="vis-public-help" class="option-help">
+            Anyone with a link has View access
+        </span>
+    </label>
+
+    <label class="radio-option p-2" for="vis-private">
+        <input type="radio" id="vis-private" name="visibility" value="private" checked
+               aria-describedby="vis-private-help">
+        <span class="option-title">Private 🔒</span>
+        <span id="vis-private-help" class="option-help">
+            Only people you've directly invited can access this project
+        </span>
+    </label>
+</fieldset>
+
+<div id="share-block">
+    <label for="share-url">Share URL</label>
+    <input id="share-url" type="text" readonly spellcheck="false" />
+</div>
+
+<div class="dialog-footer">
+    <div style="flex-grow: 2;">
+        <button id="copy-url" type="button" class="btn secondary">Copy URL</button>
+    </div>
+    <button id="save-btn" type="button" class="btn primary" disabled><span>Save</span></button>
+</div>
+
+</div>
+</html>

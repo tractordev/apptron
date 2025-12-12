@@ -1,11 +1,8 @@
 <html>
 <style>
     @import url("/styles.css");
-    :host {
-        display: block;
-    }
+    :host { display: block; }
 </style>
-
 <script type="module">
     import { urlFor, getAuth, copyText, currentURL, envUsername, isLocalhost } from "/lib/apptron.js";
     const { project } = component?.context || {};
@@ -41,49 +38,17 @@
         return true;
     }
 
+    $("#copy-url").addEventListener("click", async () => {
+        const ok = await copyText($("#publish-url").value || "");
+        const oldText = $("#copy-url").textContent;
+        $("#copy-url").textContent = ok ? "Copied!" : "Copy failed";
+        setTimeout(() => ($("#copy-url").textContent = oldText), 1200);
+    });
 
-    // -------------------------------------------------------
-    // TAB INITIALIZATION
-    // -------------------------------------------------------
-    queueMicrotask(() => init())
-
-    async function init() {
-
-        // Simple tab navigation between modals
-        $("#tab-share").addEventListener("click", () => {
-            window.modal.show("/com/share", { project });
-        });
-
-        $("#tab-embed").addEventListener("click", () => {
-            window.modal.show("/com/embed", { project });
-        });
-
-        $("#tab-publish").addEventListener("click", () => {
-            /* already here, do nothing */
-        });
-
-        $("#copy").addEventListener("click", async () => {
-            const ok = await copyText($("#publish-url").value || "");
-            const oldText = $("#copy").textContent;
-            $("#copy").textContent = ok ? "Copied!" : "Copy failed";
-            setTimeout(() => ($("#copy").textContent = oldText), 1200);
-        });
-
-        $("#publish-source").addEventListener("change", () => {
-            checkPublishSource();
-        });
-
-        $("#publish-url").value = await publishURL();
-        $("#publish-source").value = project.publish_source || ".";
-
-        await checkPublishSource();
-
-    }
-
-    
-    // -------------------------------------------------------
-    // FORM SAVE HANDLER (PUBLISH)
-    // -------------------------------------------------------
+    $("#publish-url").value = await publishURL();
+    $("#publish-source").value = project.publish_source || ".";
+    $("#publish-source").addEventListener("change", () => checkPublishSource());
+    await checkPublishSource();
 
     $("#publish-form").addEventListener("submit", async (e) => {
         $("#publish-button").classList.add("btn-loading");
@@ -112,17 +77,7 @@
     });
 </script>
 
-<div class="dialog-tabs">
-    <button id="tab-share" class="dialog-tab btn">Share</button>
-    <button id="tab-publish" class="dialog-tab dialog-tab-active btn">Publish</button>
-    <button id="tab-embed"   class="dialog-tab btn">Embed</button>
-</div>
-
 <form id="publish-form" method="dialog" class="dialog">
-<div class="dialog-header">
-    <h2>Publish</h2>
-    <button class="dialog-close btn icon-btn" onclick="window.modal.close()" type="button">&times;</button>
-</div>
 <div class="dialog-body">
     <label for="publish-source">Source Path</label>
     <input id="publish-source" name="publish-source" type="text" spellcheck="false" />
@@ -134,9 +89,8 @@
 
 <div class="dialog-footer">
     <div style="flex-grow: 2;">
-        <button id="copy" type="button" class="btn secondary">Copy URL</button>
+        <button id="copy-url" type="button" class="btn secondary">Copy URL</button>
     </div>
-    <button class="btn secondary" type="button" onclick="window.modal.finish()">Cancel</button>
     <button class="btn primary" id="publish-button" type="submit"><span>Publish</span></button>
 </div>
 </form>

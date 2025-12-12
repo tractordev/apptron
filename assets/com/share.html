@@ -1,179 +1,39 @@
 <html>
 <style>
     @import url("/styles.css");
-    :host {
-        display: block;
-    }
+    :host { display: block; }
 </style>
+<script type="module">
 
-<div class="dialog-tabs">
-    <button id="tab-share"   class="dialog-tab dialog-tab-active btn">Share</button>
-    <button id="tab-publish" class="dialog-tab btn">Publish</button>
-    <button id="tab-embed"   class="dialog-tab btn">Embed</button>
-</div>
+    const { project } = component?.context || {};
 
-<div class="dialog-header">
-    <h2>Share</h2>
+    // initialize the tabs
+    $$(".dialog-tabs > button").forEach(button => {
+        button.addEventListener("click", (e) => {
+            $$(".dialog-tabs > button").forEach(b => b.classList.remove("dialog-tab-active"));
+            button.classList.add("dialog-tab-active");
+            const tab = button.id.replace("tab-", "");
+            $("html-component").load(`/com/share_${tab}.html`);
+            $("html-component").context = { project };
+        });
+    });
+
+    // load the share tab 
+    $("html-component").load(`/com/share_share.html`);
+    $("html-component").context = { project };
+
+</script>
+
+
+<div class="dialog-header mb-4">
+    <div class="dialog-tabs">
+        <button id="tab-share"   class="dialog-tab dialog-tab-active btn">Share</button>
+        <button id="tab-embed"   class="dialog-tab btn">Embed</button>
+        <button id="tab-publish" class="dialog-tab btn">Publish</button>
+    </div>
     <button class="dialog-close icon-btn btn" type="button" onclick="window.modal.finish()" aria-label="Close">&times;</button>
 </div>
 
-<div class="dialog-body">
+<html-component></html-component>
 
-    <!-- Visibility settings -->
-    <fieldset class="visibility-group" role="radiogroup" aria-labelledby="visibility-legend">
-        <legend id="visibility-legend">Visibility</legend>
-
-        <label class="radio-option" for="vis-public">
-            <input type="radio" id="vis-public" name="visibility" value="public"
-                   aria-describedby="vis-public-help">
-            <span class="option-title">Public</span>
-            <span id="vis-public-help" class="option-help">
-                Anyone with a link has View access
-            </span>
-        </label>
-
-        <label class="radio-option" for="vis-private">
-            <input type="radio" id="vis-private" name="visibility" value="private" checked
-                   aria-describedby="vis-private-help">
-            <span class="option-title">Private 🔒</span>
-            <span id="vis-private-help" class="option-help">
-                Only people you've directly invited can access this project
-            </span>
-        </label>
-    </fieldset>
-
-     <div id="share-block">
-        <label for="share-url">Share URL</label>
-        <input id="share-url" type="text" readonly spellcheck="false" />
-    </div>
-
-    <div class="dialog-footer">
-        <div style="flex-grow: 2;">
-            <button id="copy" type="button" class="btn secondary">Copy URL</button>
-        </div>
-        <button type="button" class="btn secondary" onclick="window.modal.finish()">Cancel</button>
-        <button id="save" type="button" class="btn primary"><span>Save</span></button>
-    </div>
-</div>
-
-<script type="module">
-    import { urlFor, getAuth, copyText, isLocalhost, currentURL } from "/lib/apptron.js";
-    const { project } = component?.context || {};
-
-    async function shareURL() {
-        // not much to it, the share url is just the current url
-        return await currentURL();
-    }
-
-    queueMicrotask(() => init());
-
-    async function init() {
-        const input        = $("#share-url");
-        const shareBlock   = $("#share-block");
-        const copyBtn      = $("#copy");
-        const saveBtn      = $("#save");
-
-        const visPublic    = $("#vis-public");
-        const visPrivate   = $("#vis-private");
-
-        const tabShare     = $("#tab-share");
-        // const tabEmbed     = $("#tab-embed");
-        const tabPublish   = $("#tab-publish");
-
-
-        // Simple tab navigation between modals
-        tabShare.addEventListener("click", () => {
-            /* already here, do nothing */
-        });
-
-        $("#tab-embed").addEventListener("click", () => {
-            window.modal.show("/com/embed", { project });
-        });
-
-        tabPublish.addEventListener("click", () => {
-            window.modal.show("/com/publish", { project });
-        });
-
-        // Build share URL
-        input.value = await shareURL();
-
-        if (!project) {
-            // No project in context; nothing else to do
-            return;
-        }
-
-        // ----- INITIAL VISIBILITY -----
-        if (project.visibility === "public") {
-            visPublic.checked = true;
-        } else {
-            visPrivate.checked = true;
-        }
-
-        // Internal state to track pending changes
-        let pendingVisibility = project.visibility;
-
-        // Update pending selection when user clicks a radio
-        visPublic?.addEventListener("change", () => {
-            pendingVisibility = "public";
-            updateShareBlockVisibility();
-        });
-        visPrivate?.addEventListener("change", () => {
-            pendingVisibility = "private";
-            updateShareBlockVisibility();
-        });
-
-        function updateShareBlockVisibility() {
-            const isPublic = pendingVisibility === "public";
-            shareBlock.toggleAttribute("hidden", !isPublic);
-            copyBtn.toggleAttribute("hidden", !isPublic);
-        }
-
-        updateShareBlockVisibility();
-
-        // ----- COPY BUTTON -----
-        copyBtn?.addEventListener("click", async () => {
-            const ok = await copyText(input.value || "");
-            const oldText = copyBtn.textContent;
-            copyBtn.textContent = ok ? "Copied!" : "Copy failed";
-            setTimeout(() => (copyBtn.textContent = oldText), 1200);
-        });
-
-        // ----- SAVE BUTTON -----
-        saveBtn?.addEventListener("click", async () => {
-            saveBtn.classList.add("btn-loading");
-            // Only save if something changed
-            if (pendingVisibility !== project.visibility) {
-                try {
-                    const tokenParam = { token: (await getAuth()).getSessionToken() };
-                    const username   = window.session?.claims?.username;
-
-                    const resp = await fetch(
-                        urlFor(`/projects/${encodeURIComponent(project.name)}`, tokenParam, username),
-                        {
-                            method: "PUT",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({
-                                description: project.description || project.desc || "",
-                                visibility: pendingVisibility
-                            })
-                        }
-                    );
-
-                    if (!resp.ok) {
-                        console.error("Failed to update visibility", resp.status);
-                    } else {
-                        project.visibility = pendingVisibility; // keep local in sync
-                    }
-                } catch (err) {
-                    saveBtn.classList.remove("btn-loading");
-                    console.error("Error updating visibility", err);
-                }
-            }
-
-            // Close and resolve
-            saveBtn.classList.remove("btn-loading");
-            window.modal.finish({ saved: true });
-        });
-    }
-</script>
 </html>
