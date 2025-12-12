@@ -375,9 +375,6 @@ and we won't need these selectors */
 .header-container {
   height: 35px;
 }
-.project-header .name {
-  vertical-align: middle;
-}
 .project-header.private .name::before {
   content: "";
   display: inline-block;
@@ -542,7 +539,8 @@ dialog#modal::backdrop {
   display: none !important;
 }
 .project .project-header {
-  display: block !important;
+  display: flex !important;
+  gap: var(--size-2);
 }
 
 /* Dashboard popover menu */

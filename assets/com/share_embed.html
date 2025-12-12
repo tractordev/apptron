@@ -1,39 +1,20 @@
 <html>
 <style>
     @import url("/styles.css");
-    :host {
-        display: block;
-    }
+    :host { display: block; }
 </style>
 <script type="module">
     import { urlFor, getAuth, copyText, currentURL, envUsername, isLocalhost } from "/lib/apptron.js";
     const { project } = component?.context || {};
 
-    async function embedSource() {
-        // not much to it, the current url in an iframe
-        return `<iframe src="${await currentURL()}"></iframe>`;
-    }
+    $("#copy-src").addEventListener("click", async () => {
+        const ok = await copyText($("#embed-src").value || "");
+        const oldText = $("#copy-src").textContent;
+        $("#copy-src").textContent = ok ? "Copied!" : "Copy failed";
+        setTimeout(() => ($("#copy-src").textContent = oldText), 1200);
+    });
 
-
-    // -------------------------------------------------------
-    // TAB INITIALIZATION
-    // -------------------------------------------------------
-    queueMicrotask(() => init())
-
-    async function init() {
-
-        $("#copy").addEventListener("click", async () => {
-            const ok = await copyText($("#embed-src").value || "");
-            const oldText = $("#copy").textContent;
-            $("#copy").textContent = ok ? "Copied!" : "Copy failed";
-            setTimeout(() => ($("#copy").textContent = oldText), 1200);
-        });
-
-        $("#embed-src").value = await embedSource();
-
-    }
-
-    
+    $("#embed-src").value = `<iframe src="${await currentURL()}"></iframe>`;
 </script>
 
 <form id="embed-form" method="dialog" class="dialog">
@@ -44,7 +25,7 @@
 
 <div class="dialog-footer">
     <div style="flex-grow: 2;">
-        <button id="copy" type="button" class="btn secondary">Copy Source</button>
+        <button id="copy-src" type="button" class="btn secondary">Copy Source</button>
     </div>
     <button class="btn secondary" type="button" onclick="window.modal.finish()">Done</button>
 </div>
