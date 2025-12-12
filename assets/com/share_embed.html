@@ -5,7 +5,6 @@
         display: block;
     }
 </style>
-
 <script type="module">
     import { urlFor, getAuth, copyText, currentURL, envUsername, isLocalhost } from "/lib/apptron.js";
     const { project } = component?.context || {};
@@ -23,19 +22,6 @@
 
     async function init() {
 
-        // Simple tab navigation between modals
-        $("#tab-share").addEventListener("click", () => {
-            window.modal.show("/com/share", { project });
-        });
-
-        $("#tab-embed").addEventListener("click", () => {
-            /* already here, do nothing */
-        });
-
-        $("#tab-publish").addEventListener("click", () => {
-            window.modal.show("/com/publish", { project });
-        });
-
         $("#copy").addEventListener("click", async () => {
             const ok = await copyText($("#embed-src").value || "");
             const oldText = $("#copy").textContent;
@@ -50,17 +36,7 @@
     
 </script>
 
-<div class="dialog-tabs">
-    <button id="tab-share" class="dialog-tab btn">Share</button>
-    <button id="tab-publish" class="dialog-tab btn">Publish</button>
-    <button id="tab-embed"   class="dialog-tab dialog-tab-active btn">Embed</button>
-</div>
-
 <form id="embed-form" method="dialog" class="dialog">
-<div class="dialog-header">
-    <h2>Embed</h2>
-    <button class="dialog-close btn icon-btn" onclick="window.modal.close()" type="button">&times;</button>
-</div>
 <div class="dialog-body">
     <label for="embed-src">Embed HTML</label>
     <textarea id="embed-src" name="embed-src" spellcheck="false"></textarea>
