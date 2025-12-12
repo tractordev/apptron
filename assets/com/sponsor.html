@@ -1,0 +1,31 @@
+<html>
+<style>
+    @import url("/styles.css");
+    :host {
+        display: block;
+    }
+</style>
+<div class="dialog-header">
+    <h2>Enjoying Apptron?</h2>
+    <button class="dialog-close btn icon-btn" onclick="window.modal.close()" type="button">&times;</button>
+</div>
+<div class="dialog-body">
+    <div class="mt-4 mb-12">
+        <p>
+            We're a small team and we need your help to keep Apptron development sustainable.
+        </p>
+        <p>
+            By sponsoring, you'll help us build and maintain Apptron, as well as get access to exclusive features and support.
+        </p>
+        <p>
+            Together we can show the world that software innovation can still happen without relying on big tech.
+        </p>
+    </div>
+    <div class="dialog-footer">
+        <button class="btn secondary" type="button" onclick="window.modal.finish()">Not now</button>
+        <a href="https://github.com/sponsors/progrium" target="_blank">
+            <button class="btn primary" type="button" onclick="window.modal.finish()"><span>Learn about sponsoring</span></button>
+        </a>
+    </div>
+</div>
+</html>

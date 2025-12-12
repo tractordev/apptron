@@ -57,6 +57,10 @@
             window.modal.show("/com/account");
         });
 
+        $("#sponsor").addEventListener("click", () => {
+            window.modal.show("/com/sponsor");
+        });
+
         $("#share").addEventListener("click", async () => {
             await window.modal.show("/com/share", { project: window.apptron.env });
             window.apptron.refreshEnv();
@@ -153,6 +157,7 @@
             <div id="user-popover" class="card-menu" popover role="menu" aria-label="User menu">
                 <button id="projects" class="menu-item btn" role="menuitem" data-action="projects">Projects</button>
                 <button id="account" class="menu-item btn" role="menuitem" data-action="account">Account</button>
+                <button id="sponsor" class="menu-item btn" role="menuitem" data-action="sponsor">Sponsor</button>
                 <button id="logout" class="menu-item btn" role="menuitem" data-action="logout">Log out</button>
             </div>
         </apptron-dropdown>

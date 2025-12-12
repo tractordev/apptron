@@ -26,6 +26,12 @@
     --size-28: calc(var(--spacing) * 28);
     --size-32: calc(var(--spacing) * 32);
 
+    --text-xs: 0.75rem;
+    --text-sm: 0.875rem;
+    --text-base: 1rem;
+    --text-lg: 1.125rem;
+    --text-xl: 1.25rem;
+
     /* HANKO DEFAULT STYLES, DON'T RENAME ---------------------------*/
     /* Color Scheme */
     --color: #fff;
@@ -88,10 +94,25 @@
 .mb-2 { margin-bottom: var(--size-2); }
 .mb-4 { margin-bottom: var(--size-4); }
 .mb-8 { margin-bottom: var(--size-8); }
+.mb-12 { margin-bottom: var(--size-12); }
+
+.mt-2 { margin-top: var(--size-2); }
+.mt-4 { margin-top: var(--size-4); }
+.mt-8 { margin-top: var(--size-8); }
+.mt-12 { margin-top: var(--size-12); }
 
 .p-2 { padding: var(--size-2); }
 .p-4 { padding: var(--size-4); }
 .p-8 { padding: var(--size-8); }
+.p-12 { padding: var(--size-12); }
+
+.text-white { color: #fff; }
+
+.text-xs { font-size: var(--text-xs); }
+.text-sm { font-size: var(--text-sm); }
+.text-base { font-size: var(--text-base); }
+.text-lg { font-size: var(--text-lg); }
+.text-xl { font-size: var(--text-xl); }
 
 
 hanko-profile::part(headline1) {
@@ -445,7 +466,7 @@ dialog#modal::backdrop {
   padding: 0;
 }
 
-.dialog-body p {
+.dialog-body > p {
     margin-top: 0;
     color: var(--gray-100);
 }
