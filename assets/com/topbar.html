@@ -44,15 +44,6 @@
             }
             window.location.reload();
         });
-
-        // temporary until publish is a tab of share
-        const params = new URLSearchParams(window.location.search);
-        if (params.get("publish") === "true") {
-            $("#publish").style.display = "block";
-        }
-        $("#publish").addEventListener("click", () => {
-            window.modal.show("/com/publish", {project});
-        });
     }
 
     const auth = await getAuth();
@@ -66,8 +57,9 @@
             window.modal.show("/com/account");
         });
 
-        $("#share").addEventListener("click", () => {
-            window.modal.show("/com/share", { project });
+        $("#share").addEventListener("click", async () => {
+            await window.modal.show("/com/share", { project: window.apptron.env });
+            window.apptron.refreshEnv();
         });
 
         $("#projects").addEventListener("click", () => {

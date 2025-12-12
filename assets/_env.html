@@ -60,7 +60,7 @@
       }, 200);
     };
 
-    const project = JSON.parse(getMeta("project"));
+    let project = JSON.parse(getMeta("project"));
     const auth = await getAuth();
     window.apptron = {
       user: new Promise(async (resolve, reject) => {
@@ -86,7 +86,15 @@
         }
       }),
       origin: window.location.origin,
-      env: project
+      env: project,
+      refreshEnv: () => {
+        fetch(urlFor(`/projects/${project.name}`, {}, window.session.claims.username))
+        .then(resp => resp.json())
+        .then(data => {
+          project = data;
+          window.apptron.env = data;
+        });
+      }
     }
 
     window.apptron.instance = await setupWanix();
