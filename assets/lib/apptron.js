@@ -256,19 +256,19 @@ export async function clearAllCache(cacheName = "assets") {
     return deleted;
 }
 
+let mouseDownOnBackdrop = false; // we can use singleton because modal is one!
 export function modalDialog(el) {
+    el.addEventListener("mousedown", (e) => {
+        mouseDownOnBackdrop = e.target === el;
+    });
     el.querySelectorAll('[data-action="close"]').forEach(closer => {
         closer.addEventListener("click", () => el.close());
     });
     el.addEventListener("click", (e) => {
-        const r = el.getBoundingClientRect();
-        const inBounds = (
-            e.clientX >= r.left &&
-            e.clientX <= r.right &&
-            e.clientY >= r.top &&
-            e.clientY <= r.bottom
-        );
-        if (!inBounds) el.close();
+        if (e.target === el && mouseDownOnBackdrop) {
+            mouseDownOnBackdrop = false;
+            el.close();
+        }
     });
     return el;
 }
