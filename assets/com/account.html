@@ -5,6 +5,16 @@
         display: block;
     }
 </style>
+<script type="module">
+    // hide change username button
+    const observer = new MutationObserver(() => {
+        if ($("hanko-profile").shadowRoot) {
+            observer.disconnect();
+            $("hanko-profile").shadowRoot.querySelector("section > section > p:nth-child(4) > div > div > label").style.display = "none";
+        }
+    });
+    observer.observe($("hanko-profile").shadowRoot, { childList: true, subtree: true });
+</script>
 <div class="dialog-header">
     <h2>Account</h2>
     <button class="dialog-close btn icon-btn" onclick="window.modal.close()" type="button">&times;</button>
