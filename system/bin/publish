@@ -1,0 +1,21 @@
+#!/bin/busybox sh
+if [ -z "$1" ]; then
+    echo "Error: No source directory provided." >&2
+    exit 1
+fi
+
+src=$(realpath $1)
+
+if [ ! -d "/public" ]; then
+    echo "Error: /public does not exist." >&2
+    exit 1
+fi
+
+if [ ! -d "$src" ]; then
+    echo "Error: $src is not a directory." >&2
+    exit 1
+fi
+
+echo "sync vm/1/fsys/${src#/} vm/1/fsys/public" >> /ctl
+
+echo "Publish complete"
