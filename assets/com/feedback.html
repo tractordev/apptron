@@ -1,0 +1,38 @@
+<html>
+<style>
+    @import url("/styles.css");
+    :host { display: block; }
+</style>
+<script type="module">
+    // obfuscated feedback endpoint
+    const feedbackEndpoint = "aHR0cHM6Ly9kaXNjb3JkLmNvbS9hcGkvd2ViaG9va3MvMTQ0OTE3OTcyOTcwMDg0Nzc1OC9HYmxycTVEUWk4UGJsanVaYnBCTFVFaWdGMjVIM293WjExSHpwVW1QVlJvdjhJdjBDZEhrMGtDLXBmY1liNFpKT0JGcw==";
+
+    $("#send-btn").addEventListener("click", async () => {
+        const feedback = $("#feedback-textarea").value;
+        const response = await fetch(atob(feedbackEndpoint), {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ content: feedback })
+        });
+        if (!response.ok) {
+            alert("Failed to send feedback");
+            return;
+        }
+        window.modal.finish();
+    });
+</script>
+<div class="dialog-header">
+    <h2>Give us feedback</h2>
+    <button class="dialog-close btn icon-btn" onclick="window.modal.close()" type="button">&times;</button>
+</div>
+<div class="dialog-body">
+    <p>Feedback, ideas, bugs, tell us anything!</p>
+    <textarea id="feedback-textarea" rows="4"></textarea>
+    <div class="dialog-footer">
+        <button class="btn secondary" type="button" onclick="window.modal.finish()">Cancel</button>
+        <button id="send-btn" class="btn primary" type="button"><span>Send</span></button>
+    </div>
+</div>
+</html>
