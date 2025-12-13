@@ -25,11 +25,21 @@ export async function handle(req: Request, env: any, ctx: Context) {
       
     let objectKey = `/env/${project["uuid"]}/public${url.pathname}`;
     let object = await env.bucket.get(objectKey);
-    if (!object) {
+    if (!object || object.customMetadata["Content-Type"] === "application/x-directory") {
         objectKey = `/env/${project["uuid"]}/public${url.pathname}/index.html`.replace(/\/{2,}/g, "/");
         object = await env.bucket.get(objectKey);
         if (!object) {
-            return new Response('Not found', { status: 404 });
+            object = await env.bucket.get(`/env/${project["uuid"]}/public/404.html`);
+            if (object) {
+                return new Response(object.body, {
+                    headers: {
+                        'Content-Type': object.httpMetadata.contentType || 'text/html',
+                    },
+                    status: 404,
+                });
+            } else {
+                return new Response('Not found', { status: 404 });
+            }
         }
     }
 
