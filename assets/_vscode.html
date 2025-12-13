@@ -53,7 +53,8 @@
             const config = {
                 messagePorts: new Map([["progrium.apptron-system", ch.port1]]),
                 productConfiguration: {
-                    extensionEnabledApiProposals: {"progrium.apptron-system": ["ipc"]}
+                    extensionEnabledApiProposals: {"progrium.apptron-system": ["ipc"]},
+                    webviewContentExternalBaseUrlTemplate: `${scheme}://{{uuid}}.${url.host}/vscode/out/vs/workbench/contrib/webview/browser/pre/`,
                 },
                 configurationDefaults: {
                     "workbench.colorTheme": "Tractor Dark",
