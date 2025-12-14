@@ -87,8 +87,9 @@
       }),
       origin: window.location.origin,
       env: project,
-      refreshEnv: () => {
-        fetch(urlFor(`/projects/${project.name}`, {}, window.session.claims.username))
+      refreshEnv: async () => {
+        const tokenParam = { token: (await getAuth()).getSessionToken() };
+        fetch(urlFor(`/projects/${project.name}`, tokenParam, window.session.claims.username))
         .then(resp => resp.json())
         .then(data => {
           project = data;
