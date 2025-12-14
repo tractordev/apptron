@@ -60,11 +60,15 @@
         const project = component.context.project;
         const tokenParam = { token: (await getAuth()).getSessionToken() };
         let publishSource = $("#publish-source").value.replace(/^\/+|\/+$/g, ""); // trim slashes
-        await fetch(urlFor(`/projects/${encodeURIComponent(project.name)}`, tokenParam, window.session.claims.username), {
+        const resp = await fetch(urlFor(`/projects/${project.name}`, tokenParam, window.session.claims.username), {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ publish_source: publishSource })
         });
+        if (!resp.ok) {
+            console.error("Error updating publish source", resp);
+            return;
+        }
         // todo: use a port/handle rooted to the vm filesystem so this isn't needed
         const basePath = "vm/1/fsys"
         if (publishSource === ".") {

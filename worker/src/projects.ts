@@ -178,7 +178,7 @@ export async function handlePut(req: Request, env: any, ctx: Context) {
         }
     }
 
-    return new Response(JSON.stringify({ name: projectName, description: newAttrs.description }), {
+    return new Response(JSON.stringify(newAttrs), {
         status: 200,
         headers: { "Content-Type": "application/json" },
     });

@@ -78,16 +78,12 @@ func main() {
 	envUUID := ""
 	envName := ""
 	envOwner := ""
-	envPublishSource := ""
 	isOwner := false
 	env := apptronCfg.Get("env")
 	if !env.IsUndefined() {
 		envUUID = env.Get("uuid").String()
 		envName = env.Get("name").String()
 		envOwner = env.Get("owner").String()
-		if !env.Get("publish_source").IsUndefined() {
-			envPublishSource = env.Get("publish_source").String()
-		}
 		isOwner = envOwner == userID
 	}
 
@@ -517,34 +513,30 @@ func main() {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		// setup publish fs
-		if envPublishSource != "" && isOwner {
-			log.Println("checking for public directory")
+		// setup public fs
+		if isOwner {
+			log.Println("setting up public fs")
 			remotePublicFS := httpfs.New(fmt.Sprintf("%s/data/env/%s/public", origin.String(), envUUID), nil)
-			exists, err := fs.Exists(remotePublicFS, ".")
+			if err := fs.MkdirAll(remotePublicFS, ".", 0755); err != nil {
+				log.Fatal(err)
+			}
+			startTime = time.Now()
+			if err := fs.MkdirAll(opfs, path.Join("env", envUUID, "public"), 0755); err != nil {
+				log.Fatal(err)
+			}
+			localPublicFS, err := fs.Sub(opfs, path.Join("env", envUUID, "public"))
 			if err != nil {
 				log.Fatal(err)
 			}
-			if exists {
-				log.Println("setting up publish fs")
-				startTime = time.Now()
-				if err := fs.MkdirAll(opfs, path.Join("env", envUUID, "public"), 0755); err != nil {
-					log.Fatal(err)
-				}
-				localPublicFS, err := fs.Sub(opfs, path.Join("env", envUUID, "public"))
-				if err != nil {
-					log.Fatal(err)
-				}
-				publicSyncFS := syncfs.New(localPublicFS, remotePublicFS, 3*time.Second)
-				if err := publicSyncFS.Sync(); err != nil {
-					log.Printf("err syncing: %v\n", err)
-				}
-
-				if err := root.Namespace().Bind(publicSyncFS, ".", "public"); err != nil {
-					log.Fatal(err)
-				}
-				log.Printf("publish fs ready in %v\n", time.Since(startTime))
+			publicSyncFS := syncfs.New(localPublicFS, remotePublicFS, 3*time.Second)
+			if err := publicSyncFS.Sync(); err != nil {
+				log.Printf("err syncing: %v\n", err)
 			}
+
+			if err := root.Namespace().Bind(publicSyncFS, ".", "public"); err != nil {
+				log.Fatal(err)
+			}
+			log.Printf("public fs ready in %v\n", time.Since(startTime))
 		}
 	}()
 
