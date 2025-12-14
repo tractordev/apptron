@@ -49,12 +49,16 @@
         };
         const url = new URL(window.location.href);
         const scheme = url.protocol.replace(":", "");
+        const hostParts = url.host.split('.');
+        if (hostParts.length > 2) {
+            hostParts.shift();
+        }
         require(['vs/workbench/workbench.web.main'], function (wb) {
             const config = {
                 messagePorts: new Map([["progrium.apptron-system", ch.port1]]),
                 productConfiguration: {
                     extensionEnabledApiProposals: {"progrium.apptron-system": ["ipc"]},
-                    webviewContentExternalBaseUrlTemplate: `${scheme}://{{uuid}}.${url.host}/vscode/out/vs/workbench/contrib/webview/browser/pre/`,
+                    webviewContentExternalBaseUrlTemplate: `${scheme}://{{uuid}}.${hostParts.join('.')}/vscode/out/vs/workbench/contrib/webview/browser/pre/`,
                 },
                 configurationDefaults: {
                     "workbench.colorTheme": "Tractor Dark",
