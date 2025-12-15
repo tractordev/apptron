@@ -99,6 +99,7 @@ func main() {
 	k.AddModule("#web", web.New(k))
 	k.AddModule("#vm", vm.New())
 	k.AddModule("#pipe", &pipe.Allocator{})
+	k.AddModule("#commands", &pipe.Allocator{})
 	k.AddModule("#|", &pipe.Allocator{}) // alias for #pipe
 	k.AddModule("#ramfs", &ramfs.Allocator{})
 
@@ -123,7 +124,7 @@ func main() {
 		{"#cap", "cap"},
 		{"#web", "web"},
 		{"#vm", "vm"},
-		{"#|", "#console"},
+		{"#|", "#console"}, // todo: is this not allocating?
 	}
 	for _, b := range rootBindings {
 		if err := root.Bind(b.dst, b.src); err != nil {
@@ -332,6 +333,15 @@ func main() {
 		Run: func(_ *cli.Context, args []string) {
 			log.Println("ctl:", args)
 			switch args[0] {
+			case "cmd":
+				if len(args) < 2 {
+					fmt.Println("usage: cmd <cmd>")
+					return
+				}
+				if err := fs.AppendFile(root.Namespace(), "#commands/data", []byte(strings.Join(args[1:], " "))); err != nil {
+					log.Fatal(err)
+				}
+
 			case "bind":
 				if len(args) < 2 {
 					fmt.Println("usage: bind <oldname> <newname>")

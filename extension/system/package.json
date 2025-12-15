@@ -39,6 +39,12 @@
         "uiTheme": "tractor-dark",
         "path": "./themes/Tractor-color-theme.json"
       }
+    ],
+    "commands": [
+      {
+        "command": "apptron.open",
+        "title": "Open File or Folder"
+      }
     ]
   },
   "dependencies": {

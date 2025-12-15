@@ -109,7 +109,7 @@ export class WanixBridge implements FileSystemProvider, /*FileSearchProvider, Te
 
 	async _stat(uri: Uri): Promise<FileStat> {
 		if (!this.wfsys) {
-			if (uri.path !== "/") {
+			if (uri.path !== "/project") {
 				if (uri.path.includes(".vscode")) {
 					throw FileSystemError.FileNotFound(uri);
 				}

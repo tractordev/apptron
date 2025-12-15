@@ -1,0 +1,24 @@
+#!/bin/busybox sh
+if [ -z "$1" ]; then
+    echo "Error: No filepath provided." >&2
+    exit 1
+fi
+
+filepath=$(realpath $1)
+
+if [ -d $filepath ]; then
+    echo "cmd open-folder $filepath" >> /ctl
+    exit 0
+fi
+
+if [ -f $filepath ]; then
+    if [ "${filepath##*.}" = "md" ]; then
+        echo "cmd open-preview $filepath" >> /ctl
+    else
+        echo "cmd open-file $filepath" >> /ctl
+    fi
+    exit 0
+fi
+
+echo "Error: $filepath is not a file or directory." >&2
+exit 1

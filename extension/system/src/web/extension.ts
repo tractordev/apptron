@@ -12,7 +12,7 @@ export async function activate(context: vscode.ExtensionContext) {
 	}
 	
 	const channel = new MessageChannel();
-	const bridge = new WanixBridge(channel.port2, "vm/1/fsys/project");
+	const bridge = new WanixBridge(channel.port2, "vm/1/fsys");
 	context.subscriptions.push(bridge);
 
 	const port = (context as any).messagePassingProtocol;
@@ -23,8 +23,48 @@ export async function activate(context: vscode.ExtensionContext) {
 		const terminal = createTerminal(wfsys);
 		context.subscriptions.push(terminal);
 		terminal.show();
+
+		(async () => {
+			const dec = new TextDecoder();
+			const stream = await wfsys.openReadable("#commands/data1");
+			for await (const chunk of stream) {
+				const args = dec.decode(chunk).trim().split(" ");
+				const cmd = args.shift();
+				vscode.commands.executeCommand(`apptron.${cmd}`, ...args);
+			}
+		})();		
 	});
 
+
+	context.subscriptions.push(vscode.commands.registerCommand('apptron.open-preview', (filepath?: string) => {
+		if (!filepath) {
+			return;
+		}
+		vscode.commands.executeCommand('markdown.showPreview', vscode.Uri.parse(`wanix://${filepath}`));
+	}));
+
+	context.subscriptions.push(vscode.commands.registerCommand('apptron.open-file', (filepath?: string) => {
+		if (!filepath) {
+			return;
+		}
+		vscode.commands.executeCommand('vscode.open', vscode.Uri.parse(`wanix://${filepath}`));
+	}));
+
+	context.subscriptions.push(vscode.commands.registerCommand('apptron.open-folder', (filepath?: string) => {
+		if (!filepath) {
+			return;
+		}
+		const folders = vscode.workspace.workspaceFolders;
+		const insertIndex = folders ? folders.length : 0;
+		const uri = vscode.Uri.parse(`wanix://${filepath}`);
+		vscode.workspace.updateWorkspaceFolders(
+			insertIndex, // insert at the end
+			0, // number of folders to remove
+			{ uri }
+		);
+	}));
+
+	
 	console.log('Apptron system extension activated');
 }
 

@@ -17,6 +17,10 @@ wasm: boot.go
 	GOOS=js GOARCH=wasm go build -o ./assets/wanix.wasm .
 .PHONY: wasm
 
+ext:
+	cd extension/system && npm run compile-web
+.PHONY: ext
+
 live-install: ./assets/wanix.wasm
 	@if [ -z "$$ENV_UUID" ]; then \
 		echo "ERROR: This is expected to run in an Apptron environment"; \
@@ -53,7 +57,7 @@ assets/vscode:
 	rm assets/vscode.zip
 
 extension/system/dist: extension/system/node_modules
-	cd extension/system && npm run compile-web
+	make ext
 
 extension/system/node_modules:
 	cd extension/system && npm ci
