@@ -140,7 +140,7 @@ Go lets you cross compile to any platform/architecture. See if you can figure ou
 
 Go is the first of many languages Apptron will support. If you have a preference for what we support next, cast your vote in this [GitHub Discussion thread](https://github.com/tractordev/apptron/discussions/215).
 
-# Run Apache from inside your browser
+## Run Apache from inside your browser
 
 We start by installing Apache:
 
@@ -172,7 +172,7 @@ This URL is sharable and will work for anyone on the internet as long as your br
 
 What other servers can you run in the browser with Apptron?
 
-# More tips for this environment
+## More tips for this environment
 
 * There are 3 persistent mounts in an Apptron environment:
   * `/project` - Files shown in the sidebar for this environment
@@ -185,7 +185,7 @@ What other servers can you run in the browser with Apptron?
 * Files can be uploaded into the project mount by dragging them into the sidebar
 * You can use the `open` command to open more files or folders into the editor UI
 
-# Give us feedback
+## Give us feedback
 
 You can easily send us a message by clicking the Feedback icon to the right of the GitHub and Discord icons next to the Apptron logo in the top bar. We'd love to hear from you!
 

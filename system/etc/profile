@@ -24,12 +24,13 @@ if [ -f "/home/$USER/.profile" ]; then
 	. "/home/$USER/.profile"
 fi
 
-if [ -n "$ENV_NAME" ]; then
-	if [ -n "$USER" ]; then
-		cd ~/$ENV_NAME
-	else
-		export HOME=/home/$ENV_NAME
-		cd ~
-	fi
+# default to cd to the home directory
+if [ -n "$USER" ]; then
+	cd ~
+fi
+
+# cd to the project directory if it exists
+if [ -d /project ]; then
+	cd /project
 fi
 
