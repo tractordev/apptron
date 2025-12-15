@@ -152,6 +152,10 @@ html, body {
     margin: 0;
 }
 
+p {
+    line-height: 150%;
+}
+
 button, input, select, textarea {
   font: inherit;
 }
@@ -468,7 +472,7 @@ dialog#modal::backdrop {
 
 .dialog-body > p {
     margin-top: 0;
-    color: var(--gray-100);
+    color: var(--gray-000);
 }
 .dialog-body input[type=text],
 .dialog-body textarea, 
