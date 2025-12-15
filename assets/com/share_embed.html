@@ -7,14 +7,16 @@
     import { urlFor, getAuth, copyText, currentURL, envUsername, isLocalhost } from "/lib/apptron.js";
     const { project } = component?.context || {};
 
-    $("#copy-src").addEventListener("click", async () => {
-        const ok = await copyText($("#embed-src").value || "");
-        const oldText = $("#copy-src").textContent;
-        $("#copy-src").textContent = ok ? "Copied!" : "Copy failed";
-        setTimeout(() => ($("#copy-src").textContent = oldText), 1200);
-    });
+    queueMicrotask(async () => {
+        $("#copy-src").addEventListener("click", async () => {
+            const ok = await copyText($("#embed-src").value || "");
+            const oldText = $("#copy-src").textContent;
+            $("#copy-src").textContent = ok ? "Copied!" : "Copy failed";
+            setTimeout(() => ($("#copy-src").textContent = oldText), 1200);
+        });
 
-    $("#embed-src").value = `<iframe src="${await currentURL()}"></iframe>`;
+        $("#embed-src").value = `<iframe src="${await currentURL()}"></iframe>`;
+    });
 </script>
 
 <form id="embed-form" method="dialog" class="dialog">

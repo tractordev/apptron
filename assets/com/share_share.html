@@ -7,64 +7,66 @@
     import { urlFor, getAuth, copyText, isLocalhost, currentURL } from "/lib/apptron.js";
     const { project } = component?.context || {};
 
-    // Build share URL
-    $("#share-url").value = await currentURL();
+    queueMicrotask(async () => {
+        // Build share URL
+        $("#share-url").value = await currentURL();
 
-    // toggle the share block and copy button visibility
-    function toggleShareBlock(visibility) {
-        const isPublic = visibility === "public";
-        $("#share-block").toggleAttribute("hidden", !isPublic);
-        $("#copy-url").toggleAttribute("hidden", !isPublic);
-        $("#save-btn").disabled = (visibility === project.visibility);
-    }
-
-    // set visibility and check the radio button
-    toggleShareBlock(project.visibility);
-    $(`#vis-${project.visibility}`).checked = true;
-    $("#vis-public").addEventListener("change", (e) => toggleShareBlock(e.target.value));
-    $("#vis-private").addEventListener("change", (e) => toggleShareBlock(e.target.value));
-
-    // copy the share url to the clipboard with a success/failure message
-    $("#copy-url").addEventListener("click", async () => {
-        const ok = await copyText($("#share-url").value || "");
-        const oldText = $("#copy-url").textContent;
-        $("#copy-url").textContent = ok ? "Copied!" : "Copy failed";
-        setTimeout(() => ($("#copy-url").textContent = oldText), 1200);
-    });
-
-    // save the visibility to the server
-    $("#save-btn").addEventListener("click", async () => {
-        const visibility = $('input[name="visibility"]:checked').value;
-        
-        // doubled check if anything changed
-        if (visibility === project.visibility) {
-            return;
+        // toggle the share block and copy button visibility
+        function toggleShareBlock(visibility) {
+            const isPublic = visibility === "public";
+            $("#share-block").toggleAttribute("hidden", !isPublic);
+            $("#copy-url").toggleAttribute("hidden", !isPublic);
+            $("#save-btn").disabled = (visibility === project.visibility);
         }
 
-        $("#save-btn").classList.add("btn-loading");
-        try {
-            const tokenParam = { token: (await getAuth()).getSessionToken() };
-            const username   = window.session?.claims?.username;
+        // set visibility and check the radio button
+        toggleShareBlock(project.visibility);
+        $(`#vis-${project.visibility}`).checked = true;
+        $("#vis-public").addEventListener("change", (e) => toggleShareBlock(e.target.value));
+        $("#vis-private").addEventListener("change", (e) => toggleShareBlock(e.target.value));
 
-            const resp = await fetch(
-                urlFor(`/projects/${project.name}`, tokenParam, username),
-                {
-                    method: "PUT",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({visibility})
-                }
-            );
+        // copy the share url to the clipboard with a success/failure message
+        $("#copy-url").addEventListener("click", async () => {
+            const ok = await copyText($("#share-url").value || "");
+            const oldText = $("#copy-url").textContent;
+            $("#copy-url").textContent = ok ? "Copied!" : "Copy failed";
+            setTimeout(() => ($("#copy-url").textContent = oldText), 1200);
+        });
 
-            if (!resp.ok) {
-                throw new Error(resp.status);
+        // save the visibility to the server
+        $("#save-btn").addEventListener("click", async () => {
+            const visibility = $('input[name="visibility"]:checked').value;
+            
+            // doubled check if anything changed
+            if (visibility === project.visibility) {
+                return;
             }
-        } catch (err) {
-            console.error("Error updating visibility", err);
-        }
-        $("#save-btn").classList.remove("btn-loading");
 
-        // Close and resolve
-        window.modal.finish({ saved: true });
+            $("#save-btn").classList.add("btn-loading");
+            try {
+                const tokenParam = { token: (await getAuth()).getSessionToken() };
+                const username   = window.session?.claims?.username;
+
+                const resp = await fetch(
+                    urlFor(`/projects/${project.name}`, tokenParam, username),
+                    {
+                        method: "PUT",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({visibility})
+                    }
+                );
+
+                if (!resp.ok) {
+                    throw new Error(resp.status);
+                }
+            } catch (err) {
+                console.error("Error updating visibility", err);
+            }
+            $("#save-btn").classList.remove("btn-loading");
+
+            // Close and resolve
+            window.modal.finish({ saved: true });
+        });
     });
 </script>
 <div class="dialog-body">

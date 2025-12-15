@@ -38,46 +38,48 @@
         return true;
     }
 
-    $("#copy-url").addEventListener("click", async () => {
-        const ok = await copyText($("#publish-url").value || "");
-        const oldText = $("#copy-url").textContent;
-        $("#copy-url").textContent = ok ? "Copied!" : "Copy failed";
-        setTimeout(() => ($("#copy-url").textContent = oldText), 1200);
-    });
-
-    $("#publish-url").value = await publishURL();
-    $("#publish-source").value = project.publish_source || ".";
-    $("#publish-source").addEventListener("change", () => checkPublishSource());
-    await checkPublishSource();
-
-    $("#publish-form").addEventListener("submit", async (e) => {
-        $("#publish-button").classList.add("btn-loading");
-        e.preventDefault();
-        if (!await checkPublishSource()) {
-            $("#publish-button").classList.remove("btn-loading");
-            return;
-        }
-        const project = component.context.project;
-        const tokenParam = { token: (await getAuth()).getSessionToken() };
-        let publishSource = $("#publish-source").value.replace(/^\/+|\/+$/g, ""); // trim slashes
-        const resp = await fetch(urlFor(`/projects/${project.name}`, tokenParam, window.session.claims.username), {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ publish_source: publishSource })
+    queueMicrotask(async () => {
+        $("#copy-url").addEventListener("click", async () => {
+            const ok = await copyText($("#publish-url").value || "");
+            const oldText = $("#copy-url").textContent;
+            $("#copy-url").textContent = ok ? "Copied!" : "Copy failed";
+            setTimeout(() => ($("#copy-url").textContent = oldText), 1200);
         });
-        if (!resp.ok) {
-            console.error("Error updating publish source", resp);
-            return;
-        }
-        // todo: use a port/handle rooted to the vm filesystem so this isn't needed
-        const basePath = "vm/1/fsys"
-        if (publishSource === ".") {
-            publishSource = "";
-        } else {
-            publishSource = "/"+publishSource;
-        }
-        await window.apptron.instance.appendFile("ctl", `sync ${basePath}/project${publishSource} ${basePath}/public`);
-        window.modal.finish();
+
+        $("#publish-url").value = await publishURL();
+        $("#publish-source").value = project.publish_source || ".";
+        $("#publish-source").addEventListener("change", () => checkPublishSource());
+        await checkPublishSource();
+
+        $("#publish-form").addEventListener("submit", async (e) => {
+            $("#publish-button").classList.add("btn-loading");
+            e.preventDefault();
+            if (!await checkPublishSource()) {
+                $("#publish-button").classList.remove("btn-loading");
+                return;
+            }
+            const project = component.context.project;
+            const tokenParam = { token: (await getAuth()).getSessionToken() };
+            let publishSource = $("#publish-source").value.replace(/^\/+|\/+$/g, ""); // trim slashes
+            const resp = await fetch(urlFor(`/projects/${project.name}`, tokenParam, window.session.claims.username), {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ publish_source: publishSource })
+            });
+            if (!resp.ok) {
+                console.error("Error updating publish source", resp);
+                return;
+            }
+            // todo: use a port/handle rooted to the vm filesystem so this isn't needed
+            const basePath = "vm/1/fsys"
+            if (publishSource === ".") {
+                publishSource = "";
+            } else {
+                publishSource = "/"+publishSource;
+            }
+            await window.apptron.instance.appendFile("ctl", `sync ${basePath}/project${publishSource} ${basePath}/public`);
+            window.modal.finish();
+        });
     });
 </script>
 

@@ -25,59 +25,61 @@
     $("#project-name-error").innerText = "";
   }
 
-  $("#project-form").reset();
+  queueMicrotask(async () => {
+    $("#project-form").reset();
 
-  const project = component.context.project;
-  // todo: should probably fetch the project from 
-  // the server to get the latest description to avoid stale data
-  // and avoid the need to reload the page
-  if (project) {
-    $("#project-dialog-title").innerText = "Edit Project";
-    $("#project-submit span").innerText = "Save";
-    $("#project-name").value = project.name;
-    $("#project-desc").value = project.description || project.desc || "";
-    if (project.visibility === "public") {
-      $("#vis-public").checked = true;
+    const project = component.context.project;
+    // todo: should probably fetch the project from 
+    // the server to get the latest description to avoid stale data
+    // and avoid the need to reload the page
+    if (project) {
+      $("#project-dialog-title").innerText = "Edit Project";
+      $("#project-submit span").innerText = "Save";
+      $("#project-name").value = project.name;
+      $("#project-desc").value = project.description || project.desc || "";
+      if (project.visibility === "public") {
+        $("#vis-public").checked = true;
+      } else {
+        $("#vis-private").checked = true;
+      }
+      $("#project-name").disabled = true;
+      setTimeout(() => $("#project-desc").focus(), 0);
+
     } else {
-      $("#vis-private").checked = true;
+      $("#project-dialog-title").innerText = "New Project";
+      $("#project-submit span").innerText = "Create";
+      $("#project-name").disabled = false; // allow naming on create
+      setTimeout(() => $("#project-name").focus(), 0);
+      
     }
-    $("#project-name").disabled = true;
-    setTimeout(() => $("#project-desc").focus(), 0);
 
-  } else {
-    $("#project-dialog-title").innerText = "New Project";
-    $("#project-submit span").innerText = "Create";
-    $("#project-name").disabled = false; // allow naming on create
-    setTimeout(() => $("#project-name").focus(), 0);
-    
-  }
+    $("#project-name").addEventListener("input", checkProjectName);
 
-  $("#project-name").addEventListener("input", checkProjectName);
+    $("#project-form").addEventListener("submit", async (e) => {
+      $("#project-submit").classList.add("btn-loading");
+      e.preventDefault();
 
-  $("#project-form").addEventListener("submit", async (e) => {
-    $("#project-submit").classList.add("btn-loading");
-    e.preventDefault();
+      const name = ($("#project-name").value || "").trim();
+      const description = ($("#project-desc").value || "").trim();
+      const visibility = ($('input[name="visibility"]:checked').value || "private").trim();
+      if (!name || !$("#project-name").checkValidity()) { $("#project-name").focus(); return; }
 
-    const name = ($("#project-name").value || "").trim();
-    const description = ($("#project-desc").value || "").trim();
-    const visibility = ($('input[name="visibility"]:checked').value || "private").trim();
-    if (!name || !$("#project-name").checkValidity()) { $("#project-name").focus(); return; }
-
-    const tokenParam = { token: (await getAuth()).getSessionToken() };
-    const resp = (project)  
-      ? await fetch(urlFor(`/projects/${encodeURIComponent(project.name)}`, tokenParam, window.session.claims.username), {
-            method: "PUT",
+      const tokenParam = { token: (await getAuth()).getSessionToken() };
+      const resp = (project)  
+        ? await fetch(urlFor(`/projects/${encodeURIComponent(project.name)}`, tokenParam, window.session.claims.username), {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ description, visibility })
+          })
+        : await fetch(urlFor("/projects", {}, window.session.claims.username), {
+            method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ description, visibility })
-        })
-      : await fetch(urlFor("/projects", {}, window.session.claims.username), {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name, description, visibility })
-        });
-    
-    window.modal.finish(resp);
+            body: JSON.stringify({ name, description, visibility })
+          });
+      
+      window.modal.finish(resp);
 
+    });
   });
 </script>
 <form id="project-form" method="dialog" class="dialog">

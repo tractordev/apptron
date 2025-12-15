@@ -7,20 +7,22 @@
     // obfuscated feedback endpoint
     const feedbackEndpoint = "aHR0cHM6Ly9kaXNjb3JkLmNvbS9hcGkvd2ViaG9va3MvMTQ0OTE3OTcyOTcwMDg0Nzc1OC9HYmxycTVEUWk4UGJsanVaYnBCTFVFaWdGMjVIM293WjExSHpwVW1QVlJvdjhJdjBDZEhrMGtDLXBmY1liNFpKT0JGcw==";
 
-    $("#send-btn").addEventListener("click", async () => {
-        const feedback = $("#feedback-textarea").value;
-        const response = await fetch(atob(feedbackEndpoint), {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({ content: feedback })
+    queueMicrotask(async () => {
+        $("#send-btn").addEventListener("click", async () => {
+            const feedback = $("#feedback-textarea").value;
+            const response = await fetch(atob(feedbackEndpoint), {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ content: feedback })
+            });
+            if (!response.ok) {
+                alert("Failed to send feedback");
+                return;
+            }
+            window.modal.finish();
         });
-        if (!response.ok) {
-            alert("Failed to send feedback");
-            return;
-        }
-        window.modal.finish();
     });
 </script>
 <div class="dialog-header">
