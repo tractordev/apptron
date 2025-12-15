@@ -22,6 +22,11 @@ if [ -f /project/.apptron/envbuild ]; then
     fi
 fi
 
+if [ ! -f /web/idbfs/apptron/.welcomed ]; then
+    /bin/open /apptron/WELCOME.md
+    touch /web/idbfs/apptron/.welcomed
+fi
+
 /bin/aptn ports &
 
 exec /bin/start

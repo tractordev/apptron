@@ -27,6 +27,7 @@ RUN GOOS=linux GOARCH=386 tinygo build -o aptn *.go
 FROM --platform=$LINUX_386 docker.io/i386/alpine:$ALPINE_VERSION AS rootfs
 RUN apk add --no-cache fuse make git esbuild
 COPY --from=aptn-go /build/aptn /bin/aptn
+COPY ./system/apptron/* /apptron/
 COPY ./system/bin/* /bin/
 COPY ./system/etc/* /etc/
 
