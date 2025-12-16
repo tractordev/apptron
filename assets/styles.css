@@ -191,6 +191,25 @@ button:focus {
 input[type="text"]:disabled {
   border: none;
 }
+.input-row {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing);
+}
+.input-row input {
+  flex: 1; 
+  min-width: 0; 
+}
+.input-row button {
+  flex: 0 0 auto;
+}
+.input-row > .icon-btn {
+    font-size: var(--text-base);
+}
+.input-row > .icon-btn svg {
+    width: 20px;
+    height: 20px;
+}
 
 /* BUTTONS ----------------- */
 
@@ -480,7 +499,11 @@ dialog#modal::backdrop {
   display: block;
   width: 100%;
 }
-.dialog-body input[type=text],
+.dialog-body input[type="text"]:not(.input-row input[type="text"]),
+.dialog-body textarea,
+.dialog-body fieldset {
+  margin-bottom: 1.5rem;
+}
 .dialog-body textarea,
 .dialog-body fieldset {
   margin-bottom: 1.5rem;
