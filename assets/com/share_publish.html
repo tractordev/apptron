@@ -38,14 +38,29 @@
         return true;
     }
 
-    queueMicrotask(async () => {
-        $("#copy-url").addEventListener("click", async () => {
-            const ok = await copyText($("#publish-url").value || "");
-            const oldText = $("#copy-url").textContent;
-            $("#copy-url").textContent = ok ? "Copied!" : "Copy failed";
-            setTimeout(() => ($("#copy-url").textContent = oldText), 1200);
-        });
+    const CHECK_SVG = `
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path fill-rule="evenodd" clip-rule="evenodd" d="M21.6464 4.98438L8.94145 19.9844L7.75645 19.9304L2.73145 12.7754L3.95845 11.9144L8.42545 18.2744L20.5019 4.01538L21.6479 4.98438H21.6464Z" fill="white"/>
+    </svg>
+    `;
 
+    queueMicrotask(async () => {
+        const copyBtn = $("#copy-url");
+        if (copyBtn) {
+            copyBtn.addEventListener("click", async () => {
+                const ok = await copyText($("#publish-url").value || "");
+                if (!ok) return;
+
+                const original = copyBtn.innerHTML;
+                copyBtn.innerHTML = CHECK_SVG;
+                copyBtn.setAttribute("aria-label", "Copied");
+
+                setTimeout(() => {
+                    copyBtn.innerHTML = original;
+                    copyBtn.setAttribute("aria-label", "Copy URL");
+                }, 1200);
+            });
+        }
         $("#publish-url").value = await publishURL();
         $("#publish-source").value = project.publish_source || ".";
         $("#publish-source").addEventListener("change", () => checkPublishSource());
@@ -91,13 +106,18 @@
     <span class="form-error" id="publish-source-error"></span>
 
     <label for="publish-url">Public URL</label>
-    <input id="publish-url" type="text" readonly spellcheck="false" />
+    <div class="input-row">
+        <input id="publish-url" type="text" readonly spellcheck="false" />
+        <button type="button" id="copy-url" class="icon-btn secondary btn" aria-label="Copy URL" title="Copy">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path fill-rule="evenodd" clip-rule="evenodd" d="M6 6L7.5 4.5H15.621L21 9.879V21L19.5 22.5H7.5L6 21V6ZM19.5 10.5L15 6H7.5V21H19.5V10.5Z" fill="white"/>
+                <path fill-rule="evenodd" clip-rule="evenodd" d="M4.5 1.5L3 3V18L4.5 19.5V3H14.121L12.621 1.5H4.5Z" fill="white"/>
+            </svg>
+        </button>
+    </div>
 </div>
 
 <div class="dialog-footer">
-    <div style="flex-grow: 2;">
-        <button id="copy-url" type="button" class="btn secondary">Copy URL</button>
-    </div>
     <button class="btn primary" id="publish-button" type="submit"><span>Publish</span></button>
 </div>
 </form>
