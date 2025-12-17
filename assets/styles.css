@@ -353,6 +353,43 @@ header h1 {
     margin-bottom: 0.5rem;
 }
 
+/* TOAST MESSAGES -----------------------*/
+/* there are some magic numbers here so we can match vs code's notifications */
+#toast-root {
+    position: fixed;
+    bottom: 7px;
+    right: 7px;
+    z-index: 1000000;
+}
+.toast {
+    font-weight: 500;
+    line-height: 160%;
+    color: var(--gray-000);
+    padding: var(--size-4);
+    border: 1px solid var(--gray-600);
+    box-shadow: 0 0 2px 4px rgba(0,0,0,0.10); /* OR box-shadow: 0 0 1px 5px rgba(0,0,0,0.20); */
+    width: 500px;
+    border-radius: var(--border-radius);
+    display: flex;
+    align-items: flex-start;
+    gap: 5px;
+}
+.toast svg {
+    flex: 0 0 auto;
+}
+.toast-text {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+.toast button {
+    height: 20px;
+    padding: 0px !important;
+    align-self: flex-start;
+}
+.toast-status-icon {
+    color: var(--yellow-shade);
+}
+
 /* HEADER BAR -----------------------*/
 #header-bar {
     height: 35px;
@@ -554,15 +591,10 @@ dialog#modal::backdrop {
   color: #9a9a9a;
   line-height: 1.3;
 }
-
-
-
 /* otherwise there's too much space between the close button and the dialog contents... */
 .auth-container {
   margin-top: -1rem;
 }
-
-
 /* Top bar login state */
 #logout, #account, #account-dropdown, #edit-project, #share {
   display: none !important;
