@@ -353,6 +353,28 @@ header h1 {
     margin-bottom: 0.5rem;
 }
 
+/* TOAST MESSAGES -----------------------*/
+
+#toast-root {
+    font-weight: 500;
+    line-height: 160%;
+    color: var(--gray-000);
+    padding: var(--size-4);
+    border: 1px solid var(--gray-600);
+    box-shadow: 0 0 2px 4px rgba(0,0,0,0.10); /* OR box-shadow: 0 0 1px 5px rgba(0,0,0,0.20); */
+    width: 500px;
+    border-radius: var(--border-radius);
+    position: fixed;
+    /* bottom: 7px; */
+    right: 7px;
+    top: 400px;
+    z-index: 1000000;
+}
+
+
+/* icon size and color
+layout: flexbox row, 5px gap */
+
 /* HEADER BAR -----------------------*/
 #header-bar {
     height: 35px;
@@ -554,15 +576,10 @@ dialog#modal::backdrop {
   color: #9a9a9a;
   line-height: 1.3;
 }
-
-
-
 /* otherwise there's too much space between the close button and the dialog contents... */
 .auth-container {
   margin-top: -1rem;
 }
-
-
 /* Top bar login state */
 #logout, #account, #account-dropdown, #edit-project, #share {
   display: none !important;
