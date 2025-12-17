@@ -356,6 +356,12 @@ header h1 {
 /* TOAST MESSAGES -----------------------*/
 /* there are some magic numbers here so we can match vs code's notifications */
 #toast-root {
+    position: fixed;
+    bottom: 7px;
+    right: 7px;
+    z-index: 1000000;
+}
+.toast {
     font-weight: 500;
     line-height: 160%;
     color: var(--gray-000);
@@ -364,15 +370,8 @@ header h1 {
     box-shadow: 0 0 2px 4px rgba(0,0,0,0.10); /* OR box-shadow: 0 0 1px 5px rgba(0,0,0,0.20); */
     width: 500px;
     border-radius: var(--border-radius);
-    position: fixed;
-    bottom: 7px;
-    right: 7px;
-    z-index: 1000000;
-}
-.toast {
     display: flex;
-    align-items: top;
-    justify-content: space-between;
+    align-items: flex-start;
     gap: 5px;
 }
 .toast svg {
@@ -380,10 +379,12 @@ header h1 {
 }
 .toast-text {
     flex: 1 1 auto;
+    min-width: 0;
 }
 .toast button {
     height: 20px;
     padding: 0px !important;
+    align-self: flex-start;
 }
 .toast-status-icon {
     color: var(--yellow-shade);
