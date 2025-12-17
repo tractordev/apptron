@@ -354,7 +354,7 @@ header h1 {
 }
 
 /* TOAST MESSAGES -----------------------*/
-
+/* there are some magic numbers here so we can match vs code's notifications */
 #toast-root {
     font-weight: 500;
     line-height: 160%;
@@ -365,15 +365,29 @@ header h1 {
     width: 500px;
     border-radius: var(--border-radius);
     position: fixed;
-    /* bottom: 7px; */
+    bottom: 7px;
     right: 7px;
-    top: 400px;
     z-index: 1000000;
 }
-
-
-/* icon size and color
-layout: flexbox row, 5px gap */
+.toast {
+    display: flex;
+    align-items: top;
+    justify-content: space-between;
+    gap: 5px;
+}
+.toast svg {
+    flex: 0 0 auto;
+}
+.toast-text {
+    flex: 1 1 auto;
+}
+.toast button {
+    height: 20px;
+    padding: 0px !important;
+}
+.toast-status-icon {
+    color: var(--yellow-shade);
+}
 
 /* HEADER BAR -----------------------*/
 #header-bar {
