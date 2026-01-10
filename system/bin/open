@@ -6,6 +6,11 @@ fi
 
 filepath=$(realpath $1)
 
+if [ -d "$filepath/fsys" ] && [ -f "$filepath/ttyS0" ]; then
+    echo "cmd open-vm $filepath" >> /ctl
+    exit 0
+fi
+
 if [ -d $filepath ]; then
     echo "cmd open-folder $filepath" >> /ctl
     exit 0
