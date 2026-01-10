@@ -17,4 +17,4 @@ if [ -z "$SHELL" ]; then
     export SHELL=/bin/sh
 fi
 
-setsid /bin/sh -c "exec $SHELL </dev/ttyS0 >/dev/ttyS0 2>&1"
+exec setsid /bin/sh -c "exec $SHELL </dev/ttyS0 >/dev/ttyS0 2>&1"
