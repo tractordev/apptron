@@ -48,7 +48,7 @@
     // load the iframe after service worker is ready
     document.querySelector("#vscode-frame").src = "/_vscode";
 
-    import { setupWanix, getAuth, envUUID, getMeta, redirectTo, urlFor } from "/lib/apptron.js";
+    import { setupWanix, getAuth, envUUID, getMeta, getOrigin, redirectTo, urlFor } from "/lib/apptron.js";
 
     const loader = document.getElementById("loader");
     loader.showModal();
@@ -114,6 +114,23 @@
     //   }
     // });
 
+    // register "wanix port factory" service over messagechannel sent to top frame
+    // so other frames can request a wanix port from the top frame
+    const topChannel = new MessageChannel();
+    topChannel.port2.onmessage = async (e) => {
+      await window.apptron.instance.ready();
+      const wport = window.apptron.instance.createPort();
+      const p9channel = new MessageChannel();
+      p9channel.port1.onmessage = (e) => {
+        window.apptron.instance._virtioHandle(e.data, (buf) => {
+          p9channel.port1.postMessage(buf);
+        })
+      };
+      e.data.port.postMessage({ wanix: wport, p9: p9channel.port2 }, [wport, p9channel.port2]);
+    };
+    top.postMessage({ factory: topChannel.port1 }, getOrigin(), [topChannel.port1]);
+
+
     // need to register this as early as possible
     window.addEventListener("message", async (event) => {
       if (event.data.port) {
@@ -125,7 +142,7 @@
       }
     });
 
-    console.log("crossOriginIsolated", crossOriginIsolated);
+    console.log("crossOriginIsolated", crossOriginIsolated, location.origin);
 
   </script>
   <div class="header-container">

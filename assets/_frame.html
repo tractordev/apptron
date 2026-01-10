@@ -46,7 +46,45 @@
     }
 
     // accept messages to redirect at the top level
+    // this handles redirects, a kv store for sharing data between frames, 
+    // and a wanix port factory for registering and handing off wanix ports to other frames
+    let factory = undefined;
+    let storage = new Map();
     window.onmessage = (event) => {
+      if (event.data.type === "store") {
+        // console.log('store', event.data.token, event.data.value);
+        storage.set(event.data.token, {
+          value: event.data.value,
+          transfers: event.data.transfers || []
+        });
+        return;
+      }
+      if (event.data.type === "load") {
+        const obj = storage.get(event.data.token);
+        if (!obj) {
+          console.warn("no value found for token", event.data.token);
+          return;
+        }
+        // console.log('load', event.data.token, value);
+        event.data.reply.postMessage(obj, obj.transfers);
+        storage.delete(event.data.token);
+        return;
+      }
+      // factory is a port that can be used to create a new port
+      if (event.data.factory) {
+        factory = event.data.factory;
+        return;
+      }
+      // we need to send the port to the factory to create a new port.
+      if (event.data.service === "wanix") {
+        if (!factory) {
+          console.warn("no factory found");
+          return;
+        }
+        factory.postMessage({ port: event.data.port }, [event.data.port]);
+        return;
+      }
+
       if (!event.origin.endsWith(appHost())) {
         return;
       }
@@ -59,6 +97,8 @@
         return;
       }
     }
+
+    // console.log("top frame origin", location.origin);
   </script>
 </head>
 
