@@ -16,6 +16,9 @@ async function main() {
 		outdir: 'dist/web',
 		external: ['vscode', 'util', 'worker_threads'],
 		logLevel: 'silent',
+		loader: {
+			'.html': 'text',
+		},
 		// Node.js global to browser globalThis
 		define: {
 			global: 'globalThis',

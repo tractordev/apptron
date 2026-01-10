@@ -15,7 +15,8 @@
     "ipc"
   ],
   "activationEvents": [
-    "onFileSystem:wanix"
+    "onFileSystem:wanix",
+    "onWebviewPanel:apptron-vm"
   ],
   "extensionKind": [
     "web"
@@ -44,6 +45,10 @@
       {
         "command": "apptron.open",
         "title": "Open File or Folder"
+      },
+      {
+        "command": "apptron.open-vm",
+        "title": "Open VM"
       }
     ]
   },

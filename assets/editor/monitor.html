@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monitor</title>
+    <style>
+        canvas {
+            object-fit: contain;
+            max-width: 100%;
+            max-height: 100%;
+            border: 0px;
+            outline: none;
+        }
+        html,
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            width: 100%;
+            overflow: hidden;
+            background-color: #000;
+        }
+    </style>
+</head>
+<body>
+<script type="module">
+    import { WanixHandle } from "/wanix.min.js";
+    import { InputCapturer } from "/lib/input.js";
+
+    // const channel = new MessageChannel();
+    const wanixReady = new Promise((resolve) => {
+        window.addEventListener("message", (event) => {
+            if (event.data.wanix) {
+                resolve(event.data);
+            }
+        });
+    });
+    
+    window.onload = async function()
+    {
+        const init = await wanixReady;
+        const fsys = new WanixHandle(init.wanix);
+        const vm = (init.vm || "vm/1").replace(/^\//, "");
+
+        document.body.setAttribute('tabindex', '-1');
+        const canvas = document.querySelector("canvas");
+        canvas.addEventListener('mousedown', () => {
+            document.body.focus();
+        });
+        const input = new InputCapturer(canvas);
+        const screen = canvas.transferControlToOffscreen();
+        const token = Math.random().toString(36).slice(2,10);
+        top.postMessage({ type: "store", token: token, transfers: [screen, input.port] }, "*", [screen, input.port]);
+        fsys.writeFile(`${vm}/ctl`, `update-screen ${token}`);
+    };
+</script>
+<canvas tabindex="0"></canvas>
+</body>
+</html>

@@ -1,7 +1,8 @@
 
 import * as vscode from 'vscode';
 import { WanixBridge } from './bridge.js';
-
+// @ts-ignore
+import monitorHtml from "./monitor.html";
 
 declare const navigator: unknown;
 
@@ -23,6 +24,21 @@ export async function activate(context: vscode.ExtensionContext) {
 		const terminal = createTerminal(wfsys);
 		context.subscriptions.push(terminal);
 		terminal.show();
+
+		context.subscriptions.push(vscode.commands.registerCommand('apptron.open-vm', (filepath?: string) => {
+			const panel = vscode.window.createWebviewPanel(
+				'apptron-vm',
+				'Monitor',
+				vscode.ViewColumn.One,
+				{
+					enableScripts: true
+				}
+			);
+			panel.webview.html = monitorHtml;
+			panel.webview.postMessage({ origin: location.origin, vm: filepath });
+	
+		}));
+		vscode.window.registerWebviewPanelSerializer('apptron-vm', new WebViewPanelSerializer());
 
 		(async () => {
 			const dec = new TextDecoder();
@@ -113,3 +129,11 @@ if (!ReadableStream.prototype[Symbol.asyncIterator]) {
         }
     };
 }
+
+class WebViewPanelSerializer implements vscode.WebviewPanelSerializer {
+	async deserializeWebviewPanel(webviewPanel: vscode.WebviewPanel, state: any) {
+	  // Restore the content of our webview.
+	  webviewPanel.webview.html = monitorHtml;
+	  webviewPanel.webview.postMessage({ origin: location.origin, vm: state.vm });
+	}
+  }
