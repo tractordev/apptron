@@ -1,5 +1,6 @@
 import { WanixRuntime } from "/wanix.min.js";
 import { register } from "/hanko/elements.js";
+import { InputCapturer } from "/lib/input.js";
 
 // querySelector conveniences, but dont import these in html components
 // because they have their own that work differently for shadowRoot
@@ -13,11 +14,28 @@ export async function setupWanix() {
         await clearAllCache("bundles");
     }
     const w = new WanixRuntime({
+        screen: true,
         helpers: true,
         debug9p: params.get('debug9p') === "true",
         wasm: null,
         network: params.get('network') || `${isLocalhost() ? "ws" : "wss"}://${appHost()}/x/net`
     });
+
+    const audio = new V86Audio();
+    window.handleAudio = audio.handleEvent.bind(audio);
+    
+    const createCanvas = (id) => {
+        const canvas = document.createElement('canvas');
+        canvas.id = id;
+        canvas.style.display = 'none';
+        canvas.style.position = 'absolute';
+        document.body.appendChild(canvas);
+        return canvas;
+    }
+    const canvas = createCanvas('screen');
+    w.screen = canvas.transferControlToOffscreen();
+    
+    // w.input = new InputCapturer(canvas);
     // getting the bundle ourself, and the function to get other bundles
     w._bundle = getBundle("/bundles/sys.tar.gz");
     w._getBundle = getBundle;
@@ -318,5 +336,77 @@ export async function copyText(text) {
         } catch {
             return false;
         }
+    }
+}
+
+class V86Audio {
+    constructor() {
+        this.audioContext = null;
+        this.sampleRate = 22050;
+        this.nextStartTime = 0;
+        this.minBufferAhead = 0.1; // 100ms minimum buffer to absorb jitter
+    }
+
+    handleEvent(data) {
+        if (!data.audio) {
+            return;
+        }
+        
+        // Track the incoming audio's sample rate (browser will resample as needed)
+        if (data.audio.rate) {
+            this.sampleRate = data.audio.rate;
+            return;
+        }
+        
+        if (!this.audioContext) {
+            this.init();
+        }
+        if (!data.audio.left || !data.audio.right) {
+            return;
+        }
+        this.queueAudio(data.audio.left, data.audio.right);
+    }
+
+    // Call this on user interaction (click) to enable audio
+    init() {
+        if (this.audioContext) return;
+        this.audioContext = new AudioContext({ sampleRate: this.sampleRate });
+        this.nextStartTime = 0;
+        console.log("AudioContext initialized, sample rate:", this.audioContext.sampleRate);
+    }
+
+    queueAudio(left, right) {
+        if (!this.audioContext) {
+            // Try to init, but may fail without user gesture
+            this.init();
+            if (!this.audioContext) return;
+        }
+
+        if (this.audioContext.state === "suspended") {
+            this.audioContext.resume();
+        }
+
+        const sampleCount = left.length;
+        if (sampleCount === 0) return;
+
+        // Create audio buffer at the incoming data's sample rate
+        // The browser will resample if the AudioContext uses a different rate
+        const buffer = this.audioContext.createBuffer(2, sampleCount, this.sampleRate);
+        buffer.getChannelData(0).set(left);
+        buffer.getChannelData(1).set(right);
+
+        // Schedule playback
+        const source = this.audioContext.createBufferSource();
+        source.buffer = buffer;
+        source.connect(this.audioContext.destination);
+
+        const currentTime = this.audioContext.currentTime;
+        if (this.nextStartTime < currentTime) {
+            // Fell behind - use larger buffer to prevent repeated underruns
+            this.nextStartTime = currentTime + this.minBufferAhead;
+        }
+
+        source.start(this.nextStartTime);
+        this.nextStartTime += buffer.duration;
     }
 }

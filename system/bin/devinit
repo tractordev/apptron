@@ -1,0 +1,41 @@
+#!/bin/busybox sh
+
+echo "devinit..."
+
+mount -t proc proc /proc
+mount -t sysfs sysfs /sys
+mount -t binfmt_misc none /proc/sys/fs/binfmt_misc
+
+# register wasm binary format
+echo ':wasm:M::\x00\x61\x73\x6d::/bin/wexec:' > /proc/sys/fs/binfmt_misc/register
+
+# configure networking
+ifconfig eth0 up
+ifconfig lo up
+udhcpc -i eth0 -s /bin/post-dhcp
+
+source /etc/profile # loads apptron.sh for ENV_UUID, SESSION_IP
+
+if [ -f /project/.apptron/envbuild ]; then
+    env_root=/web/idbfs/apptron/env/$ENV_UUID/root
+    if [ ! -e $env_root ] || [ /project/.apptron/envbuild -nt $env_root ]; then
+        echo
+        exec /bin/rebuild
+    fi
+fi
+
+
+echo -e "\033[33mWelcome to Apptron Dev!\033[0m"
+echo
+
+
+if [ -f /project/.apptron/envrc ]; then
+    source /project/.apptron/envrc
+fi
+
+if [ -z "$SHELL" ]; then
+    export SHELL=/bin/sh
+fi
+
+# exec setsid getty -n -l $SHELL 0 console
+exec setsid /bin/sh -c "exec $SHELL </dev/ttyS0 >/dev/ttyS0 2>&1"
