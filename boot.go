@@ -19,11 +19,15 @@ import (
 	"syscall/js"
 	"time"
 
+	"github.com/hugelgupf/p9/p9"
+	"github.com/u-root/uio/ulog"
 	"tractor.dev/toolkit-go/engine/cli"
 	"tractor.dev/wanix"
 	"tractor.dev/wanix/fs"
+	"tractor.dev/wanix/fs/fskit"
 	"tractor.dev/wanix/fs/httpfs"
 	"tractor.dev/wanix/fs/memfs"
+	"tractor.dev/wanix/fs/p9kit"
 	"tractor.dev/wanix/fs/syncfs"
 	"tractor.dev/wanix/fs/tarfs"
 	"tractor.dev/wanix/vfs/pipe"
@@ -114,6 +118,22 @@ func main() {
 		debug9p = js.ValueOf(false)
 	}
 	run9p := virtio9p.Setup(root.Namespace(), inst, debug9p.Bool())
+
+	// experimental 9p server over ... 9p.
+	// this ends up being much slower than using a messagechannel for the 9p connection.
+	p9fs := fskit.OpenFunc(func(ctx context.Context, path string) (fs.File, error) {
+		p1, p2 := pipe.New(false)
+		var o []p9.ServerOpt
+		if true {
+			o = append(o, p9.WithServerLogger(ulog.Log))
+		}
+		srv := p9.NewServer(p9kit.Attacher(root.Namespace(), p9kit.WithMemAttrStore()), o...)
+		go srv.Handle(p2, p2)
+		return fskit.NewStreamFile(p1, p1, p1, "<9p-connection>"), nil
+	})
+	if err := root.Namespace().Bind(p9fs, ".", "#9psrv"); err != nil {
+		log.Fatal(err)
+	}
 
 	// setup root bindings
 	rootBindings := []struct {
