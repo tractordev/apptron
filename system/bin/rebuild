@@ -2,39 +2,26 @@
 
 set -euo pipefail
 
-env_root=/web/idbfs/apptron/env/$ENV_UUID/root
-echo "Building environment..."
+# delete old env root
+rm -rf /web/idbfs/apptron/env/$ENV_UUID/root
 
-mount -o bind /dev /envbuild/dev
-mount -t proc proc /envbuild/proc
-mount -t sysfs sys /envbuild/sys
+env_overlay=/web/idbfs/apptron/env/$ENV_UUID/overlay
+buildroot=/apptron/.buildroot
 
-cp /project/.apptron/envbuild /envbuild/.envbuild
-chroot /envbuild /bin/sh -c ". .envbuild"
+echo "!! Building environment..."
 
-umount /envbuild/dev
-umount /envbuild/proc
-umount /envbuild/sys
+mount -o bind /dev $buildroot/dev
+mount -t proc proc $buildroot/proc
+mount -t sysfs sys $buildroot/sys
 
-echo "Saving environment ..."
-rm /envbuild/.envbuild
-rm -rf $env_root
-echo cp envbuild "${env_root:1}" >> /ctl
-rm -rf /envbuild/*
-echo "Build complete"
-echo
+cp /project/.apptron/envbuild $buildroot/.envbuild
+chroot $buildroot /bin/sh -c ". .envbuild"
 
-# next boot will use the new environment,
-# but here we will chroot into it
-mount -o bind /dev $env_root/dev
-mount -o bind /home $env_root/home
-# mount -o bind /project $env_root/project
-# mount -o bind /web $env_root/web
-mount -t proc proc $env_root/proc
-mount -t sysfs sys $env_root/sys
-cp /etc/resolv.conf $env_root/etc/resolv.conf
-cp /etc/profile.d/apptron.sh $env_root/etc/profile.d/apptron.sh
+umount $buildroot/dev
+umount $buildroot/proc
+umount $buildroot/sys
 
-# read -p "Press enter to continue"
-
-chroot $env_root /bin/start
+rm $buildroot/.envbuild
+rm -rf $env_overlay
+echo cp '#envbuild' "${env_overlay:1}" >> /ctl
+echo "reload" >> /ctl

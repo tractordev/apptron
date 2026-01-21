@@ -24,6 +24,7 @@ import (
 	"tractor.dev/toolkit-go/engine/cli"
 	"tractor.dev/wanix"
 	"tractor.dev/wanix/fs"
+	"tractor.dev/wanix/fs/cowfs"
 	"tractor.dev/wanix/fs/fskit"
 	"tractor.dev/wanix/fs/httpfs"
 	"tractor.dev/wanix/fs/memfs"
@@ -117,6 +118,9 @@ func main() {
 	if debug9p.IsUndefined() {
 		debug9p = js.ValueOf(false)
 	}
+	// cached9p := metacache.New(root.Namespace())
+	// cached9p.SetLogger(slogger.New(slog.LevelDebug))
+	// run9p := virtio9p.Setup(cached9p, inst, debug9p.Bool())
 	run9p := virtio9p.Setup(root.Namespace(), inst, debug9p.Bool())
 
 	// experimental 9p server over ... 9p.
@@ -193,27 +197,61 @@ func main() {
 		log.Fatal(err)
 	}
 
-	// load environment rootfs
+	// load environment base and scratch
 	startTime = time.Now()
-	envRoot := memfs.New()
-	var envRootExists bool
+	envBase, err := fs.Sub(bundleFS, "rootfs")
+	if err != nil {
+		log.Fatal(err)
+	}
+	var envScratch fs.FS = memfs.New()
+	root.Namespace().Bind(envScratch, ".", "#scratch")
 	if !env.IsUndefined() {
-		envRootExists, _ = fs.DirExists(opfs, fmt.Sprintf("env/%s/root", envUUID))
-	}
-	if envRootExists {
-		updateLoader("Loading custom environment...")
-		log.Println("using custom env root")
-		if err := fs.CopyFS(opfs, fmt.Sprintf("env/%s/root", envUUID), envRoot, "."); err != nil {
-			log.Fatal(err)
+		if rootExists, _ := fs.DirExists(opfs, fmt.Sprintf("env/%s/root", envUUID)); rootExists {
+			updateLoader("Loading custom environment...")
+			log.Println("using custom env base")
+			envBase, err = fs.Sub(opfs, fmt.Sprintf("env/%s/root", envUUID))
+			if err != nil {
+				log.Fatal(err)
+			}
 		}
-	} else {
-		if err := fs.CopyFS(bundleFS, "rootfs", envRoot, "."); err != nil {
-			log.Fatal(err)
+		if overlayExists, _ := fs.DirExists(opfs, fmt.Sprintf("env/%s/overlay", envUUID)); overlayExists {
+			updateLoader("Loading custom environment...")
+			log.Println("using env overlay")
+			envOverlay, err := fs.Sub(opfs, fmt.Sprintf("env/%s/overlay", envUUID))
+			if err != nil {
+				log.Fatal(err)
+			}
+			envBase = fskit.UnionFS{
+				envBase,
+				envOverlay,
+			}
 		}
 	}
-	root.Namespace().Bind(envRoot, ".", "#env")
+	root.Namespace().Bind(&cowfs.FS{Base: envBase, Overlay: envScratch}, ".", "#env")
 	envTime := time.Since(startTime)
-	log.Printf("env loaded in %v\n", envTime)
+	log.Printf("env (cow) loaded in %v\n", envTime)
+
+	// old way of loading env:
+	// startTime = time.Now()
+	// envRoot := memfs.New()
+	// var envRootExists bool
+	// if !env.IsUndefined() {
+	// 	envRootExists, _ = fs.DirExists(opfs, fmt.Sprintf("env/%s/root", envUUID))
+	// }
+	// if envRootExists {
+	// 	updateLoader("Loading custom environment...")
+	// 	log.Println("using custom env root")
+	// 	if err := fs.CopyFS(opfs, fmt.Sprintf("env/%s/root", envUUID), envRoot, "."); err != nil {
+	// 		log.Fatal(err)
+	// 	}
+	// } else {
+	// 	if err := fs.CopyFS(bundleFS, "rootfs", envRoot, "."); err != nil {
+	// 		log.Fatal(err)
+	// 	}
+	// }
+	// root.Namespace().Bind(envRoot, ".", "#env")
+	// envTime = time.Since(startTime)
+	// log.Printf("env loaded in %v\n", envTime)
 
 	// setup vm
 	vmraw, err := fs.ReadFile(root.Namespace(), "vm/new/default")
@@ -370,6 +408,10 @@ func main() {
 				if err := root.Bind(args[1], args[2]); err != nil {
 					log.Fatal(err)
 				}
+
+			case "reload":
+				js.Global().Get("location").Call("reload")
+
 			case "bundle":
 				if len(args) < 1 {
 					fmt.Println("usage: bundle <name>")
@@ -440,14 +482,15 @@ func main() {
 	}
 
 	// load environment buildfs
-	startTime = time.Now()
-	envBuild := memfs.New()
-	if err := fs.CopyFS(bundleFS, "rootfs", envBuild, "."); err != nil {
+	var buildScratch fs.FS = memfs.New()
+	root.Namespace().Bind(buildScratch, ".", "#envbuild")
+	buildBase, err := fs.Sub(bundleFS, "rootfs")
+	if err != nil {
 		log.Fatal(err)
 	}
-	root.Namespace().Bind(envBuild, ".", "envbuild")
-	envBuildTime := time.Since(startTime)
-	log.Printf("env build loaded in %v\n", envBuildTime)
+	if err := root.Namespace().Bind(&cowfs.FS{Base: buildBase, Overlay: buildScratch}, ".", fmt.Sprintf("vm/%s/fsys/apptron/.buildroot", vm)); err != nil {
+		log.Fatal(err)
+	}
 
 	updateLoader("Syncing filesystem...")
 

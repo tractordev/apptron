@@ -15,8 +15,9 @@ udhcpc -i eth0 -s /bin/post-dhcp
 source /etc/profile # loads apptron.sh for ENV_UUID, SESSION_IP
 
 if [ -f /project/.apptron/envbuild ]; then
-    env_root=/web/idbfs/apptron/env/$ENV_UUID/root
-    if [ ! -e $env_root ] || [ /project/.apptron/envbuild -nt $env_root ]; then
+    env_overlay=/web/idbfs/apptron/env/$ENV_UUID/overlay
+    # if overlay doesn't exist or is older than envbuild, rebuild
+    if [ ! -e $env_overlay ] || [ /project/.apptron/envbuild -nt $env_overlay ]; then
         echo
         exec /bin/rebuild
     fi
@@ -28,5 +29,6 @@ if [ ! -f /web/idbfs/apptron/.welcomed ]; then
 fi
 
 /bin/aptn ports &
+# /bin/aptn fuse &
 
 exec /bin/start
