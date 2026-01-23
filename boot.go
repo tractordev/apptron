@@ -42,6 +42,8 @@ import (
 	wanixruntime "tractor.dev/wanix/web/runtime"
 )
 
+var Version string
+
 // todo: centralize or make based on jwt claims
 // there is also admins defined in the cloudflare worker
 var admins = []string{"progrium"}
@@ -228,6 +230,7 @@ func main() {
 		}
 	}
 	root.Namespace().Bind(&cowfs.FS{Base: envBase, Overlay: envScratch}, ".", "#env")
+	root.Namespace().Bind(fskit.RawNode([]byte(Version+"\n")), ".", "#version")
 	envTime := time.Since(startTime)
 	log.Printf("env (cow) loaded in %v\n", envTime)
 

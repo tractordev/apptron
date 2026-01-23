@@ -1,6 +1,10 @@
 VSCODE_URL	?= https://github.com/progrium/vscode-web/releases/download/v1/vscode-web-1.103.2.zip
 DOCKER_CMD 	?= $(shell command -v podman || command -v docker)
 
+VERSION		?= $(shell cat version.txt)
+COMMIT		?= $(shell git rev-parse --short HEAD)
+DATE		?= $(shell date +"%Y%m%d%H%M%S")
+
 all: assets/vscode worker/node_modules extension/system/dist assets/wanix.min.js assets/wanix.wasm
 .PHONY: all
 
@@ -14,7 +18,7 @@ deploy: all
 .PHONY: deploy
 
 wasm: boot.go
-	GOOS=js GOARCH=wasm go build -o ./assets/wanix.wasm .
+	GOOS=js GOARCH=wasm go build -ldflags="-X 'main.Version=$(VERSION)-$(DATE)-$(COMMIT)'" -o ./assets/wanix.wasm .
 .PHONY: wasm
 
 ext:
