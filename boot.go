@@ -302,7 +302,7 @@ func main() {
 		"rw",
 		"root=host9p",
 		"rootfstype=9p",
-		fmt.Sprintf("rootflags=trans=virtio,version=9p2000.L,aname=vm/%s/fsys,cache=loose,msize=131072", vm),
+		fmt.Sprintf("rootflags=trans=virtio,version=9p2000.L,aname=vm/%s/fsys,cache=none,msize=131072", vm),
 		"mem=1008M",
 		"memmap=16M$1008M",
 	}
@@ -328,6 +328,7 @@ func main() {
 	// 	if err := fsutil.WaitFor(ctx, root.Namespace(), fmt.Sprintf("vm/%s/fsys/run/shm9p.lock", vm), true); err != nil {
 	// 		log.Fatal(err)
 	// 	}
+	// 	// log.Println("shm9p ready!")
 	// 	shmpipe, err := fs.OpenFile(root.Namespace(), fmt.Sprintf("vm/%s/shmpipe0", vm), os.O_RDWR, 0)
 	// 	if err != nil {
 	// 		log.Fatal(err)
@@ -346,6 +347,7 @@ func main() {
 	// 	if len(entries) == 0 {
 	// 		log.Fatal("vmfs is empty, this should not happen")
 	// 	}
+	// 	// log.Println("vmfs:", entries)
 	// 	if err := root.Namespace().Bind(vmfs, ".", fmt.Sprintf("vm/%s/9proot", vm)); err != nil {
 	// 		log.Fatal(err)
 	// 	}
