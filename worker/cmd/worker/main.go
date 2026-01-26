@@ -10,6 +10,8 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"os"
+	"os/signal"
 	"strings"
 	"sync"
 	"time"
@@ -30,6 +32,16 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	// Log all signals
+	signals := make(chan os.Signal, 1)
+	signal.Notify(signals)
+
+	go func() {
+		for sig := range signals {
+			log.Printf("Received signal: %v", sig)
+		}
+	}()
 
 	if err := http.ListenAndServe(":8080", handler(vn)); err != nil {
 		log.Fatal(err)
