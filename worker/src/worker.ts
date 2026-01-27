@@ -206,6 +206,17 @@ export default {
             });
         }
 
+        // final fallback: serve 404 page without changing URL
+        if (req.method === "GET" && url.pathname !== "/404") {
+            const notFoundReq = new Request(new URL("/404", req.url).toString(), req);
+            const notFoundResp = await env.assets.fetch(notFoundReq);
+
+            return new Response(notFoundResp.body, {
+                status: 404,
+                headers: notFoundResp.headers,
+            });
+        }
+
         return env.assets.fetch(req);
     },
 };

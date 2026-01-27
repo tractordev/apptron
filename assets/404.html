@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>404 – Page not found</title>
+    <link rel="stylesheet" href="/styles.css" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <script src="/lib/html-component.js" type="module"></script>
+
+</head>
+<body>
+    <div class="header-container">
+        <html-component src="/com/topbar"></html-component>
+    </div>
+
+    <main class="container error-page centered">
+        <h1 class="mb-0">404</h1>
+        <p class="mt-2"><strong>Page not found</strong></p>
+        <p>The page you’re looking for doesn’t exist or was moved.</p>
+
+        <div class="actions mt-12">
+        <button class="btn primary" onclick="history.back()">Go Back</button>
+        </div>
+    </main>
+
+    <script src="/lib/html-component.js" type="module"></script>
+</body>
+</html>

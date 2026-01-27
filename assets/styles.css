@@ -91,11 +91,13 @@
 }
 
 /* some tailwind inspired utility classes as needed*/
+.mb-0 { margin-bottom: 0px; }
 .mb-2 { margin-bottom: var(--size-2); }
 .mb-4 { margin-bottom: var(--size-4); }
 .mb-8 { margin-bottom: var(--size-8); }
 .mb-12 { margin-bottom: var(--size-12); }
 
+.mt-0 { margin-top: 0px; }
 .mt-2 { margin-top: var(--size-2); }
 .mt-4 { margin-top: var(--size-4); }
 .mt-8 { margin-top: var(--size-8); }
@@ -142,6 +144,16 @@ hanko-auth {
         transform: rotate(1turn);
     }
 }
+
+/* layout utilities --------------------- */
+.centered {
+    display: flex;
+    flex-direction: column;
+    align-items: center;     /* horizontal centering */
+    justify-content: center; /* vertical centering */
+    text-align: center;      /* center inline text */
+}
+
 
 /* global styles --------------------- */
 html, body {
@@ -351,6 +363,12 @@ header h1 {
     justify-content: space-between;
     align-items: center;
     margin-bottom: 0.5rem;
+}
+
+/* 404 page -----------------------*/
+
+.error-page h1 {
+    font-size: 4rem;
 }
 
 /* TOAST MESSAGES -----------------------*/
