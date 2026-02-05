@@ -6,9 +6,10 @@ import { ADMIN_USERS, HOST_DOMAIN, PUBLISH_DOMAINS } from "./config";
 import { Context, parseContext } from "./context";
 import * as projects from "./projects";
 import * as publicsite from "./public";
+
 export class Session extends Container {
     defaultPort = 8080;
-    sleepAfter = "1h";
+    sleepAfter = "2h";
 }
 
 const CORS_HEADERS = {
