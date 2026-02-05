@@ -82,6 +82,11 @@ func main() {
 		}
 	}
 
+	mode := "edit"
+	if !apptronCfg.Get("mode").IsUndefined() {
+		mode = apptronCfg.Get("mode").String()
+	}
+
 	envUUID := ""
 	envName := ""
 	envOwner := ""
@@ -282,6 +287,7 @@ func main() {
 
 	profile := []string{
 		fmt.Sprintf("export USER=%s", username),
+		fmt.Sprintf("export ENV_MODE=%s", mode),
 	}
 	if username != "" {
 		profile = append(profile, fmt.Sprintf("export HOME=/home/%s", username))
