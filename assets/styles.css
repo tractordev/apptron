@@ -471,7 +471,7 @@ and we won't need these selectors */
 #header-bar .project-header button:focus {
   box-shadow: none;
 }
-.header-container {
+#topbar {
   height: 35px;
 }
 .project-header.private .name::before {

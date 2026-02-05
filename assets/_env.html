@@ -35,18 +35,38 @@
       pointer-events: auto !important;
       user-select: none;
     }
+
+    .wanix-terminal {
+      width: 100%;
+      height: 100%;
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
   </style>
 
 </head>
 
 <body>
   <script type="module">
+    console.log("crossOriginIsolated", crossOriginIsolated, location.origin);
+
     // not ready to deploy service worker yet, can uncomment in dev
     // import { register } from "/sw.js";
     // const handle = await register(null, { timeout: 20000, prefix: "/:/" });
 
-    // load the iframe after service worker is ready
-    document.querySelector("#vscode-frame").src = "/_vscode";
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("topbar") === "0") {
+      document.querySelector("#topbar").style.display = "none";
+    }
+
+    const mode = location.pathname.slice(1).split("/")[0];
+    if (mode === "edit") {
+      // load the iframe after service worker is ready
+      document.querySelector("#vscode-frame").src = "/_vscode";
+    }
+    
+    
 
     import { setupWanix, getAuth, envUUID, getMeta, getOrigin, redirectTo, urlFor } from "/lib/apptron.js";
 
@@ -63,6 +83,7 @@
     let project = JSON.parse(getMeta("project"));
     const auth = await getAuth();
     window.apptron = {
+      mode: mode,
       user: new Promise(async (resolve, reject) => {
         try {
           const session = await auth.validatedSession;
@@ -133,7 +154,7 @@
 
     // need to register this as early as possible
     window.addEventListener("message", async (event) => {
-      if (event.data.port) {
+      if (event.data.port && mode === "edit") {
         console.log("vscode waiting for apptron...");
         await window.apptron.instance.ready();
         loader.loaded();
@@ -142,10 +163,17 @@
       }
     });
 
-    console.log("crossOriginIsolated", crossOriginIsolated, location.origin);
+    if (mode === "console") {
+      await window.apptron.instance.ready();
+      const w = window.apptron.instance;
+      const xid = (await w.readText("web/dom/new/xterm")).trim();
+      await w.writeFile("task/1/ctl", `bind #console/data web/dom/${xid}/data`);
+      await w.writeFile("web/dom/body/ctl", `append-child ${xid}`);
+      loader.loaded();
+    }
 
   </script>
-  <div class="header-container">
+  <div id="topbar">
     <html-component src="/com/topbar"></html-component>
   </div>
   <iframe id="vscode-frame" allow="clipboard-read; clipboard-write; cross-origin-isolated"
