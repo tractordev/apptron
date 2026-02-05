@@ -1,16 +1,17 @@
 #!/bin/busybox sh
 
-clear
-echo "Base System:  $(grep "^PRETTY_NAME=" /etc/os-release | cut -d= -f2 | tr -d '"')"
-echo "Architecture: $(uname -m)"
-echo "Session IP:   $SESSION_IP"
-echo
-echo -e "\033[33mWelcome to Apptron!\033[0m"
-echo
-
+if [ -f /project/.apptron/motd ]; then
+    source /project/.apptron/motd
+elif [ -f /project/motd ]; then
+    source /project/motd
+elif [ -f /etc/motd ]; then
+    source /etc/motd
+fi
 
 if [ -f /project/.apptron/envrc ]; then
     source /project/.apptron/envrc
+elif [ -f /project/envrc ]; then
+    source /project/envrc
 fi
 
 if [ -z "$SHELL" ]; then

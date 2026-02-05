@@ -1,0 +1,7 @@
+clear
+echo "Base System:  $(grep "^PRETTY_NAME=" /etc/os-release | cut -d= -f2 | tr -d '"')"
+echo "Architecture: $(uname -m)"
+echo "Session IP:   $SESSION_IP"
+echo
+echo -e "\033[33mWelcome to Apptron!\033[0m"
+echo
