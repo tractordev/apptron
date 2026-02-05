@@ -125,12 +125,11 @@ hanko-profile::part(headline1) {
 .hanko_paragraph {
   margin-top: 0px;
 }
-/* center login component on screen */
 hanko-auth {
   position: absolute;
-  top: 25%;
+  top: 10vh;
   left: 50%;
-  transform: translate(-50%, -50%);
+  transform: translateX(-50%);
   width: 400px;
   padding: 1rem;
 }
