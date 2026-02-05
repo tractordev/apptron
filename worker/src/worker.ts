@@ -62,7 +62,7 @@ export default {
             return new Response("", { status: 200 });
         }
 
-        if (ctx.envDomain && url.pathname.startsWith("/edit/")) {
+        if (ctx.envDomain && (url.pathname.startsWith("/edit/")||url.pathname.startsWith("/console/"))) {
             const project = await projects.getByUUID(env, ctx.subdomain);
             if (project === null) {
                 return new Response("Not Found", { status: 404 });
@@ -146,9 +146,10 @@ export default {
             return handleR2FS(req, env, "/data");
         }
 
-        // <username>.apptron.dev/edit/<env-name>
-        if (url.pathname.startsWith("/edit/")) {
+        // <username>.apptron.dev/<mode>/<env-name>
+        if (url.pathname.startsWith("/edit/")||url.pathname.startsWith("/console/")) {
             const parts = url.pathname.split("/");
+            const mode = parts[1];
             const envName = parts[2];
             const project = await projects.getByName(env, ctx.subdomain, envName);
             if (project === null) {
@@ -158,7 +159,7 @@ export default {
                 return new Response("Not Found", { status: 404 });
                 // return new Response("Forbidden", { status: 403 });
             }
-            return await envPage(req, env, project, "/edit/"+envName);
+            return await envPage(req, env, project, `/${mode}/${envName}`);
         }
 
         if (url.pathname === "/" && req.method === "GET") {
