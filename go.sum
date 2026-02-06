@@ -34,3 +34,5 @@ tractor.dev/wanix v0.0.0-20260121042432-359e19582b52 h1:rLZto52Df0h7NOgNy2Nt4n9X
 tractor.dev/wanix v0.0.0-20260121042432-359e19582b52/go.mod h1:SNCIfmlU9noiVhntMcTa6Hxcr0jdINRdYi6ZDpau/oU=
 tractor.dev/wanix v0.0.0-20260205212728-7573ed4d9cf4 h1:3bWNRWtoES04CHZGnj0uPRYJoevUI1c+/raauVs+QII=
 tractor.dev/wanix v0.0.0-20260205212728-7573ed4d9cf4/go.mod h1:SNCIfmlU9noiVhntMcTa6Hxcr0jdINRdYi6ZDpau/oU=
+tractor.dev/wanix v0.0.0-20260206011602-56e07a64246a h1:dZ+SGFUY9bLhGQNEM8wHNBVfHjb8A7+AdpHLMU+IGDg=
+tractor.dev/wanix v0.0.0-20260206011602-56e07a64246a/go.mod h1:SNCIfmlU9noiVhntMcTa6Hxcr0jdINRdYi6ZDpau/oU=
