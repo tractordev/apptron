@@ -27,6 +27,7 @@
       height: 100vh;
       display: flex;
       flex-direction: column;
+      overflow: hidden;
     }
 
     iframe {
@@ -43,6 +44,21 @@
       top: 0;
       left: 0;
     }
+    
+    .xterm {
+      height: 100%;
+      width: 100%;
+    }
+
+    .xterm-viewport,
+    .xterm-screen {
+      width: 100%;
+      height: 100%;
+    }
+
+    .xterm-screen {
+      padding: 4px 5px;
+    }
   </style>
 
 </head>
@@ -55,18 +71,17 @@
     // import { register } from "/sw.js";
     // const handle = await register(null, { timeout: 20000, prefix: "/:/" });
 
-    const params = new URLSearchParams(window.location.search);
-    if (params.get("topbar") === "0") {
-      document.querySelector("#topbar").style.display = "none";
-    }
 
     const mode = location.pathname.slice(1).split("/")[0];
     if (mode === "edit") {
       // load the iframe after service worker is ready
       document.querySelector("#vscode-frame").src = "/_vscode";
     }
-    
-    
+
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("topbar") === "0" || params.get("embed") === "1") {
+      document.querySelector("#topbar").style.display = "none";
+    }
 
     import { setupWanix, getAuth, envUUID, getMeta, getOrigin, redirectTo, urlFor } from "/lib/apptron.js";
 
