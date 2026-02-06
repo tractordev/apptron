@@ -3,6 +3,18 @@
     @import url("/styles.css");
     :host { display: block; }
 </style>
+
+<div class="dialog-header mb-8">
+    <div class="dialog-tabs">
+        <button id="tab-share"   class="dialog-tab dialog-tab-active btn">Share</button>
+        <button id="tab-embed"   class="dialog-tab btn">Embed</button>
+        <button id="tab-publish" class="dialog-tab btn">Publish</button>
+    </div>
+    <button class="dialog-close icon-btn btn" type="button" onclick="window.modal.finish()" aria-label="Close">&times;</button>
+</div>
+
+<html-component></html-component>
+
 <script type="module">
 
     const { project } = component?.context || {};
@@ -23,17 +35,4 @@
     $("html-component").context = { project };
 
 </script>
-
-
-<div class="dialog-header mb-8">
-    <div class="dialog-tabs">
-        <button id="tab-share"   class="dialog-tab dialog-tab-active btn">Share</button>
-        <button id="tab-embed"   class="dialog-tab btn">Embed</button>
-        <button id="tab-publish" class="dialog-tab btn">Publish</button>
-    </div>
-    <button class="dialog-close icon-btn btn" type="button" onclick="window.modal.finish()" aria-label="Close">&times;</button>
-</div>
-
-<html-component></html-component>
-
 </html>

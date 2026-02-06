@@ -6,6 +6,50 @@
     display: block;
   }
 </style>
+
+<form id="project-form" method="dialog" class="dialog">
+  <div class="dialog-header">
+    <h2 id="project-dialog-title">New Project</h2>
+    <button class="dialog-close btn icon-btn" type="button" onclick="window.modal.finish()" aria-label="Close">&times;</button>
+  </div>
+
+  <div class="dialog-body">
+    <label for="project-name">Project name</label>
+    <input id="project-name" name="project-name" type="text" pattern="[A-Za-z][A-Za-z0-9_\-]{1,63}"
+      oninput="this.value = this.value.replace(/[^A-Za-z0-9_\-]/g, '')"
+      title="Names can only contain letters, numbers, dashes, and underscores" required />
+    <span class="form-error" id="project-name-error"></span>
+
+    <label for="project-desc">Description</label>
+    <textarea id="project-desc" name="description" rows="4"></textarea>
+
+    <fieldset class="visibility-group" role="radiogroup" aria-labelledby="visibility-legend">
+      <legend id="visibility-legend">Visibility</legend>
+
+      <label class="radio-option" for="vis-public">
+        <input type="radio" id="vis-public" name="visibility" value="public" aria-describedby="vis-public-help">
+        <span class="option-title">Public</span>
+        <span id="vis-public-help" class="option-help">
+          Anyone with a link has View access
+        </span>
+      </label>
+      <label class="radio-option" for="vis-private">
+        <input type="radio" id="vis-private" name="visibility" value="private" checked
+          aria-describedby="vis-private-help">
+        <span class="option-title">Private 🔒</span>
+        <span id="vis-private-help" class="option-help">
+          Only people you've directly invited can access this project
+        </span>
+      </label>
+    </fieldset>
+  </div>
+
+  <div class="dialog-footer">
+    <button class="btn secondary" type="button" onclick="window.modal.finish()">Cancel</button>
+    <button class="btn primary" id="project-submit" type="submit"><span>Create</span></button>
+  </div>
+</form>
+
 <script type="module">
   import { redirectTo, urlFor, getAuth } from "/lib/apptron.js";
 
@@ -82,46 +126,4 @@
     });
   });
 </script>
-<form id="project-form" method="dialog" class="dialog">
-  <div class="dialog-header">
-    <h2 id="project-dialog-title">New Project</h2>
-    <button class="dialog-close btn icon-btn" type="button" onclick="window.modal.finish()" aria-label="Close">&times;</button>
-  </div>
-
-  <div class="dialog-body">
-    <label for="project-name">Project name</label>
-    <input id="project-name" name="project-name" type="text" pattern="[A-Za-z][A-Za-z0-9_\-]{1,63}"
-      oninput="this.value = this.value.replace(/[^A-Za-z0-9_\-]/g, '')"
-      title="Names can only contain letters, numbers, dashes, and underscores" required />
-    <span class="form-error" id="project-name-error"></span>
-
-    <label for="project-desc">Description</label>
-    <textarea id="project-desc" name="description" rows="4"></textarea>
-
-    <fieldset class="visibility-group" role="radiogroup" aria-labelledby="visibility-legend">
-      <legend id="visibility-legend">Visibility</legend>
-
-      <label class="radio-option" for="vis-public">
-        <input type="radio" id="vis-public" name="visibility" value="public" aria-describedby="vis-public-help">
-        <span class="option-title">Public</span>
-        <span id="vis-public-help" class="option-help">
-          Anyone with a link has View access
-        </span>
-      </label>
-      <label class="radio-option" for="vis-private">
-        <input type="radio" id="vis-private" name="visibility" value="private" checked
-          aria-describedby="vis-private-help">
-        <span class="option-title">Private 🔒</span>
-        <span id="vis-private-help" class="option-help">
-          Only people you've directly invited can access this project
-        </span>
-      </label>
-    </fieldset>
-  </div>
-
-  <div class="dialog-footer">
-    <button class="btn secondary" type="button" onclick="window.modal.finish()">Cancel</button>
-    <button class="btn primary" id="project-submit" type="submit"><span>Create</span></button>
-  </div>
-</form>
 </html>

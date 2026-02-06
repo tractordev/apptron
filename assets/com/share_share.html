@@ -3,6 +3,51 @@
     @import url("/styles.css");
     :host { display: block; }
 </style>
+
+<div class="dialog-body">
+
+<fieldset class="visibility-group" role="radiogroup" aria-labelledby="visibility-legend">
+    <legend id="visibility-legend">Visibility</legend>
+
+    <label class="radio-option p-2" for="vis-public">
+        <input type="radio" id="vis-public" name="visibility" value="public"
+               aria-describedby="vis-public-help">
+        <span class="option-title">Public</span>
+        <span id="vis-public-help" class="option-help">
+            Anyone with a link has View access
+        </span>
+    </label>
+
+    <label class="radio-option p-2" for="vis-private">
+        <input type="radio" id="vis-private" name="visibility" value="private" checked
+               aria-describedby="vis-private-help">
+        <span class="option-title">Private 🔒</span>
+        <span id="vis-private-help" class="option-help">
+            Only people you've directly invited can access this project
+        </span>
+    </label>
+</fieldset>
+
+<div id="share-block">
+    <label for="share-url">Share URL</label>
+    <div class="input-row">
+        <input id="share-url" type="text" readonly spellcheck="false" />
+        <button type="button" id="copy-url" class="icon-btn secondary btn" aria-label="Copy URL" title="Copy">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path fill-rule="evenodd" clip-rule="evenodd" d="M6 6L7.5 4.5H15.621L21 9.879V21L19.5 22.5H7.5L6 21V6ZM19.5 10.5L15 6H7.5V21H19.5V10.5Z" fill="white"/>
+                <path fill-rule="evenodd" clip-rule="evenodd" d="M4.5 1.5L3 3V18L4.5 19.5V3H14.121L12.621 1.5H4.5Z" fill="white"/>
+            </svg>
+        </button>
+    </div>
+
+</div>
+
+<div class="dialog-footer">
+    <button id="save-btn" type="button" class="btn primary" disabled><span>Save</span></button>
+</div>
+
+</div>
+
 <script type="module">
     import { urlFor, getAuth, copyText, isLocalhost, currentURL } from "/lib/apptron.js";
     const { project } = component?.context || {};
@@ -83,47 +128,4 @@
         });
     });
 </script>
-<div class="dialog-body">
-
-<fieldset class="visibility-group" role="radiogroup" aria-labelledby="visibility-legend">
-    <legend id="visibility-legend">Visibility</legend>
-
-    <label class="radio-option p-2" for="vis-public">
-        <input type="radio" id="vis-public" name="visibility" value="public"
-               aria-describedby="vis-public-help">
-        <span class="option-title">Public</span>
-        <span id="vis-public-help" class="option-help">
-            Anyone with a link has View access
-        </span>
-    </label>
-
-    <label class="radio-option p-2" for="vis-private">
-        <input type="radio" id="vis-private" name="visibility" value="private" checked
-               aria-describedby="vis-private-help">
-        <span class="option-title">Private 🔒</span>
-        <span id="vis-private-help" class="option-help">
-            Only people you've directly invited can access this project
-        </span>
-    </label>
-</fieldset>
-
-<div id="share-block">
-    <label for="share-url">Share URL</label>
-    <div class="input-row">
-        <input id="share-url" type="text" readonly spellcheck="false" />
-        <button type="button" id="copy-url" class="icon-btn secondary btn" aria-label="Copy URL" title="Copy">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path fill-rule="evenodd" clip-rule="evenodd" d="M6 6L7.5 4.5H15.621L21 9.879V21L19.5 22.5H7.5L6 21V6ZM19.5 10.5L15 6H7.5V21H19.5V10.5Z" fill="white"/>
-                <path fill-rule="evenodd" clip-rule="evenodd" d="M4.5 1.5L3 3V18L4.5 19.5V3H14.121L12.621 1.5H4.5Z" fill="white"/>
-            </svg>
-        </button>
-    </div>
-
-</div>
-
-<div class="dialog-footer">
-    <button id="save-btn" type="button" class="btn primary" disabled><span>Save</span></button>
-</div>
-
-</div>
 </html>

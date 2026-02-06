@@ -5,91 +5,6 @@
         display: block;
     }
 </style>
-<script type="module">
-    import { getAuth, redirectTo, urlFor, modalDialog, getMeta } from "/lib/apptron.js";
-
-    // this is our singleton dialog modal but with extra
-    // finish and show methods to make it easier to use
-    window.modal = modalDialog($("#modal"));
-    window.modal.finish = (value) => {
-        $("#modal").finishValue = value;
-        $("#modal").close();
-    }
-    window.modal.show = (url, context = {}) => {
-        $("#modal html-component").load(url);
-        $("#modal html-component").context = context;
-        $("#modal").showModal();
-        return new Promise((resolve, reject) => {
-            $("#modal").addEventListener("close", () => {
-                const value = $("#modal").finishValue;
-                resolve(value);
-                delete $("#modal").finishValue;
-            }, { once: true });
-        });
-    }
-
-    const project = JSON.parse(getMeta("project"));
-    if (project) {
-        $("#header-bar").classList.add("project");
-        $(".project-header .name").innerText = project["name"];
-
-        project["visibility"] === "private" && $(".project-header")?.classList.add("private");
-
-        $(".project-header button").addEventListener("click", async () => {
-            const resp = await window.modal.show("/com/project", {project});
-            if (!resp) return; // canceled
-            if (!resp.ok) {
-                alert("Failed to update project");
-                return;
-            }
-            window.location.reload();
-        });
-    }
-
-    const auth = await getAuth();
-    auth.validatedSession.then((session) => {
-        window.session = session;
-        if (!session.is_valid) return;
-        
-        $("#header-bar").classList.add("signedin");
-
-        $("#account").addEventListener("click", () => {
-            window.modal.show("/com/account");
-        });
-
-        $("#sponsor").addEventListener("click", () => {
-            window.modal.show("/com/sponsor");
-        });
-
-        $("#feedback").addEventListener("click", () => {
-            window.modal.show("/com/feedback");
-        });
-
-        $("#share").addEventListener("click", async () => {
-            await window.modal.show("/com/share", { project: window.apptron.env });
-            window.apptron.refreshEnv();
-        });
-
-        $("#projects").addEventListener("click", () => {
-            redirectTo(urlFor("/dashboard", {}, session.claims.username));
-        });
-
-        $("#logo-link").addEventListener("click", () => {
-            redirectTo(urlFor("/dashboard", {}, session.claims.username));
-        });
-
-        $("#logout").addEventListener("click", () => {
-            redirectTo(urlFor("/signout"));
-        });
-
-        $("#username span.label").innerText = session.claims.username;
-    });
-
-    $("#signin").addEventListener("click", () => {
-        redirectTo(urlFor("/signin"));
-    });
-
-</script>
 
 <div id="header-bar" style="display: none;">
     <div id="header-left">
@@ -179,4 +94,89 @@
 <html-component></html-component>
 </dialog>
 
+<script type="module">
+    import { getAuth, redirectTo, urlFor, modalDialog, getMeta } from "/lib/apptron.js";
+
+    // this is our singleton dialog modal but with extra
+    // finish and show methods to make it easier to use
+    window.modal = modalDialog($("#modal"));
+    window.modal.finish = (value) => {
+        $("#modal").finishValue = value;
+        $("#modal").close();
+    }
+    window.modal.show = (url, context = {}) => {
+        $("#modal html-component").load(url);
+        $("#modal html-component").context = context;
+        $("#modal").showModal();
+        return new Promise((resolve, reject) => {
+            $("#modal").addEventListener("close", () => {
+                const value = $("#modal").finishValue;
+                resolve(value);
+                delete $("#modal").finishValue;
+            }, { once: true });
+        });
+    }
+
+    const project = JSON.parse(getMeta("project"));
+    if (project) {
+        $("#header-bar").classList.add("project");
+        $(".project-header .name").innerText = project["name"];
+
+        project["visibility"] === "private" && $(".project-header")?.classList.add("private");
+
+        $(".project-header button").addEventListener("click", async () => {
+            const resp = await window.modal.show("/com/project", {project});
+            if (!resp) return; // canceled
+            if (!resp.ok) {
+                alert("Failed to update project");
+                return;
+            }
+            window.location.reload();
+        });
+    }
+
+    const auth = await getAuth();
+    auth.validatedSession.then((session) => {
+        window.session = session;
+        if (!session.is_valid) return;
+        
+        $("#header-bar").classList.add("signedin");
+
+        $("#account").addEventListener("click", () => {
+            window.modal.show("/com/account");
+        });
+
+        $("#sponsor").addEventListener("click", () => {
+            window.modal.show("/com/sponsor");
+        });
+
+        $("#feedback").addEventListener("click", () => {
+            window.modal.show("/com/feedback");
+        });
+
+        $("#share").addEventListener("click", async () => {
+            await window.modal.show("/com/share", { project: window.apptron.env });
+            window.apptron.refreshEnv();
+        });
+
+        $("#projects").addEventListener("click", () => {
+            redirectTo(urlFor("/dashboard", {}, session.claims.username));
+        });
+
+        $("#logo-link").addEventListener("click", () => {
+            redirectTo(urlFor("/dashboard", {}, session.claims.username));
+        });
+
+        $("#logout").addEventListener("click", () => {
+            redirectTo(urlFor("/signout"));
+        });
+
+        $("#username span.label").innerText = session.claims.username;
+    });
+
+    $("#signin").addEventListener("click", () => {
+        redirectTo(urlFor("/signin"));
+    });
+
+</script>
 </html>

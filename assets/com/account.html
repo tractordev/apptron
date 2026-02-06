@@ -5,6 +5,17 @@
         display: block;
     }
 </style>
+
+<div class="dialog-header">
+    <h2>Account</h2>
+    <button class="dialog-close btn icon-btn" onclick="window.modal.close()" type="button">&times;</button>
+</div>
+<div class="dialog-body">
+    <div class="auth-container">
+        <hanko-profile></hanko-profile>
+    </div>
+</div>
+
 <script type="module">
     // hide change username button
     const observer = new MutationObserver(() => {
@@ -15,13 +26,4 @@
     });
     observer.observe($("hanko-profile").shadowRoot, { childList: true, subtree: true });
 </script>
-<div class="dialog-header">
-    <h2>Account</h2>
-    <button class="dialog-close btn icon-btn" onclick="window.modal.close()" type="button">&times;</button>
-</div>
-<div class="dialog-body">
-    <div class="auth-container">
-        <hanko-profile></hanko-profile>
-    </div>
-</div>
 </html>

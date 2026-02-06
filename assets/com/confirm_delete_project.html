@@ -1,74 +1,72 @@
 <html>
-	<style>
-		@import url("/styles.css");
+<style>
+	@import url("/styles.css");
 
-		:host {
-			display: block;
+	:host {
+		display: block;
+	}
+</style>
+
+<form id="confirm-delete-form" method="dialog" class="dialog">
+	<div class="dialog-header">
+		<h2>Delete project</h2>
+		<button class="dialog-close btn icon-btn" type="button" onclick="window.modal.finish()" aria-label="Close">&times;</button>
+	</div>
+
+	<div class="dialog-body">
+		<p>
+			This will permanently delete <strong id="delete-project-name"></strong>.
+			Type the project name to confirm.
+		</p>
+
+		<label for="confirm-name">Project name</label>
+		<input id="confirm-name" name="confirm-name" type="text" autocomplete="off" required />
+		<span class="form-error" id="confirm-name-error"></span>
+	</div>
+
+	<div class="dialog-footer">
+		<button class="btn secondary" type="button" onclick="window.modal.finish()">Cancel</button>
+		<button class="btn danger primary" id="confirm-delete-btn" type="submit" disabled><span>Delete</span></button>
+	</div>
+</form>
+
+<script type="module">
+	queueMicrotask(async () => {
+		const project = component.context.project;
+		const name = project?.name || "";
+
+		$("#delete-project-name").innerText = name;
+
+		const input = $("#confirm-name");
+		const btn = $("#confirm-delete-btn");
+		const err = $("#confirm-name-error");
+
+		function updateState() {
+			const v = (input.value || "").trim();
+			const ok = v === name;
+			btn.disabled = !ok;
+			err.innerText = v && !ok ? "Name does not match" : "";
 		}
 
-		/* Optional: make the destructive action visually clear if you already have styles for .danger */
-	</style>
+		input.addEventListener("input", updateState);
 
-	<script type="module">
-		queueMicrotask(async () => {
-			const project = component.context.project;
-			const name = project?.name || "";
+		$("#confirm-delete-form").addEventListener("submit", async (e) => {
+			e.preventDefault();
 
-			$("#delete-project-name").innerText = name;
-
-			const input = $("#confirm-name");
-			const btn = $("#confirm-delete-btn");
-			const err = $("#confirm-name-error");
-
-			function updateState() {
-				const v = (input.value || "").trim();
-				const ok = v === name;
-				btn.disabled = !ok;
-				err.innerText = v && !ok ? "Name does not match" : "";
+			// Only allow if exact match (button should already be disabled otherwise)
+			if ((input.value || "").trim() !== name) {
+				updateState();
+				input.focus();
+				return;
 			}
 
-			input.addEventListener("input", updateState);
-
-			$("#confirm-delete-form").addEventListener("submit", async (e) => {
-				e.preventDefault();
-
-				// Only allow if exact match (button should already be disabled otherwise)
-				if ((input.value || "").trim() !== name) {
-					updateState();
-					input.focus();
-					return;
-				}
-
-				// Return a simple payload the caller can use
-				window.modal.finish({ confirmed: true, projectName: name });
-			});
-
-			// focus input on open
-			setTimeout(() => input.focus(), 0);
-			updateState();
+			// Return a simple payload the caller can use
+			window.modal.finish({ confirmed: true, projectName: name });
 		});
-	</script>
 
-	<form id="confirm-delete-form" method="dialog" class="dialog">
-		<div class="dialog-header">
-			<h2>Delete project</h2>
-			<button class="dialog-close btn icon-btn" type="button" onclick="window.modal.finish()" aria-label="Close">&times;</button>
-		</div>
-
-		<div class="dialog-body">
-			<p>
-				This will permanently delete <strong id="delete-project-name"></strong>.
-				Type the project name to confirm.
-			</p>
-
-			<label for="confirm-name">Project name</label>
-			<input id="confirm-name" name="confirm-name" type="text" autocomplete="off" required />
-			<span class="form-error" id="confirm-name-error"></span>
-		</div>
-
-		<div class="dialog-footer">
-			<button class="btn secondary" type="button" onclick="window.modal.finish()">Cancel</button>
-			<button class="btn danger primary" id="confirm-delete-btn" type="submit" disabled><span>Delete</span></button>
-		</div>
-	</form>
+		// focus input on open
+		setTimeout(() => input.focus(), 0);
+		updateState();
+	});
+</script>
 </html>
