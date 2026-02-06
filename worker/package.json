@@ -1,6 +1,7 @@
 {
   "dependencies": {
     "@cloudflare/containers": "^0.0.25",
+    "mime": "^4.1.0",
     "modern-tar": "^0.5.4"
   }
 }
