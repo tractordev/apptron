@@ -3,26 +3,18 @@
     @import url("/styles.css");
     :host { display: block; }
 </style>
-<script type="module">
-    import { urlFor, getAuth, copyText, currentURL, envUsername, isLocalhost } from "/lib/apptron.js";
-    const { project } = component?.context || {};
-
-    queueMicrotask(async () => {
-        $("#copy-src").addEventListener("click", async () => {
-            const ok = await copyText($("#embed-src").value || "");
-            const oldText = $("#copy-src").textContent;
-            $("#copy-src").textContent = ok ? "Copied!" : "Copy failed";
-            setTimeout(() => ($("#copy-src").textContent = oldText), 1200);
-        });
-
-        $("#embed-src").value = `<iframe src="${await currentURL()}"></iframe>`;
-    });
-</script>
 
 <form id="embed-form" method="dialog" class="dialog">
 <div class="dialog-body">
+    <label for="embed-mode">Embed Mode</label>
+    <select id="embed-mode" name="embed-mode" onchange="updateEmbedHTML()">
+        <option value="edit" selected>Editor</option>
+        <option value="console">Console</option>
+    </select>
+    <span class="form-error"></span>
+
     <label for="embed-src">Embed HTML</label>
-    <textarea id="embed-src" name="embed-src" spellcheck="false"></textarea>
+    <textarea id="embed-src" name="embed-src" spellcheck="false" style="height: 6rem;"></textarea>
 </div>
 
 <div class="dialog-footer">
@@ -33,4 +25,28 @@
 </div>
 </form>
 
+<script type="module">
+    import { urlFor, getAuth, copyText, currentURL, envUsername, isLocalhost } from "/lib/apptron.js";
+    const { project } = component?.context || {};
+
+    window.updateEmbedHTML = async () => {
+        const mode = $("#embed-mode").value;
+        const url = new URL(await currentURL());
+        url.searchParams.set("embed", "1");
+        const embedURL = url.toString().replace("/edit", "/" + mode);
+
+        $("#embed-src").value = `<iframe width="800" height="450" src="${embedURL}" style="border: 0;"></iframe>`;
+    }
+
+    queueMicrotask(async () => {
+        $("#copy-src").addEventListener("click", async () => {
+            const ok = await copyText($("#embed-src").value || "");
+            const oldText = $("#copy-src").textContent;
+            $("#copy-src").textContent = ok ? "Copied!" : "Copy failed";
+            setTimeout(() => ($("#copy-src").textContent = oldText), 1200);
+        });
+
+        updateEmbedHTML();
+    });
+</script>
 </html>

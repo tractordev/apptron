@@ -183,7 +183,7 @@ label, legend {
   color: var(--gray-100);
   margin-bottom: var(--spacing);
 }
-input[type="text"], textarea {
+input[type="text"], textarea, select {
   border-radius: var(--border-radius);
   border: 1px solid var(--gray-300);
   background-color: inherit;
@@ -195,7 +195,8 @@ input:not([type="radio"]), button.primary, button.secondary {
 }
 input[type="text"]:focus,
 textarea:focus,
-button:focus {
+button:focus,
+select:focus {
   outline: none; 
   box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.2);
 }
@@ -555,10 +556,7 @@ dialog#modal::backdrop {
 }
 .dialog-body input[type="text"]:not(.input-row input[type="text"]),
 .dialog-body textarea,
-.dialog-body fieldset {
-  margin-bottom: 1.5rem;
-}
-.dialog-body textarea,
+.dialog-body select,
 .dialog-body fieldset {
   margin-bottom: 1.5rem;
 }
@@ -694,6 +692,9 @@ dialog#modal::backdrop {
   width: 200px;
   height: 200px;
   background-image: url("/img/loader.svg");
+  background-repeat: no-repeat;
+  background-size: contain;
+  background-position: center;
 }
 
 #loader.fade-out, #loader.fade-out::backdrop {
