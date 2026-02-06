@@ -19,13 +19,13 @@ const CORS_HEADERS = {
     "Vary": "Origin",
 };
 
-function applyCORS(resp: Response) {
+function applyHeaders(resp: Response, headers: Record<string, string>) {
     const newresp = new Response(resp.body, {
         status: resp.status,
         statusText: resp.statusText,
         headers: new Headers(resp.headers)
     });
-    for (const [key, value] of Object.entries(CORS_HEADERS)) {
+    for (const [key, value] of Object.entries(headers)) {
         newresp.headers.set(key, value);
     }
     return newresp;
@@ -192,7 +192,7 @@ export default {
         }
         
         if (ctx.userDomain && url.pathname.startsWith("/projects")) {
-            return applyCORS(await projects.handle(req, env, ctx));
+            return applyHeaders(await projects.handle(req, env, ctx), CORS_HEADERS);
         }
 
         if (["/signin", "/signout", "/shell", "/dashboard", "/debug"].includes(url.pathname)) {
@@ -254,7 +254,8 @@ async function envPage(req: Request, env: any, project: any, path: string) {
         status: envResp.status,
         statusText: envResp.statusText,
         headers: new Headers(envResp.headers)
-    });
+    }); 
+    resp.headers.set("Content-Security-Policy", "frame-ancestors *");
     // resp.headers.set("Cross-Origin-Opener-Policy", "same-origin");
     // resp.headers.set("Cross-Origin-Embedder-Policy", "require-corp");
     // resp.headers.set("Cross-Origin-Resource-Policy", "cross-origin");
