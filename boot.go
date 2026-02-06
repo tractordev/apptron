@@ -311,6 +311,7 @@ func main() {
 		fmt.Sprintf("rootflags=trans=virtio,version=9p2000.L,aname=vm/%s/fsys,cache=none,msize=131072", vm),
 		"mem=1008M",
 		"memmap=16M$1008M",
+		"loglevel=3",
 	}
 	ctlcmd := []string{
 		"start",
@@ -612,7 +613,7 @@ func main() {
 			if err != nil {
 				log.Fatal(err)
 			}
-			publicSyncFS := syncfs.New(localPublicFS, remotePublicFS, 3*time.Second)
+			publicSyncFS := syncfs.New(localPublicFS, remotePublicFS, 2*time.Second)
 			if err := publicSyncFS.Sync(); err != nil {
 				log.Printf("err syncing: %v\n", err)
 			}
