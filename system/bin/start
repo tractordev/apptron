@@ -1,17 +1,17 @@
 #!/bin/busybox sh
 
-if [ -f /project/.apptron/motd ]; then
-    source /project/.apptron/motd
-elif [ -f /project/motd ]; then
-    source /project/motd
-elif [ -f /etc/motd ]; then
-    source /etc/motd
+if [ -f /project/.apptron/banner ]; then
+    source /project/.apptron/banner
+elif [ -f /project/.banner ]; then
+    source /project/.banner
+elif [ -f /etc/banner ]; then
+    source /etc/banner
 fi
 
 if [ -f /project/.apptron/envrc ]; then
     source /project/.apptron/envrc
-elif [ -f /project/envrc ]; then
-    source /project/envrc
+elif [ -f /project/.envrc ]; then
+    source /project/.envrc
 fi
 
 if [ -z "$SHELL" ]; then
