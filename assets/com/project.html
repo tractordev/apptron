@@ -1,129 +1,121 @@
 <html>
 <style>
-  @import url("/styles.css");
+    @import url("/styles.css");
 
-  :host {
-    display: block;
-  }
+    :host {
+        display: block;
+    }
 </style>
 
 <form id="project-form" method="dialog" class="dialog">
-  <div class="dialog-header">
-    <h2 id="project-dialog-title">New Project</h2>
-    <button class="dialog-close btn icon-btn" type="button" onclick="window.modal.finish()" aria-label="Close">&times;</button>
-  </div>
+    <div class="dialog-header">
+        <h2 id="project-dialog-title">New Project</h2>
+        <button class="dialog-close btn icon-btn" type="button" onclick="window.modal.finish()" aria-label="Close">&times;</button>
+    </div>
 
-  <div class="dialog-body">
-    <label for="project-name">Project name</label>
-    <input id="project-name" name="project-name" type="text" pattern="[A-Za-z][A-Za-z0-9_\-]{1,63}"
-      oninput="this.value = this.value.replace(/[^A-Za-z0-9_\-]/g, '')"
-      title="Names can only contain letters, numbers, dashes, and underscores" required />
-    <span class="form-error" id="project-name-error"></span>
+    <div class="dialog-body">
+        <label for="project-name">Project name</label>
 
-    <label for="project-desc">Description</label>
-    <textarea id="project-desc" name="description" rows="4"></textarea>
+        <input id="project-name" name="project-name" type="text" autocomplete="off" spellcheck="false" autocapitalize="none" required />
 
-    <fieldset class="visibility-group" role="radiogroup" aria-labelledby="visibility-legend">
-      <legend id="visibility-legend">Visibility</legend>
+        <span class="form-error" id="project-name-error"></span>
 
-      <label class="radio-option" for="vis-public">
-        <input type="radio" id="vis-public" name="visibility" value="public" aria-describedby="vis-public-help">
-        <span class="option-title">Public</span>
-        <span id="vis-public-help" class="option-help">
-          Anyone with a link has View access
-        </span>
-      </label>
-      <label class="radio-option" for="vis-private">
-        <input type="radio" id="vis-private" name="visibility" value="private" checked
-          aria-describedby="vis-private-help">
-        <span class="option-title">Private 🔒</span>
-        <span id="vis-private-help" class="option-help">
-          Only people you've directly invited can access this project
-        </span>
-      </label>
-    </fieldset>
-  </div>
+        <label for="project-desc">Description</label>
+        <textarea id="project-desc" name="description" rows="4"></textarea>
 
-  <div class="dialog-footer">
-    <button class="btn secondary" type="button" onclick="window.modal.finish()">Cancel</button>
-    <button class="btn primary" id="project-submit" type="submit"><span>Create</span></button>
-  </div>
+        <fieldset class="visibility-group" role="radiogroup" aria-labelledby="visibility-legend">
+            <legend id="visibility-legend">Visibility</legend>
+
+            <label class="radio-option" for="vis-public">
+                <input type="radio" id="vis-public" name="visibility" value="public" aria-describedby="vis-public-help">
+                <span class="option-title">Public</span>
+                <span id="vis-public-help" class="option-help">Anyone with a link has View access</span>
+            </label>
+            <label class="radio-option" for="vis-private">
+                <input type="radio" id="vis-private" name="visibility" value="private" checked aria-describedby="vis-private-help">
+                <span class="option-title">Private 🔒</span>
+                <span id="vis-private-help" class="option-help"> Only people you've directly invited can access this project</span>
+            </label>
+        </fieldset>
+    </div>
+
+    <div class="dialog-footer">
+        <button class="btn secondary" type="button" onclick="window.modal.finish()">Cancel</button>
+        <button class="btn primary" id="project-submit" type="submit"><span>Create</span></button>
+    </div>
 </form>
 
 <script type="module">
-  import { redirectTo, urlFor, getAuth } from "/lib/apptron.js";
+    import { redirectTo, urlFor, getAuth } from "/lib/apptron.js";
 
-  async function checkProjectName() {
-    const name = ($("#project-name").value || "").trim();
-    if (!name || !$("#project-name").checkValidity()) return;
-    const tokenParam = { token: (await getAuth()).getSessionToken() };
-    const resp = await fetch(urlFor(`/projects/${encodeURIComponent(name)}`, tokenParam, window.session.claims.username), {
-      method: "HEAD"
-    });
-    if (resp.status === 200) {
-      $("#project-name-error").innerText = "Project name already exists";
-      $("#project-submit").disabled = true;
-      return;
-    }
-    $("#project-submit").disabled = false;
-    $("#project-name-error").innerText = "";
-  }
-
-  queueMicrotask(async () => {
-    $("#project-form").reset();
-
-    const project = component.context.project;
-    // todo: should probably fetch the project from 
-    // the server to get the latest description to avoid stale data
-    // and avoid the need to reload the page
-    if (project) {
-      $("#project-dialog-title").innerText = "Edit Project";
-      $("#project-submit span").innerText = "Save";
-      $("#project-name").value = project.name;
-      $("#project-desc").value = project.description || project.desc || "";
-      if (project.visibility === "public") {
-        $("#vis-public").checked = true;
-      } else {
-        $("#vis-private").checked = true;
-      }
-      $("#project-name").disabled = true;
-      setTimeout(() => $("#project-desc").focus(), 0);
-
-    } else {
-      $("#project-dialog-title").innerText = "New Project";
-      $("#project-submit span").innerText = "Create";
-      $("#project-name").disabled = false; // allow naming on create
-      setTimeout(() => $("#project-name").focus(), 0);
-      
+    async function checkProjectName() {
+        const name = ($("#project-name").value || "").trim();
+        if (!name || !$("#project-name").checkValidity()) return;
+        const tokenParam = { token: (await getAuth()).getSessionToken() };
+        const resp = await fetch(urlFor(`/projects/${encodeURIComponent(name)}`, tokenParam, window.session.claims.username), {
+            method: "HEAD"
+        });
+        if (resp.status === 200) {
+            $("#project-name-error").innerText = "Project name already exists";
+            $("#project-submit").disabled = true;
+            return;
+        }
+        $("#project-submit").disabled = false;
+        $("#project-name-error").innerText = "";
     }
 
-    $("#project-name").addEventListener("input", checkProjectName);
+    queueMicrotask(async () => {
+        $("#project-form").reset();
 
-    $("#project-form").addEventListener("submit", async (e) => {
-      $("#project-submit").classList.add("btn-loading");
-      e.preventDefault();
+        const project = component.context.project;
+        // todo: should probably fetch the project from 
+        // the server to get the latest description to avoid stale data
+        // and avoid the need to reload the page
+        if (project) {
+            $("#project-dialog-title").innerText = "Edit Project";
+            $("#project-submit span").innerText = "Save";
+            $("#project-name").value = project.name;
+            $("#project-desc").value = project.description || project.desc || "";
+            if (project.visibility === "public") {
+                $("#vis-public").checked = true;
+            } else {
+                $("#vis-private").checked = true;
+            }
+            $("#project-name").disabled = true;
+            setTimeout(() => $("#project-desc").focus(), 0);
+        } else {
+            $("#project-dialog-title").innerText = "New Project";
+            $("#project-submit span").innerText = "Create";
+            $("#project-name").disabled = false; // allow naming on create
+            setTimeout(() => $("#project-name").focus(), 0);
+        }
 
-      const name = ($("#project-name").value || "").trim();
-      const description = ($("#project-desc").value || "").trim();
-      const visibility = ($('input[name="visibility"]:checked').value || "private").trim();
-      if (!name || !$("#project-name").checkValidity()) { $("#project-name").focus(); return; }
+        $("#project-name").addEventListener("input", checkProjectName);
 
-      const tokenParam = { token: (await getAuth()).getSessionToken() };
-      const resp = (project)  
-        ? await fetch(urlFor(`/projects/${encodeURIComponent(project.name)}`, tokenParam, window.session.claims.username), {
-              method: "PUT",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ description, visibility })
-          })
-        : await fetch(urlFor("/projects", {}, window.session.claims.username), {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ name, description, visibility })
-          });
+        $("#project-form").addEventListener("submit", async (e) => {
+            $("#project-submit").classList.add("btn-loading");
+            e.preventDefault();
+
+            const name = ($("#project-name").value || "").trim();
+            const description = ($("#project-desc").value || "").trim();
+            const visibility = ($('input[name="visibility"]:checked').value || "private").trim();
+            if (!name || !$("#project-name").checkValidity()) { $("#project-name").focus(); return; }
+
+            const tokenParam = { token: (await getAuth()).getSessionToken() };
+            const resp = (project)  
+                ? await fetch(urlFor(`/projects/${encodeURIComponent(project.name)}`, tokenParam, window.session.claims.username), {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ description, visibility })
+                })
+                : await fetch(urlFor("/projects", {}, window.session.claims.username), {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ name, description, visibility })
+                });
       
-      window.modal.finish(resp);
-
+            window.modal.finish(resp);
+        });
     });
-  });
 </script>
 </html>
