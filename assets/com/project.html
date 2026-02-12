@@ -1,129 +1,267 @@
 <html>
 <style>
-  @import url("/styles.css");
+    @import url("/styles.css");
 
-  :host {
-    display: block;
-  }
+    :host {
+        display: block;
+    }
 </style>
 
 <form id="project-form" method="dialog" class="dialog">
-  <div class="dialog-header">
-    <h2 id="project-dialog-title">New Project</h2>
-    <button class="dialog-close btn icon-btn" type="button" onclick="window.modal.finish()" aria-label="Close">&times;</button>
-  </div>
+    <div class="dialog-header">
+        <h2 id="project-dialog-title">New Project</h2>
+        <button class="dialog-close btn icon-btn" type="button" onclick="window.modal.finish()" aria-label="Close">&times;</button>
+    </div>
 
-  <div class="dialog-body">
-    <label for="project-name">Project name</label>
-    <input id="project-name" name="project-name" type="text" pattern="[A-Za-z][A-Za-z0-9_\-]{1,63}"
-      oninput="this.value = this.value.replace(/[^A-Za-z0-9_\-]/g, '')"
-      title="Names can only contain letters, numbers, dashes, and underscores" required />
-    <span class="form-error" id="project-name-error"></span>
+    <div class="dialog-body">
+        <label for="project-name">Project name</label>
 
-    <label for="project-desc">Description</label>
-    <textarea id="project-desc" name="description" rows="4"></textarea>
+        <input id="project-name" name="project-name" type="text" autocomplete="off" spellcheck="false" autocapitalize="none" required />
 
-    <fieldset class="visibility-group" role="radiogroup" aria-labelledby="visibility-legend">
-      <legend id="visibility-legend">Visibility</legend>
+        <span class="form-error" id="project-name-error"></span>
 
-      <label class="radio-option" for="vis-public">
-        <input type="radio" id="vis-public" name="visibility" value="public" aria-describedby="vis-public-help">
-        <span class="option-title">Public</span>
-        <span id="vis-public-help" class="option-help">
-          Anyone with a link has View access
-        </span>
-      </label>
-      <label class="radio-option" for="vis-private">
-        <input type="radio" id="vis-private" name="visibility" value="private" checked
-          aria-describedby="vis-private-help">
-        <span class="option-title">Private 🔒</span>
-        <span id="vis-private-help" class="option-help">
-          Only people you've directly invited can access this project
-        </span>
-      </label>
-    </fieldset>
-  </div>
+        <label for="project-desc">Description</label>
+        <textarea id="project-desc" name="description" rows="4"></textarea>
 
-  <div class="dialog-footer">
-    <button class="btn secondary" type="button" onclick="window.modal.finish()">Cancel</button>
-    <button class="btn primary" id="project-submit" type="submit"><span>Create</span></button>
-  </div>
+        <fieldset class="visibility-group" role="radiogroup" aria-labelledby="visibility-legend">
+            <legend id="visibility-legend">Visibility</legend>
+
+            <label class="radio-option" for="vis-public">
+                <input type="radio" id="vis-public" name="visibility" value="public" aria-describedby="vis-public-help">
+                <span class="option-title">Public</span>
+                <span id="vis-public-help" class="option-help">Anyone with a link has View access</span>
+            </label>
+            <label class="radio-option" for="vis-private">
+                <input type="radio" id="vis-private" name="visibility" value="private" checked aria-describedby="vis-private-help">
+                <span class="option-title">Private 🔒</span>
+                <span id="vis-private-help" class="option-help"> Only people you've directly invited can access this project</span>
+            </label>
+        </fieldset>
+    </div>
+
+    <div class="dialog-footer">
+        <button class="btn secondary" type="button" onclick="window.modal.finish()">Cancel</button>
+        <button class="btn primary" id="project-submit" type="submit"><span>Create</span></button>
+    </div>
 </form>
 
 <script type="module">
-  import { redirectTo, urlFor, getAuth } from "/lib/apptron.js";
+    import { redirectTo, urlFor, getAuth } from "/lib/apptron.js";
 
-  async function checkProjectName() {
-    const name = ($("#project-name").value || "").trim();
-    if (!name || !$("#project-name").checkValidity()) return;
-    const tokenParam = { token: (await getAuth()).getSessionToken() };
-    const resp = await fetch(urlFor(`/projects/${encodeURIComponent(name)}`, tokenParam, window.session.claims.username), {
-      method: "HEAD"
-    });
-    if (resp.status === 200) {
-      $("#project-name-error").innerText = "Project name already exists";
-      $("#project-submit").disabled = true;
-      return;
-    }
-    $("#project-submit").disabled = false;
-    $("#project-name-error").innerText = "";
-  }
+    function sanitizeProjectName(raw) {
+        const input = (raw || "").trim();
 
-  queueMicrotask(async () => {
-    $("#project-form").reset();
+        let out = "";
+        let replacedRuns = 0;
+        let inInvalidRun = false;
 
-    const project = component.context.project;
-    // todo: should probably fetch the project from 
-    // the server to get the latest description to avoid stale data
-    // and avoid the need to reload the page
-    if (project) {
-      $("#project-dialog-title").innerText = "Edit Project";
-      $("#project-submit span").innerText = "Save";
-      $("#project-name").value = project.name;
-      $("#project-desc").value = project.description || project.desc || "";
-      if (project.visibility === "public") {
-        $("#vis-public").checked = true;
-      } else {
-        $("#vis-private").checked = true;
-      }
-      $("#project-name").disabled = true;
-      setTimeout(() => $("#project-desc").focus(), 0);
+        for (let i = 0; i < input.length; i++) {
+            const ch = input[i];
+            const isValid = /[A-Za-z0-9._-]/.test(ch);
 
-    } else {
-      $("#project-dialog-title").innerText = "New Project";
-      $("#project-submit span").innerText = "Create";
-      $("#project-name").disabled = false; // allow naming on create
-      setTimeout(() => $("#project-name").focus(), 0);
-      
+            if (isValid) {
+                out += ch;
+                inInvalidRun = false;
+                continue;
+            }
+            if (!inInvalidRun) {
+                out += "-";
+                replacedRuns++;
+                inInvalidRun = true;
+            }
+        }
+        out = out.toLowerCase();
+        return { value: out, replacedRuns };
     }
 
-    $("#project-name").addEventListener("input", checkProjectName);
+    function validateProjectNameLocal(name) {
+        if (!name) return { ok: false, message: "" }; // empty: disable submit, no message
+        if (name.length > 100) {
+            return { ok: false, message: "Project name is too long (maximum is 100 characters)" };
+        }
 
-    $("#project-form").addEventListener("submit", async (e) => {
-      $("#project-submit").classList.add("btn-loading");
-      e.preventDefault();
+        if (/^\d/.test(name)) {
+            return { ok: false, message: "Project name cannot start with a digit" };
+        }
+        return { ok: true, message: "" };
+    }
 
-      const name = ($("#project-name").value || "").trim();
-      const description = ($("#project-desc").value || "").trim();
-      const visibility = ($('input[name="visibility"]:checked').value || "private").trim();
-      if (!name || !$("#project-name").checkValidity()) { $("#project-name").focus(); return; }
+    queueMicrotask(async () => {
+        $("#project-form").reset();
 
-      const tokenParam = { token: (await getAuth()).getSessionToken() };
-      const resp = (project)  
-        ? await fetch(urlFor(`/projects/${encodeURIComponent(project.name)}`, tokenParam, window.session.claims.username), {
-              method: "PUT",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ description, visibility })
-          })
-        : await fetch(urlFor("/projects", {}, window.session.claims.username), {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ name, description, visibility })
-          });
+        const project = component.context.project;
+        // todo: should probably fetch the project from 
+        // the server to get the latest description to avoid stale data
+        // and avoid the need to reload the page
+        // EDIT PROJECT
+        if (project) {
+            $("#project-dialog-title").innerText = "Edit Project";
+            $("#project-submit span").innerText = "Save";
+            $("#project-name").value = project.name;
+            $("#project-desc").value = project.description || project.desc || "";
+            if (project.visibility === "public") {
+                $("#vis-public").checked = true;
+            } else {
+                $("#vis-private").checked = true;
+            }
+            $("#project-name").disabled = true;
+            setTimeout(() => $("#project-desc").focus(), 0);
+        // CREATE PROJECT
+        } else {
+            function showError(msg) {
+                err.innerText = msg || "";
+                err.classList.remove("is-info");
+            }
+            function showInfo(msg) {
+                err.innerText = msg || "";
+                err.classList.add("is-info");
+            }
+            function clearMessage() {
+                err.innerText = "";
+                err.classList.remove("is-info");
+            }
+            $("#project-dialog-title").innerText = "New Project";
+            $("#project-submit span").innerText = "Create";
+            $("#project-name").disabled = false;
+            setTimeout(() => $("#project-name").focus(), 0);
+
+            const input = $("#project-name");
+            const btn = $("#project-submit");
+            const err = $("#project-name-error");
+
+            let dupTimer = null;
+            let dupAbort = null;
+            let lastChecked = "";
+            let lastResult = null; // { name, exists }
+
+            async function checkDuplicate(name) {
+                if (!name) return { name, exists: false };
+                if (lastResult && lastResult.name === name) return lastResult;
+
+                try { dupAbort?.abort(); } catch {}
+                dupAbort = new AbortController();
+
+                const tokenParam = { token: (await getAuth()).getSessionToken() };
+                const resp = await fetch(
+                    urlFor(`/projects/${encodeURIComponent(name)}`, tokenParam, window.session.claims.username),
+                    { method: "HEAD", signal: dupAbort.signal }
+                );
+
+                const exists = resp.status === 200;
+                lastResult = { name, exists };
+                return lastResult;
+            }
+
+            function scheduleDuplicateCheck(name) {
+                if (dupTimer) clearTimeout(dupTimer);
+
+                dupTimer = setTimeout(async () => {
+                    dupTimer = null;
+
+                    if (((input.value || "").trim()) !== name) return;
+                    btn.disabled = true;
+
+                    try {
+                        const r = await checkDuplicate(name);
+                        if (((input.value || "").trim()) !== r.name) return;
+
+                        if (r.exists) {
+                            showError("Project name already exists in this account");
+                            btn.disabled = true;
+                            return;
+                        }
+                        // available
+                        btn.disabled = false;
+                    } catch (e) {
+                        if (e?.name === "AbortError") return;
+                        showError("Could not verify project name. Try again.");
+                        btn.disabled = true;
+                    }
+                }, 250);
+            }
+
+            function updateNameState() {
+                const before = input.value || "";
+                const { value: sanitized, replacedRuns } = sanitizeProjectName(before);
+
+                if (sanitized !== before.trim()) input.value = sanitized;
+
+                const local = validateProjectNameLocal(sanitized);
+
+                if (!sanitized) {
+                    clearMessage();
+                    btn.disabled = true;
+                    lastChecked = "";
+                    return;
+                }
+                if (!local.ok) {
+                    showError(local.message);
+                    btn.disabled = true;
+                    lastChecked = "";
+                    return;
+                }
+                // show note (non-blocking) until we start checking
+                replacedRuns > 0
+                    ? showInfo(`Replaced ${replacedRuns} invalid character${replacedRuns === 1 ? "" : "s"} with “-”.`)
+                    : clearMessage();
+                if (sanitized !== lastChecked) {
+                    lastChecked = sanitized;
+                    btn.disabled = true; // block until verified
+                    scheduleDuplicateCheck(sanitized);
+                }
+            }
+            input.addEventListener("input", updateNameState);
+            btn.disabled = true;
+            updateNameState();
+        }
+
+        $("#project-form").addEventListener("submit", async (e) => {
+            $("#project-submit").classList.add("btn-loading");
+            e.preventDefault();
+
+            const name = ($("#project-name").value || "").trim();
+            const description = ($("#project-desc").value || "").trim();
+            const visibility = ($('input[name="visibility"]:checked').value || "private").trim();
+
+            if (!project) {
+                const local = validateProjectNameLocal(name);
+                if (!name || !local.ok) {
+                    $("#project-name-error").innerText = local.message;
+                    $("#project-submit").classList.remove("btn-loading");
+                    $("#project-name").focus();
+                    return;
+                }
+                $("#project-submit").disabled = true;
+
+                const tokenParam = { token: (await getAuth()).getSessionToken() };
+                const headResp = await fetch(
+                    urlFor(`/projects/${encodeURIComponent(name)}`, tokenParam, window.session.claims.username),
+                    { method: "HEAD" }
+                );
+                if (headResp.status === 200) {
+                    $("#project-name-error").innerText = "Project name already exists in this account";
+                    $("#project-submit").classList.remove("btn-loading");
+                    $("#project-submit").disabled = true;
+                    $("#project-name").focus();
+                    return;
+                }
+            }
+
+            const tokenParam = { token: (await getAuth()).getSessionToken() };
+            const resp = (project)  
+                ? await fetch(urlFor(`/projects/${encodeURIComponent(project.name)}`, tokenParam, window.session.claims.username), {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ description, visibility })
+                })
+                : await fetch(urlFor("/projects", {}, window.session.claims.username), {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ name, description, visibility })
+                });
       
-      window.modal.finish(resp);
-
+            window.modal.finish(resp);
+        });
     });
-  });
 </script>
 </html>
