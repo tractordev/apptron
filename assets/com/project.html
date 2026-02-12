@@ -108,6 +108,18 @@
             setTimeout(() => $("#project-desc").focus(), 0);
         // CREATE PROJECT
         } else {
+            function showError(msg) {
+                err.innerText = msg || "";
+                err.classList.remove("is-info");
+            }
+            function showInfo(msg) {
+                err.innerText = msg || "";
+                err.classList.add("is-info");
+            }
+            function clearMessage() {
+                err.innerText = "";
+                err.classList.remove("is-info");
+            }
             $("#project-dialog-title").innerText = "New Project";
             $("#project-submit span").innerText = "Create";
             $("#project-name").disabled = false;
@@ -147,8 +159,6 @@
                     dupTimer = null;
 
                     if (((input.value || "").trim()) !== name) return;
-
-                    err.innerText = "Checking availability…";
                     btn.disabled = true;
 
                     try {
@@ -156,16 +166,15 @@
                         if (((input.value || "").trim()) !== r.name) return;
 
                         if (r.exists) {
-                            err.innerText = "Project name already exists in this account";
+                            showError("Project name already exists in this account");
                             btn.disabled = true;
                             return;
                         }
                         // available
-                        err.innerText = "";
                         btn.disabled = false;
                     } catch (e) {
                         if (e?.name === "AbortError") return;
-                        err.innerText = "Could not verify project name. Try again.";
+                        showError("Could not verify project name. Try again.");
                         btn.disabled = true;
                     }
                 }, 250);
@@ -180,21 +189,21 @@
                 const local = validateProjectNameLocal(sanitized);
 
                 if (!sanitized) {
-                    err.innerText = "";
+                    clearMessage();
                     btn.disabled = true;
                     lastChecked = "";
                     return;
                 }
                 if (!local.ok) {
-                    err.innerText = local.message;
+                    showError(local.message);
                     btn.disabled = true;
                     lastChecked = "";
                     return;
                 }
                 // show note (non-blocking) until we start checking
-                err.innerText = replacedRuns > 0
-                    ? `Replaced ${replacedRuns} invalid character${replacedRuns === 1 ? "" : "s"} with “-”.`
-                    : "";
+                replacedRuns > 0
+                    ? showInfo(`Replaced ${replacedRuns} invalid character${replacedRuns === 1 ? "" : "s"} with “-”.`)
+                    : clearMessage();
                 if (sanitized !== lastChecked) {
                     lastChecked = sanitized;
                     btn.disabled = true; // block until verified
@@ -223,7 +232,6 @@
                     return;
                 }
                 $("#project-submit").disabled = true;
-                $("#project-name-error").innerText = "Checking availability…";
 
                 const tokenParam = { token: (await getAuth()).getSessionToken() };
                 const headResp = await fetch(
