@@ -603,7 +603,7 @@ dialog#modal::backdrop {
 .option-help {
   grid-column: 2;
   font-size: 0.85rem;
-  color: #9a9a9a;
+  color: var(--gray-100);
   line-height: 1.3;
 }
 /* otherwise there's too much space between the close button and the dialog contents... */
@@ -726,4 +726,7 @@ dialog#modal::backdrop {
   font-size: 0.85rem;
   position: absolute;
   margin-top: -1.25rem; /* placement hack */
+}
+.form-error.is-info {
+    color: var(--gray-100);
 }
