@@ -285,9 +285,14 @@ func main() {
 		}
 	}
 
+	publishURL, err := jsutil.AwaitErr(apptronCfg.Call("publishURL"))
+	if err != nil {
+		log.Fatal(err)
+	}
 	profile := []string{
 		fmt.Sprintf("export USER=%s", username),
 		fmt.Sprintf("export ENV_MODE=%s", mode),
+		fmt.Sprintf("export PUBLIC_URL=%s", publishURL.String()),
 	}
 	if username != "" {
 		profile = append(profile, fmt.Sprintf("export HOME=/home/%s", username))
