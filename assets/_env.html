@@ -83,7 +83,7 @@
       document.querySelector("#topbar").style.display = "none";
     }
 
-    import { setupWanix, getAuth, envUUID, getMeta, getOrigin, redirectTo, urlFor } from "/lib/apptron.js";
+    import { setupWanix, getAuth, envUUID, envUsername, isLocalhost, getMeta, getOrigin, redirectTo, urlFor } from "/lib/apptron.js";
 
     const loader = document.getElementById("loader");
     loader.showModal();
@@ -131,6 +131,15 @@
           project = data;
           window.apptron.env = data;
         });
+      },
+      publishURL: async () => {
+        const username = await envUsername();
+        // todo: dont hardcode the publish domain for prod
+        const publicURL = `${username}.aptn.pub/${window.apptron.env.name}`;
+        if (isLocalhost()) {
+            return `http://${window.location.host}/${publicURL}`;
+        }
+        return `https://${publicURL}`;
       }
     }
 
