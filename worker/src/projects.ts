@@ -247,6 +247,9 @@ export async function getByName(env: any, username: string, projectName: string)
     if (!attrs) {
         return null;
     }
+    if (!attrs["ownername"]) {
+        attrs["ownername"] = username;
+    }
     return attrs;
 }
 
