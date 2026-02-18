@@ -380,6 +380,7 @@ header h1 {
     z-index: 1000000;
 }
 .toast {
+    background-color: var(--gray-600);
     font-weight: 500;
     line-height: 160%;
     color: var(--gray-000);
