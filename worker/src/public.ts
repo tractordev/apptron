@@ -1,6 +1,6 @@
 import { PUBLISH_DOMAINS } from "./config";
 import { Context } from "./context";
-import { isLocal } from "./util";
+import { isLocal, insertHTML } from "./util";
 import * as projects from "./projects";
 import mime from 'mime';
 
@@ -38,7 +38,7 @@ export async function handle(req: Request, env: any, ctx: Context) {
     let publicPath = `/env/${project["uuid"]}/public`;
     let objectKey = `${publicPath}${url.pathname}`;
     let object = await env.bucket.get(objectKey);
-    if (!object && url.pathname === "/sw.js") {
+    if (!object && url.pathname === "/offline.js") {
         return new Response(await generateSW(env, publicPath), { status: 200, headers: { 'Content-Type': 'application/javascript' } });
     }
     if (!object || object.customMetadata["Content-Type"] === "application/x-directory") {
@@ -59,11 +59,15 @@ export async function handle(req: Request, env: any, ctx: Context) {
         }
     }
 
-    return new Response(object.body, {
+    const resp = new Response(object.body, {
         headers: {
             'Content-Type': object.httpMetadata.contentType || mime.getType(url.pathname) || 'text/html',
         },
     });
+    if (url.pathname === "/") {
+        return insertHTML(resp, "body", `<script src="./offline.js" type="module"></script>`);
+    }
+    return resp;
 }
 
 async function generateSW(env, publicPath) {
@@ -133,7 +137,11 @@ ${assets.map(a => `dirname(import.meta.url)+'${a}'`).join(",\n")}
         const headers = new Headers(response.headers);
         headers.set('sw-cached-at', Date.now().toString());
 
-        const timestampedResponse = new Response(await response.clone().blob(), {
+        // 204, 205, 304 must not have a body per spec
+        const noBodyStatuses = [204, 205, 304];
+        const body = noBodyStatuses.includes(response.status) ? null : await response.clone().blob();
+
+        const timestampedResponse = new Response(body, {
             status: response.status,
             statusText: response.statusText,
             headers: headers
