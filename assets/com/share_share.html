@@ -4,7 +4,7 @@
     :host { display: block; }
 </style>
 
-<div class="dialog-body">
+<div id="share-body" class="dialog-body" style="visibility:hidden">
 
 <fieldset class="visibility-group" role="radiogroup" aria-labelledby="visibility-legend">
     <legend id="visibility-legend">Visibility</legend>
@@ -59,73 +59,78 @@
     `;
 
     queueMicrotask(async () => {
-        const copyBtn = $("#copy-url");
-        if (copyBtn) {
-            copyBtn.addEventListener("click", async () => {
-                const ok = await copyText($("#share-url").value || "");
-                if (!ok) return;
+        try {
+            const copyBtn = $("#copy-url");
+            if (copyBtn) {
+                copyBtn.addEventListener("click", async () => {
+                    const ok = await copyText($("#share-url").value || "");
+                    if (!ok) return;
 
-                const original = copyBtn.innerHTML;
-                copyBtn.innerHTML = CHECK_SVG;
-                copyBtn.setAttribute("aria-label", "Copied");
+                    const original = copyBtn.innerHTML;
+                    copyBtn.innerHTML = CHECK_SVG;
+                    copyBtn.setAttribute("aria-label", "Copied");
 
-                setTimeout(() => {
-                    copyBtn.innerHTML = original;
-                    copyBtn.setAttribute("aria-label", "Copy URL");
-                }, 1200);
-            });
-        }
-        // Build share URL
-        $("#share-url").value = await currentURL();
+                    setTimeout(() => {
+                        copyBtn.innerHTML = original;
+                        copyBtn.setAttribute("aria-label", "Copy URL");
+                    }, 1200);
+                });
+            }
+            // Build share URL
+            $("#share-url").value = await currentURL();
 
-        // toggle the share block and copy button visibility
-        function toggleShareBlock(visibility) {
-            const isPublic = visibility === "public";
-            $("#share-block").toggleAttribute("hidden", !isPublic);
-            $("#copy-url").toggleAttribute("hidden", !isPublic);
-            $("#save-btn").disabled = (visibility === project.visibility);
-        }
-
-        // set visibility and check the radio button
-        toggleShareBlock(project.visibility);
-        $(`#vis-${project.visibility}`).checked = true;
-        $("#vis-public").addEventListener("change", (e) => toggleShareBlock(e.target.value));
-        $("#vis-private").addEventListener("change", (e) => toggleShareBlock(e.target.value));
-
-        // save the visibility to the server
-        $("#save-btn").addEventListener("click", async () => {
-            const visibility = $('input[name="visibility"]:checked').value;
-            
-            // doubled check if anything changed
-            if (visibility === project.visibility) {
-                return;
+            // toggle the share block and copy button visibility
+            function toggleShareBlock(visibility) {
+                const isPublic = visibility === "public";
+                $("#share-block").toggleAttribute("hidden", !isPublic);
+                $("#copy-url").toggleAttribute("hidden", !isPublic);
+                $("#save-btn").disabled = (visibility === project.visibility);
             }
 
-            $("#save-btn").classList.add("btn-loading");
-            try {
-                const tokenParam = { token: (await getAuth()).getSessionToken() };
-                const username   = window.session?.claims?.username;
+            // set visibility and check the radio button
+            toggleShareBlock(project.visibility);
+            $(`#vis-${project.visibility}`).checked = true;
+            $("#vis-public").addEventListener("change", (e) => toggleShareBlock(e.target.value));
+            $("#vis-private").addEventListener("change", (e) => toggleShareBlock(e.target.value));
 
-                const resp = await fetch(
-                    urlFor(`/projects/${project.name}`, tokenParam, username),
-                    {
-                        method: "PUT",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({visibility})
-                    }
-                );
-
-                if (!resp.ok) {
-                    throw new Error(resp.status);
+            // save the visibility to the server
+            $("#save-btn").addEventListener("click", async () => {
+                const visibility = $('input[name="visibility"]:checked').value;
+                
+                // doubled check if anything changed
+                if (visibility === project.visibility) {
+                    return;
                 }
-            } catch (err) {
-                console.error("Error updating visibility", err);
-            }
-            $("#save-btn").classList.remove("btn-loading");
 
-            // Close and resolve
-            window.modal.finish({ saved: true });
-        });
+                $("#save-btn").classList.add("btn-loading");
+                try {
+                    const tokenParam = { token: (await getAuth()).getSessionToken() };
+                    const username   = window.session?.claims?.username;
+
+                    const resp = await fetch(
+                        urlFor(`/projects/${project.name}`, tokenParam, username),
+                        {
+                            method: "PUT",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({visibility})
+                        }
+                    );
+
+                    if (!resp.ok) {
+                        throw new Error(resp.status);
+                    }
+                } catch (err) {
+                    console.error("Error updating visibility", err);
+                }
+                $("#save-btn").classList.remove("btn-loading");
+
+                // Close and resolve
+                window.modal.finish({ saved: true });
+            });
+        } finally {
+            const body = $("#share-body");
+            if (body) body.style.visibility = "visible";
+        }
     });
 </script>
 </html>
