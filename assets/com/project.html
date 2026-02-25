@@ -104,7 +104,7 @@
             } else {
                 $("#vis-private").checked = true;
             }
-            $("#project-name").disabled = true;
+            $("#project-name").readOnly = true;
             setTimeout(() => $("#project-desc").focus(), 0);
         // CREATE PROJECT
         } else {
@@ -122,7 +122,7 @@
             }
             $("#project-dialog-title").innerText = "New Project";
             $("#project-submit span").innerText = "Create";
-            $("#project-name").disabled = false;
+            $("#project-name").readOnly = false;
             setTimeout(() => $("#project-name").focus(), 0);
 
             const input = $("#project-name");

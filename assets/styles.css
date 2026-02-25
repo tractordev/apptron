@@ -200,8 +200,14 @@ select:focus {
   outline: none; 
   box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.2);
 }
-input[type="text"]:disabled {
+input:disabled, textarea:disabled, select:disabled {
   border: none;
+  cursor:not-allowed;
+  color: var(--gray-300);
+}
+input:read-only {
+    border: none;
+    cursor:text;
 }
 .input-row {
   display: flex;
