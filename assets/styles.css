@@ -12,7 +12,7 @@
     --gray-300: #666666;
     --gray-200: #808080;
     --gray-100: #A6A6A6;
-    --gray-000: #BDBDBD;
+    --gray-000: #BBBBBB;
 
     --spacing: 0.25rem;
 
@@ -200,8 +200,22 @@ select:focus {
   outline: none; 
   box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.2);
 }
-input[type="text"]:disabled {
-  border: none;
+input:disabled, textarea:disabled, select:disabled {
+  border: var(--gray-300);
+  cursor:not-allowed;
+  color: var(--gray-300);
+}
+textarea:disabled {
+    resize: none;
+}
+label:has(+ input:disabled),
+label:has(+ select:disabled),
+label:has(+ textarea:disabled) {
+  color: var(--gray-300);
+}
+input:read-only#project-name {
+    border: none;
+    cursor:text;
 }
 .input-row {
   display: flex;
@@ -548,6 +562,12 @@ dialog#modal::backdrop {
 .dialog-body > p {
     margin-top: 0;
     color: var(--gray-000);
+}
+.dialog-body > p.info {
+    border: 1px solid var(--gray-400);
+    border-radius: var(--border-radius);
+    padding: var(--size-2);
+    background-color: var(--gray-500);
 }
 .dialog-body input[type=text],
 .dialog-body textarea, 
