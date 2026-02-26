@@ -6,6 +6,7 @@
 
 <form id="embed-form" method="dialog" class="dialog" style="visibility:hidden">
 <div class="dialog-body">
+    <p id="embed-info" class="info mb-8">Set project to public via Share to enable embedding.</p>
     <label for="embed-mode">Embed Mode</label>
     <select id="embed-mode" name="embed-mode" onchange="updateEmbedHTML()">
         <option value="edit" selected>Editor</option>
@@ -35,20 +36,34 @@
         url.searchParams.set("embed", "1");
         const embedURL = url.toString().replace("/edit", "/" + mode);
 
+        console.log("embedURL:", embedURL);
+
         $("#embed-src").value = `<iframe width="800" height="450" src="${embedURL}" style="border: 0;"></iframe>`;
     }
 
     queueMicrotask(async () => {
         try {
+            const isPublic = project?.visibility === "public";
+            const disabled = !isPublic;
+
+            $("#embed-mode").disabled = disabled;
+            $("#copy-src").disabled = disabled;
+            $("#embed-src").disabled = disabled;
+
+            const info = $("#embed-info");
+            if (info) info.hidden = isPublic;
+
             $("#copy-src").addEventListener("click", async () => {
+                if (disabled) return;
+
                 const ok = await copyText($("#embed-src").value || "");
                 const oldText = $("#copy-src").textContent;
                 $("#copy-src").textContent = ok ? "Copied!" : "Copy failed";
                 setTimeout(() => ($("#copy-src").textContent = oldText), 1200);
             });
+
             await updateEmbedHTML();
         } finally {
-            /* to mitigate the occasional content flash that still happens in the embed tab */
             await new Promise(requestAnimationFrame);
             await new Promise(requestAnimationFrame);
             const form = $("#embed-form");
