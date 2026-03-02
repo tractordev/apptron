@@ -14,7 +14,15 @@ mount -o bind /dev $buildroot/dev
 mount -t proc proc $buildroot/proc
 mount -t sysfs sys $buildroot/sys
 
-cp /project/.apptron/envbuild $buildroot/.envbuild
+if [ -f /project/.apptron/envbuild ]; then
+    cp /project/.apptron/envbuild $buildroot/.envbuild
+elif [ -f /project/.envbuild ]; then
+    cp /project/.envbuild $buildroot/.envbuild
+else
+    echo "no envbuild file found"
+    exit 1
+fi
+
 chroot $buildroot /bin/sh -c ". .envbuild"
 
 umount $buildroot/dev
