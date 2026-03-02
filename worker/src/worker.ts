@@ -36,6 +36,8 @@ export default {
         const url = new URL(req.url);
         const ctx = parseContext(req, env);
 
+        // console.log(ctx);
+
         if (
             ctx.portDomain ||
             url.pathname.startsWith("/x/net") || 
@@ -194,7 +196,7 @@ export default {
         if (ctx.userDomain && url.pathname.startsWith("/projects")) {
             return applyHeaders(await projects.handle(req, env, ctx), CORS_HEADERS);
         }
-
+        // also add to wrangler.toml run_worker_first field
         if (["/signin", "/signout", "/shell", "/dashboard", "/debug"].includes(url.pathname)) {
             const resp = await env.assets.fetch(req);
 
@@ -209,15 +211,15 @@ export default {
         }
 
         // final fallback: serve 404 page without changing URL
-        if (req.method === "GET" && url.pathname !== "/404") {
-            const notFoundReq = new Request(new URL("/404", req.url).toString(), req);
-            const notFoundResp = await env.assets.fetch(notFoundReq);
+        // if (req.method === "GET" && url.pathname !== "/404") {
+        //     const notFoundReq = new Request(new URL("/404", req.url).toString(), req);
+        //     const notFoundResp = await env.assets.fetch(notFoundReq);
 
-            return new Response(notFoundResp.body, {
-                status: 404,
-                headers: notFoundResp.headers,
-            });
-        }
+        //     return new Response(notFoundResp.body, {
+        //         status: 404,
+        //         headers: notFoundResp.headers,
+        //     });
+        // }
 
         return env.assets.fetch(req);
     },
