@@ -51,8 +51,8 @@
     let factory = undefined;
     let storage = new Map();
     window.onmessage = (event) => {
+      // console.log("top frame message:", event.data, event.origin);
       if (event.data.type === "store") {
-        // console.log('store', event.data.token, event.data.value);
         storage.set(event.data.token, {
           value: event.data.value,
           transfers: event.data.transfers || []
@@ -86,6 +86,7 @@
       }
 
       if (!event.origin.endsWith(appHost())) {
+        console.log("origin not allowed", event.origin, appHost());
         return;
       }
       if (event.data.redirect) {

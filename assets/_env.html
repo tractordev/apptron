@@ -122,6 +122,7 @@
         }
       }),
       origin: window.location.origin,
+      embedded: params.get("embed") === "1",
       env: project,
       refreshEnv: async () => {
         const tokenParam = { token: (await getAuth()).getSessionToken() };
