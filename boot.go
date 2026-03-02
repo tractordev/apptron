@@ -87,6 +87,11 @@ func main() {
 		mode = apptronCfg.Get("mode").String()
 	}
 
+	embedded := false
+	if !apptronCfg.Get("embedded").IsUndefined() {
+		embedded = apptronCfg.Get("embedded").Bool()
+	}
+
 	envUUID := ""
 	envName := ""
 	envOwner := ""
@@ -285,11 +290,13 @@ func main() {
 		}
 	}
 
+	// todo: timeout
 	publishURL, err := jsutil.AwaitErr(apptronCfg.Call("publishURL"))
 	if err != nil {
 		log.Fatal(err)
 	}
 	profile := []string{
+		fmt.Sprintf("export ENV_EMBED=%d", map[bool]int{true: 1, false: 0}[embedded]),
 		fmt.Sprintf("export USER=%s", username),
 		fmt.Sprintf("export ENV_MODE=%s", mode),
 		fmt.Sprintf("export PUBLIC_URL=%s", publishURL.String()),
