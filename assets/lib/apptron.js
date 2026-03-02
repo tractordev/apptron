@@ -167,7 +167,7 @@ export function urlFor(path, params = {}, user = null) {
 export function currentURL() {
     if (isEnvDomain()) {
         const reply = new MessageChannel();
-        top.postMessage({ self: true, reply: reply.port2 }, getOrigin(), [reply.port2]);
+        window.parent.postMessage({ self: true, reply: reply.port2 }, getOrigin(), [reply.port2]);
         return new Promise((resolve, reject) => {
             reply.port1.onmessage = (e) => resolve(e.data);
         });
