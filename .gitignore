@@ -10,3 +10,6 @@ node_modules
 /assets/wanix.js
 kernel/bzImage
 .env.local
+go.work.sum
+go.work
+/wanix
