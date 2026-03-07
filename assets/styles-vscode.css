@@ -1,0 +1,27 @@
+/* hide "..." in explorer because its not needed and takes up too much room */
+/* #workbench\.parts\.sidebar > div.composite.title > div.title-actions > div > div > ul > li:last-child {
+    display: none;
+} */
+/* use tab outline to connect to content area, box-shadow to add back right border */
+div.tabs-container > div.tab.active.selected {
+    position:relative !important; 
+    z-index: 100 !important;
+    outline: 1px solid var(--vscode-tab-activeBackground) !important;
+    outline-offset: -1px !important;
+    box-shadow: 1px 0px 0 var(--tabs-border-bottom-color);
+}
+/* make vertical sash over the tab outline */
+div.monaco-sash.vertical {
+    z-index: 101 !important;
+}
+/* hide "EXPLORER" label, takes up too much room */
+/* #workbench\.parts\.sidebar > div.composite.title > div.title-label > h2 {
+    overflow: hidden;
+    margin-left: -4.5rem;
+} */
+/* editor --------------------- */
+.monaco-workbench .part.editor>.content .editor-group-container>.editor-group-watermark>.letterpress {
+    background-image: url(/img/transparent-logomark.svg) !important;
+    width: 50%;
+    border: 1px solid red;
+}

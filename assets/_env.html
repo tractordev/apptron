@@ -17,9 +17,13 @@
   <!-- <link rel="apple-touch-icon" href="/vscode/code-192.png" /> -->
   <!-- <link rel="icon" type="image/svg+xml" href="/favicon.svg" /> -->
 
+  
+  <link rel="stylesheet" href="/vscode/out/vs/workbench/workbench.web.main.css" />
+  <link rel="stylesheet" href="/styles-vscode.css" />
   <link rel="stylesheet" href="/styles.css" />
   <script src="/lib/html-component.js" type="module"></script>
   <script src="/lib/dropdown.js" type="module"></script>
+  <script src="/lib/vscode.js" type="module"></script>
 
   <style>
     body {
@@ -67,16 +71,11 @@
   <script type="module">
     console.log("crossOriginIsolated", crossOriginIsolated, location.origin);
 
+    const mode = location.pathname.slice(1).split("/")[0];
+
     // not ready to deploy service worker yet, can uncomment in dev
     // import { register } from "/sw.js";
     // const handle = await register(null, { timeout: 20000, prefix: "/:/" });
-
-
-    const mode = location.pathname.slice(1).split("/")[0];
-    if (mode === "edit") {
-      // load the iframe after service worker is ready
-      document.querySelector("#vscode-frame").src = "/_vscode";
-    }
 
     const params = new URLSearchParams(window.location.search);
     if (params.get("topbar") === "0" || params.get("embed") === "1") {
@@ -145,7 +144,11 @@
     }
 
     window.apptron.instance = await setupWanix();
-    
+
+    if (mode === "edit") {
+      document.querySelector("vscode-workbench").mount();
+    }
+
     // set service worker handler after wanix is available
     // handle(async (req) => {
     //   await window.apptron.instance.ready();
@@ -201,8 +204,7 @@
   <div id="topbar">
     <html-component src="/com/topbar"></html-component>
   </div>
-  <iframe id="vscode-frame" allow="clipboard-read; clipboard-write; cross-origin-isolated"
-    sandbox="allow-scripts allow-same-origin allow-forms allow-modals allow-popups allow-popups-to-escape-sandbox"></iframe>
+  <vscode-workbench></vscode-workbench>
 
   <dialog id="loader">
     <div class="spinner"></div>

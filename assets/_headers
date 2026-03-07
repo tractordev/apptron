@@ -2,7 +2,7 @@
   Access-Control-Allow-Origin: *
 /*.tgz
   Access-Control-Allow-Origin: *
-/_vscode
+/edit/*
   Cross-Origin-Opener-Policy: same-origin
   Cross-Origin-Embedder-Policy: require-corp
   Cross-Origin-Resource-Policy: cross-origin
