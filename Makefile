@@ -52,6 +52,12 @@ clean:
 .env.local:
 	cp .env.example .env.local
 
+wanix:
+	git clone https://github.com/tractordev/wanix
+
+go.work: wanix
+	go work init . ./wanix
+
 assets/vscode:
 	curl -sL $(VSCODE_URL) -o assets/vscode.zip
 	mkdir -p .tmp

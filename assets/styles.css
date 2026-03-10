@@ -171,7 +171,8 @@ button, input, select, textarea {
   font: inherit;
 }
 
-* {
+/* Exclude workbench so its layout (e.g. .monaco-tl-twistie) uses default content-box */
+*:not(vscode-workbench *) {
   box-sizing: border-box;
 }
 
