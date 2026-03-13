@@ -1,74 +1,74 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Apptron</title>
+    <meta charset="UTF-8">
+    <title>Apptron</title>
 
-  <!-- Mobile tweaks -->
-  <meta name="mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-title" content="Code">
+    <!-- Mobile tweaks -->
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Code">
 
-  <!-- Disable pinch zooming -->
-  <meta name="viewport"
-    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no">
+    <!-- Disable pinch zooming -->
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no">
 
-  <!-- Icons (disabled for now) -->
-  <!-- <link rel="apple-touch-icon" href="/vscode/code-192.png" /> -->
-  <!-- <link rel="icon" type="image/svg+xml" href="/favicon.svg" /> -->
+    <!-- Icons (disabled for now) -->
+    <!-- <link rel="apple-touch-icon" href="/vscode/code-192.png" /> -->
+    <!-- <link rel="icon" type="image/svg+xml" href="/favicon.svg" /> -->
 
   
-  <link rel="stylesheet" href="/vscode/out/vs/workbench/workbench.web.main.css" />
-  <link rel="stylesheet" href="/styles-vscode.css" />
-  <link rel="stylesheet" href="/styles.css" />
-  <script src="/lib/html-component.js" type="module"></script>
-  <script src="/lib/dropdown.js" type="module"></script>
-  <script src="/lib/vscode.js" type="module"></script>
+    <link rel="stylesheet" href="/vscode/out/vs/workbench/workbench.web.main.css" />
+    <link rel="stylesheet" href="/styles-vscode.css" />
+    <link rel="stylesheet" href="/styles.css" />
+    <script src="/lib/html-component.js" type="module"></script>
+    <script src="/lib/dropdown.js" type="module"></script>
+    <script src="/lib/vscode.js" type="module"></script>
 
-  <style>
-    body {
-      margin: 0;
-      height: 100vh;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-    }
+    <style>
+        body {
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
 
-    iframe {
-      border: 0;
-      flex: 1;
-      pointer-events: auto !important;
-      user-select: none;
-    }
+        iframe {
+            border: 0;
+            flex: 1;
+            pointer-events: auto !important;
+            user-select: none;
+        }
 
-    .wanix-terminal {
-      width: 100%;
-      height: 100%;
-      position: absolute;
-      top: 0;
-      left: 0;
-    }
+        .wanix-terminal {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
     
-    .xterm {
-      height: 100%;
-      width: 100%;
-    }
+        .xterm {
+            height: 100%;
+            width: 100%;
+        }
 
-    .xterm-viewport,
-    .xterm-screen {
-      width: 100%;
-      height: 100%;
-    }
+        .xterm-viewport,
+        .xterm-screen {
+            width: 100%;
+            height: 100%;
+        }
 
-    .xterm-screen {
-      padding: 4px 5px;
-    }
-  </style>
-
+        .xterm-screen {
+            padding: 4px 5px;
+        }
+    </style>
 </head>
 
 <body>
-  <script type="module">
+
+<script type="module">
     console.log("crossOriginIsolated", crossOriginIsolated, location.origin);
 
     const mode = location.pathname.slice(1).split("/")[0];
@@ -79,74 +79,89 @@
 
     const params = new URLSearchParams(window.location.search);
     if (params.get("topbar") === "0" || params.get("embed") === "1") {
-      document.querySelector("#topbar").style.display = "none";
+        document.querySelector("#topbar").style.display = "none";
     }
 
     import { setupWanix, getAuth, envUUID, envUsername, isLocalhost, getMeta, getOrigin, redirectTo, urlFor } from "/lib/apptron.js";
 
     const loader = document.getElementById("loader");
+    const tipEl = loader.querySelector("#loader-tip-body");
+
+    const tips = [
+        "When HTTP servers listen on a port, you get a public URL that routes to it.",
+        "Files in /public are served as a static site.",
+        "Your home directory is a persistent mount across projects.",
+        "You can install packages with the apk package manager.",
+        "Embed with Console mode to only show the terminal."
+    ];
+
+    if (tipEl && tips.length) {
+        const tip = tips[Math.floor(Math.random() * tips.length)];
+        tipEl.textContent = tip;
+    }
+
     loader.showModal();
     loader.loaded = () => {
-      loader.classList.add("fade-out");
-      setTimeout(() => {
-        loader.close();
-        loader.remove();
-      }, 200);
+        loader.classList.add("fade-out");
+        setTimeout(() => {
+            loader.close();
+            loader.remove();
+        }, 200);
     };
 
     let project = JSON.parse(getMeta("project"));
     const auth = await getAuth();
     window.apptron = {
-      mode: mode,
-      user: new Promise(async (resolve, reject) => {
-        try {
-          const session = await auth.validatedSession;
-          if (!session.is_valid) {
-            if (project["visibility"] !== "public") {
-              redirectTo(urlFor("/signin"));
-              return;
+        mode: mode,
+        user: new Promise(async (resolve, reject) => {
+            try {
+                const session = await auth.validatedSession;
+                if (!session.is_valid) {
+                    if (project["visibility"] !== "public") {
+                        redirectTo(urlFor("/signin"));
+                        return;
+                    }
+                    resolve(null);
+                    return;
+                }
+                setInterval(async () => {
+                    const session = await auth.validateSession();
+                    if (!session.is_valid) {
+                        redirectTo(urlFor("/signin"));
+                    }
+                }, 300 * 1000); // every 5 minutes
+                resolve(await auth.getUser());
+            } catch (error) {
+                resolve(null);
             }
-            resolve(null);
-            return;
-          }
-          setInterval(async () => {
-            const session = await auth.validateSession();
-            if (!session.is_valid) {
-              redirectTo(urlFor("/signin"));
+        }),
+        origin: window.location.origin,
+        embedded: params.get("embed") === "1",
+        env: project,
+        refreshEnv: async () => {
+            const tokenParam = { token: (await getAuth()).getSessionToken() };
+            fetch(urlFor(`/projects/${project.name}`, tokenParam, window.session.claims.username))
+            .then(resp => resp.json())
+            .then(data => {
+                project = data;
+                window.apptron.env = data;
+            });
+        },
+        publishURL: async () => {
+            const username = await envUsername();
+            // todo: dont hardcode the publish domain for prod
+            const publicURL = `${username}.aptn.pub/${window.apptron.env.name}`;
+            if (isLocalhost()) {
+                return `http://${window.location.host}/${publicURL}`;
             }
-          }, 300 * 1000); // every 5 minutes
-          resolve(await auth.getUser());
-        } catch (error) {
-          resolve(null);
+            return `https://${publicURL}`;
         }
-      }),
-      origin: window.location.origin,
-      embedded: params.get("embed") === "1",
-      env: project,
-      refreshEnv: async () => {
-        const tokenParam = { token: (await getAuth()).getSessionToken() };
-        fetch(urlFor(`/projects/${project.name}`, tokenParam, window.session.claims.username))
-        .then(resp => resp.json())
-        .then(data => {
-          project = data;
-          window.apptron.env = data;
-        });
-      },
-      publishURL: async () => {
-        const username = await envUsername();
-        // todo: dont hardcode the publish domain for prod
-        const publicURL = `${username}.aptn.pub/${window.apptron.env.name}`;
-        if (isLocalhost()) {
-            return `http://${window.location.host}/${publicURL}`;
-        }
-        return `https://${publicURL}`;
-      }
     }
 
     window.apptron.instance = await setupWanix();
 
     if (mode === "edit") {
-      document.querySelector("vscode-workbench").mount();
+        document.querySelector("vscode-workbench").mount();
     }
 
     // set service worker handler after wanix is available
@@ -167,48 +182,56 @@
     // so other frames can request a wanix port from the top frame
     const topChannel = new MessageChannel();
     topChannel.port2.onmessage = async (e) => {
-      await window.apptron.instance.ready();
-      const wport = window.apptron.instance.createPort();
-      const p9channel = new MessageChannel();
-      p9channel.port1.onmessage = (e) => {
-        window.apptron.instance._virtioHandle(e.data, (buf) => {
-          p9channel.port1.postMessage(buf);
-        })
-      };
-      e.data.port.postMessage({ wanix: wport, p9: p9channel.port2 }, [wport, p9channel.port2]);
+        await window.apptron.instance.ready();
+        const wport = window.apptron.instance.createPort();
+        const p9channel = new MessageChannel();
+        p9channel.port1.onmessage = (e) => {
+            window.apptron.instance._virtioHandle(e.data, (buf) => {
+                p9channel.port1.postMessage(buf);
+            })
+        };
+        e.data.port.postMessage({ wanix: wport, p9: p9channel.port2 }, [wport, p9channel.port2]);
     };
     top.postMessage({ factory: topChannel.port1 }, getOrigin(), [topChannel.port1]);
 
 
     // need to register this as early as possible
     window.addEventListener("message", async (event) => {
-      if (event.data.port && mode === "edit") {
-        console.log("vscode waiting for apptron...");
-        await window.apptron.instance.ready();
-        loader.loaded();
-        const port = window.apptron.instance.createPort();
-        event.data.port.postMessage({ wanix: port }, [port]);
-      }
+        if (event.data.port && mode === "edit") {
+            console.log("vscode waiting for apptron...");
+            await window.apptron.instance.ready();
+            loader.loaded();
+            const port = window.apptron.instance.createPort();
+            event.data.port.postMessage({ wanix: port }, [port]);
+        }
     });
 
     if (mode === "console") {
-      await window.apptron.instance.ready();
-      const w = window.apptron.instance;
-      const xid = (await w.readText("web/dom/new/xterm")).trim();
-      await w.writeFile("task/1/ctl", `bind #console/data web/dom/${xid}/data`);
-      await w.writeFile("web/dom/body/ctl", `append-child ${xid}`);
-      loader.loaded();
+        await window.apptron.instance.ready();
+        const w = window.apptron.instance;
+        const xid = (await w.readText("web/dom/new/xterm")).trim();
+        await w.writeFile("task/1/ctl", `bind #console/data web/dom/${xid}/data`);
+        await w.writeFile("web/dom/body/ctl", `append-child ${xid}`);
+        loader.loaded();
     }
+</script>
 
-  </script>
-  <div id="topbar">
+<div id="topbar">
     <html-component src="/com/topbar"></html-component>
-  </div>
-  <vscode-workbench></vscode-workbench>
+</div>
+<vscode-workbench></vscode-workbench>
 
-  <dialog id="loader">
+<dialog id="loader">
     <div class="spinner"></div>
-    <p>Loading...</p>
-  </dialog>
+    <p class="loader-status">Loading...</p>
+    <div class="loader-tip">
+        <svg height="20" width="20"><use href="/img/icons/info.svg"></use></svg>
+        <div>
+            <p><strong>Did you know?</strong></p>
+            <p id="loader-tip-body"></p>
+        </div>
+    </div>
+</dialog>
+
 </body>
 </html>

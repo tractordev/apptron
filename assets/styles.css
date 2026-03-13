@@ -386,7 +386,7 @@ header h1 {
     font-size: 4rem;
 }
 
-/* TOAST MESSAGES -----------------------*/
+/* TOAST MESSAGES AND TIP BOX-----------------------*/
 /* there are some magic numbers here so we can match vs code's notifications */
 #toast-root {
     position: fixed;
@@ -394,21 +394,23 @@ header h1 {
     right: 7px;
     z-index: 1000000;
 }
-.toast {
+.toast, .loader-tip {
     background-color: var(--gray-600);
     font-weight: 500;
     line-height: 160%;
     color: var(--gray-000);
     padding: var(--size-4);
     border: 1px solid var(--gray-600);
-    box-shadow: 0 0 2px 4px rgba(0,0,0,0.10); /* OR box-shadow: 0 0 1px 5px rgba(0,0,0,0.20); */
-    width: 500px;
     border-radius: var(--border-radius);
     display: flex;
     align-items: flex-start;
     gap: 5px;
 }
-.toast svg {
+.toast {
+    box-shadow: 0 0 2px 4px rgba(0,0,0,0.10); /* OR box-shadow: 0 0 1px 5px rgba(0,0,0,0.20); */
+    width: 500px;
+}
+.toast svg, .loader-tip svg {
     flex: 0 0 auto;
 }
 .toast-text {
@@ -420,8 +422,15 @@ header h1 {
     padding: 0px !important;
     align-self: flex-start;
 }
-.toast-status-icon {
+.toast-status-icon, .loader-tip svg {
     color: var(--yellow-shade);
+}
+.loader-tip {
+    margin-top: var(--size-12);
+}
+.loader-tip p {
+    margin: 0px;
+    line-height: var(--line-height)
 }
 
 /* HEADER BAR -----------------------*/
