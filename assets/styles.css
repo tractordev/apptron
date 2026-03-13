@@ -427,6 +427,7 @@ header h1 {
 }
 .loader-tip {
     margin-top: var(--size-12);
+    max-width: 500px;
 }
 .loader-tip p {
     margin: 0px;
