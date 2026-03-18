@@ -1,0 +1,30 @@
+{
+  "name": "apptron",
+  "version": "1.0.0",
+  "description": "[![Discord](https://img.shields.io/discord/415940907729420288?label=Discord)](https://discord.gg/nQbgRjEBU4) ![GitHub Sponsors](https://img.shields.io/github/sponsors/progrium?label=Sponsors)",
+  "main": "index.js",
+  "directories": {
+    "test": "tests"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.58.2",
+    "@types/node": "^25.5.0",
+    "dotenv": "^17.3.1",
+    "mailslurp-client": "^17.0.0"
+  },
+  "scripts": {
+    "test": "playwright test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tractordev/apptron.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/tractordev/apptron/issues"
+  },
+  "homepage": "https://github.com/tractordev/apptron#readme"
+}
