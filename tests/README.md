@@ -24,8 +24,11 @@ cp .env.example .env.local
 
 | Variable | Where to get it |
 |---|---|
+| `AUTH_URL` | Hanko Cloud dashboard → your project URL (different for local and prod) |
 | `MAILSLURP_API_KEY` | Create a free account at [mailslurp.com](https://mailslurp.com) |
-| `HANKO_ADMIN_API_KEY` | Hanko Cloud dashboard → your project → API Keys → **secret** |
+| `HANKO_ADMIN_API_KEY` | Hanko Cloud dashboard → your project → API Keys → **secret** (different for local and prod) |
+
+`AUTH_URL` and `HANKO_ADMIN_API_KEY` are environment-specific — your local Hanko project and prod Hanko project each have their own values. `.env.local` is for local development; set the prod equivalents in your deployment environment.
 
 ## Running the tests
 
