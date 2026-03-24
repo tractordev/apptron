@@ -50,7 +50,59 @@
     import { urlFor, redirectTo, modalDialog, $, $$, getBundle } from "/lib/apptron.js";
     import { showToast } from "/lib/toast.js";
 
-  
+    // periodically show sponsor modal
+    const SPONSOR_NEXT_AT_KEY = "apptron:sponsorNextAt";
+
+    async function waitForModal() {
+        while (!window.modal) {
+            await new Promise(requestAnimationFrame);
+        }
+    }
+    async function waitForUser() {
+        while (!window.user) {
+            await new Promise(requestAnimationFrame);
+        }
+    }
+    function addDays(date, days) {
+        const d = new Date(date);
+        d.setDate(d.getDate() + days);
+        return d;
+    }
+    function getUserCreatedAt(user) {
+        const raw = user?.created_at ?? user?.createdAt ?? user?.created ?? user?.created_on;
+        if (!raw) return null;
+        const d = new Date(raw);
+        return Number.isNaN(d.getTime()) ? null : d;
+    }
+    async function maybeShowSponsorModal() {
+        await waitForUser();
+
+        const createdAt = getUserCreatedAt(window.user);
+        if (!createdAt) return;
+
+        const firstEligibleAt = addDays(createdAt, 14);
+
+        let nextAtISO = localStorage.getItem(SPONSOR_NEXT_AT_KEY);
+        if (!nextAtISO) {
+            nextAtISO = firstEligibleAt.toISOString();
+            localStorage.setItem(SPONSOR_NEXT_AT_KEY, nextAtISO);
+        }
+
+        const nextAt = new Date(nextAtISO);
+        if (Number.isNaN(nextAt.getTime())) {
+            localStorage.setItem(SPONSOR_NEXT_AT_KEY, firstEligibleAt.toISOString());
+            return;
+        }
+
+        if (Date.now() < nextAt.getTime()) return;
+
+        await waitForModal();
+        await window.modal.show("/com/sponsor");
+
+        const next = addDays(new Date(), 30).toISOString();
+        localStorage.setItem(SPONSOR_NEXT_AT_KEY, next);
+    }
+
     $("#create-btn").addEventListener("click", async () => {
         const resp = await window.modal.show("/com/project", {});
         if (!resp) return; // canceled
@@ -200,7 +252,9 @@
         redirectTo(url); // or window.location.href = url;
     });
 
-
+    queueMicrotask(() => {
+        maybeShowSponsorModal().catch(console.error);
+    });
 
     // start pre-loading common bundles
     getBundle("/bundles/sys.tar.gz");
