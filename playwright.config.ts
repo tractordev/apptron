@@ -20,6 +20,11 @@ export default defineConfig({
       name: 'setup',
       testMatch: /.*setup\.ts/,
       use: { ...devices['Desktop Chrome'] },
+      teardown: 'cleanup',
+    },
+    {
+      name: 'cleanup',
+      testMatch: /.*teardown\.ts/,
     },
     {
       name: 'chromium',

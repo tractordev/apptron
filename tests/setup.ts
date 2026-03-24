@@ -6,9 +6,12 @@ import * as fs from 'fs';
 // The chromium project in playwright.config.ts loads this at the start of every test,
 // so tests don't need to sign in themselves.
 const authFile = 'tests/.auth/user.json';
+const userFile = 'tests/.auth/test-user.json';
 
 // A virtual authenticator simulates a hardware passkey device (like Touch ID or a USB key).
 // This lets Playwright handle WebAuthn ceremonies automatically, with no real biometrics needed.
+// Crucially, it never touches Chrome's real passkey store — credentials exist only in memory
+// for the duration of the test.
 async function setupVirtualAuthenticator(page: any, context: any) {
   const cdp = await context.newCDPSession(page);
   await cdp.send('WebAuthn.enable', { enableUI: false });
@@ -82,4 +85,7 @@ setup('create test account', async ({ page, context }) => {
   // Save cookies + localStorage so all other tests start already logged in.
   fs.mkdirSync('tests/.auth', { recursive: true });
   await page.context().storageState({ path: authFile });
+
+  // Save the email so teardown.ts can look up and delete this user via the Hanko admin API.
+  fs.writeFileSync(userFile, JSON.stringify({ email: inbox.emailAddress }));
 });
