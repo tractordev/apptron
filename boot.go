@@ -53,7 +53,7 @@ func updateLoader(text string) {
 	if loader.IsUndefined() {
 		return
 	}
-	loader.Call("querySelector", "p").Set("textContent", text)
+	loader.Call("querySelector", ".loader-status").Set("textContent", text)
 }
 
 func main() {
