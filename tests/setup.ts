@@ -1,5 +1,4 @@
 import { test as setup } from '@playwright/test';
-import { MailSlurp } from 'mailslurp-client';
 import * as fs from 'fs';
 
 // Where the authenticated browser state (cookies + localStorage) will be saved.
@@ -28,6 +27,31 @@ async function setupVirtualAuthenticator(page: any, context: any) {
   return cdp;
 }
 
+async function waitForMailinatorCode(inboxName: string, timeoutMs = 30000): Promise<string> {
+  const deadline = Date.now() + timeoutMs;
+  const apiKey = process.env.MAILINATOR_API_KEY!;
+  while (Date.now() < deadline) {
+    const domain = process.env.MAILINATOR_DOMAIN!;
+    const inboxRes = await fetch(
+      `https://mailinator.com/api/v2/domains/${domain}/inboxes/${inboxName}`,
+      { headers: { Authorization: apiKey } }
+    );
+    const inbox = await inboxRes.json() as { msgs?: { id: string }[] };
+    if (inbox.msgs && inbox.msgs.length > 0) {
+      const msgRes = await fetch(
+        `https://mailinator.com/api/v2/domains/${domain}/inboxes/${inboxName}/messages/${inbox.msgs[0].id}`,
+        { headers: { Authorization: apiKey } }
+      );
+      const msg = await msgRes.json() as { parts?: { body: string }[] };
+      const body = msg.parts?.[0]?.body ?? '';
+      const match = body.match(/\d{6}/);
+      if (match) return match[0];
+    }
+    await new Promise(r => setTimeout(r, 2000));
+  }
+  throw new Error('Timed out waiting for Mailinator email');
+}
+
 setup('create test account', async ({ page, context }) => {
   // Log browser console messages and failed network requests so we can diagnose
   // issues with the external Hanko API without staring at a blank spinner.
@@ -44,12 +68,11 @@ setup('create test account', async ({ page, context }) => {
   await hankoAuth.getByRole('button', { name: 'Create account' }).waitFor({ state: 'visible', timeout: 30000 });
   await hankoAuth.getByRole('button', { name: 'Create account' }).click();
 
-  // Create a real MailSlurp inbox so we can receive the Hanko verification email.
-  const mailslurp = new MailSlurp({ apiKey: process.env.MAILSLURP_API_KEY!, basePath: 'https://api.mailslurp.com' });
-  const inbox = await mailslurp.createInbox();
+  const inboxName = `testuser${Date.now()}`;
+  const emailAddress = `${inboxName}@${process.env.MAILINATOR_DOMAIN}`;
 
-  await hankoAuth.getByLabel('Username').fill(`testuser${Date.now()}`);
-  await hankoAuth.getByLabel('Email').fill(inbox.emailAddress!);
+  await hankoAuth.getByLabel('Username').fill(inboxName);
+  await hankoAuth.getByLabel('Email').fill(emailAddress);
   await hankoAuth.getByRole('button', { name: 'Continue' }).click();
 
   // Hanko occasionally returns a transient "technical error" after form submission.
@@ -59,9 +82,8 @@ setup('create test account', async ({ page, context }) => {
     throw new Error('Hanko returned a technical error — retrying');
   }
 
-  // Wait for the passcode email and extract the 6-digit code.
-  const email = await mailslurp.waitForLatestEmail(inbox.id!, 30000);
-  const code = email.body!.match(/\d{6}/)![0];
+  // Poll Mailinator for the passcode email and extract the 6-digit code.
+  const code = await waitForMailinatorCode(inboxName);
 
   await hankoAuth.locator('input').first().click();
   await page.keyboard.type(code);
@@ -87,5 +109,5 @@ setup('create test account', async ({ page, context }) => {
   await page.context().storageState({ path: authFile });
 
   // Save the email so teardown.ts can look up and delete this user via the Hanko admin API.
-  fs.writeFileSync(userFile, JSON.stringify({ email: inbox.emailAddress }));
+  fs.writeFileSync(userFile, JSON.stringify({ email: emailAddress }));
 });

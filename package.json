@@ -9,8 +9,7 @@
   "devDependencies": {
     "@playwright/test": "^1.58.2",
     "@types/node": "^25.5.0",
-    "dotenv": "^17.3.1",
-    "mailslurp-client": "^17.0.0"
+    "dotenv": "^17.3.1"
   },
   "scripts": {
     "test": "playwright test"

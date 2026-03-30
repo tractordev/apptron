@@ -25,7 +25,7 @@ cp .env.example .env.local
 | Variable | Where to get it |
 |---|---|
 | `AUTH_URL` | Hanko Cloud dashboard → your project URL (different for local and prod) |
-| `MAILSLURP_API_KEY` | Create a free account at [mailslurp.com](https://mailslurp.com) |
+| `MAILINATOR_API_KEY` | Use shared verified pro account credentials |
 | `HANKO_ADMIN_API_KEY` | Hanko Cloud dashboard → your project → API Keys → **secret** (different for local and prod) |
 
 `AUTH_URL` and `HANKO_ADMIN_API_KEY` are environment-specific — your local Hanko project and prod Hanko project each have their own values. `.env.local` is for local development; set the prod equivalents in your deployment environment.
@@ -45,7 +45,7 @@ npx playwright test --headed
 ## How it works
 
 **Setup** (`setup.ts`) runs once before all tests. It:
-1. Creates a real MailSlurp inbox to receive the Hanko verification email
+1. Creates a Mailinator inbox to receive the Hanko verification email
 2. Signs up a new test account via the Hanko auth flow
 3. Uses a virtual WebAuthn authenticator to register a passkey — this is in-memory only and never saves to your browser's credential store
 4. Saves the authenticated session to `tests/.auth/user.json`
