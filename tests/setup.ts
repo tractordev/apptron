@@ -4,8 +4,8 @@ import * as fs from 'fs';
 // Where the authenticated browser state (cookies + localStorage) will be saved.
 // The chromium project in playwright.config.ts loads this at the start of every test,
 // so tests don't need to sign in themselves.
-const authFile = 'tests/.auth/user.json';
-const userFile = 'tests/.auth/test-user.json';
+const authFile = '.auth/user.json';
+const userFile = '.auth/test-user.json';
 
 // A virtual authenticator simulates a hardware passkey device (like Touch ID or a USB key).
 // This lets Playwright handle WebAuthn ceremonies automatically, with no real biometrics needed.
@@ -105,7 +105,7 @@ setup('create test account', async ({ page, context }) => {
   await page.waitForURL('**/dashboard**', { timeout: 30000 });
 
   // Save cookies + localStorage so all other tests start already logged in.
-  fs.mkdirSync('tests/.auth', { recursive: true });
+  fs.mkdirSync('.auth', { recursive: true });
   await page.context().storageState({ path: authFile });
 
   // Save the email so teardown.ts can look up and delete this user via the Hanko admin API.

@@ -1,7 +1,7 @@
 import { test as teardown } from '@playwright/test';
 import * as fs from 'fs';
 
-const userFile = 'tests/.auth/test-user.json';
+const userFile = '.auth/test-user.json';
 
 teardown('delete test account', async () => {
   if (!fs.existsSync(userFile)) {
