@@ -2,6 +2,7 @@ import { test as teardown } from '@playwright/test';
 import * as fs from 'fs';
 
 const userFile = '.auth/test-user.json';
+const projectFile = '.auth/test-project.json';
 
 teardown('delete test account', async () => {
   if (!fs.existsSync(userFile)) {
@@ -46,4 +47,5 @@ teardown('delete test account', async () => {
 
   console.log(`[teardown] Deleted and verified removal of Hanko user ${userId} (${email})`);
   fs.unlinkSync(userFile);
+  if (fs.existsSync(projectFile)) fs.unlinkSync(projectFile);
 });

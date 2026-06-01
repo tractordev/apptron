@@ -1,4 +1,4 @@
-import { test as setup } from '@playwright/test';
+import { test as setup, expect } from '@playwright/test';
 import * as fs from 'fs';
 
 // Where the authenticated browser state (cookies + localStorage) will be saved.
@@ -6,6 +6,7 @@ import * as fs from 'fs';
 // so tests don't need to sign in themselves.
 const authFile = '.auth/user.json';
 const userFile = '.auth/test-user.json';
+const projectFile = '.auth/test-project.json';
 
 // A virtual authenticator simulates a hardware passkey device (like Touch ID or a USB key).
 // This lets Playwright handle WebAuthn ceremonies automatically, with no real biometrics needed.
@@ -56,9 +57,10 @@ setup('create test account', async ({ page, context }) => {
   // Log browser console messages and failed network requests so we can diagnose
   // issues with the external Hanko API without staring at a blank spinner.
   page.on('console', (msg: any) => console.log('[browser]', msg.text()));
-  page.on('requestfailed', (req: any) =>
-    console.log('[failed request]', req.url(), req.failure()?.errorText)
-  );
+  page.on('requestfailed', (req: any) => {
+    const url = new URL(req.url());
+    console.log('[failed request]', url.origin + url.pathname, req.failure()?.errorText);
+  });
 
   await setupVirtualAuthenticator(page, context);
   await page.goto('/signin');
@@ -101,7 +103,10 @@ setup('create test account', async ({ page, context }) => {
   }
 
   // The virtual authenticator intercepts navigator.credentials.create() automatically.
+  // Wait for the button to detach before waiting for the redirect — this gives the
+  // WebAuthn ceremony time to complete and avoids ERR_ABORTED on the dashboard navigation.
   await hankoAuth.getByRole('button', { name: 'Create a passkey' }).click();
+  await hankoAuth.getByRole('button', { name: 'Create a passkey' }).waitFor({ state: 'detached', timeout: 15000 });
   await page.waitForURL('**/dashboard**', { timeout: 30000 });
 
   // Save cookies + localStorage so all other tests start already logged in.
@@ -110,4 +115,16 @@ setup('create test account', async ({ page, context }) => {
 
   // Save the email so teardown.ts can look up and delete this user via the Hanko admin API.
   fs.writeFileSync(userFile, JSON.stringify({ email: emailAddress }));
+
+  // Create a project so editor tests can navigate straight to it without repeating the creation flow.
+  await page.locator('#header-bar.signedin').waitFor({ state: 'visible' });
+  await page.waitForFunction(() => customElements.get('html-component') !== undefined);
+  await page.getByRole('button', { name: 'Create Project' }).click();
+  await page.getByRole('heading', { name: 'New Project' }).waitFor({ state: 'visible', timeout: 30000 });
+  const projectName = `project${Date.now()}`;
+  await page.getByLabel('Project name').fill(projectName);
+  await expect(page.locator('#project-submit')).toBeEnabled({ timeout: 15000 });
+  await page.locator('#project-submit').click();
+  await page.waitForURL('**/edit/**', { timeout: 15000 });
+  fs.writeFileSync(projectFile, JSON.stringify({ url: page.url() }));
 });

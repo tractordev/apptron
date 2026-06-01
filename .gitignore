@@ -13,6 +13,7 @@ kernel/bzImage
 go.work.sum
 go.work
 /wanix
+test-results/
 tests/test-results/
 tests/playwright-report/
 tests/.auth/
