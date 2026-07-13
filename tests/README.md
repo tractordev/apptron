@@ -4,9 +4,9 @@ Playwright tests for Apptron. Tests run against a local `wrangler dev` server an
 
 ## Prerequisites
 
-**1. Install dependencies**
+**1. Install dependencies** (from the `tests/` directory)
 ```bash
-npm install
+cd tests && npm install
 ```
 
 **2. Install the Chromium browser**
@@ -16,7 +16,7 @@ npx playwright install chromium
 
 **3. Set up environment variables**
 
-Copy `.env.example` to `.env.local` and fill in the required values:
+Copy `.env.example` to `.env.local` in the **project root** and fill in the required values:
 
 ```bash
 cp .env.example .env.local
@@ -56,6 +56,6 @@ npx playwright test --headed
 
 ## Notes
 
-- `tests/.auth/` is gitignored — it contains live session tokens and should never be committed
+- `.auth/` is gitignored — it contains live session tokens and should never be committed
 - The virtual authenticator means no real passkeys are created in your browser
 - If setup fails due to a transient Hanko API error, Playwright will retry once automatically

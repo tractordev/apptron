@@ -14,7 +14,8 @@ go.work.sum
 go.work
 /wanix
 test-results/
-playwright-report/
+tests/test-results/
+tests/playwright-report/
 tests/.auth/
 .claude/settings.local.json
 .claude/worktrees/

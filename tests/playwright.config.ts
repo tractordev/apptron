@@ -2,11 +2,11 @@ import { defineConfig, devices } from '@playwright/test';
 import * as dotenv from 'dotenv';
 
 // Wrangler loads .env.local automatically, but Node (and Playwright) don't.
-// We load it here so MAILSLURP_API_KEY is available in tests.
-dotenv.config({ path: '.env.local' });
+// We load it here so env vars (MAILINATOR_API_KEY etc.) are available in tests.
+dotenv.config({ path: '../.env.local' });
 
 export default defineConfig({
-  testDir: './tests',
+  testDir: '.',
   retries: 1,
   use: {
     baseURL: 'http://localhost:8788',
@@ -15,7 +15,7 @@ export default defineConfig({
   // Virtual authenticators (for passkey/WebAuthn testing) only work in Chromium
   projects: [
     // Runs once before all other projects — creates the test account and saves
-    // the session to tests/.auth/user.json so other tests can reuse the login.
+    // the session to .auth/user.json so other tests can reuse the login.
     {
       name: 'setup',
       testMatch: /.*setup\.ts/,
@@ -31,7 +31,7 @@ export default defineConfig({
       use: {
         ...devices['Desktop Chrome'],
         // Load the saved session — every test starts already logged in.
-        storageState: 'tests/.auth/user.json',
+        storageState: '.auth/user.json',
       },
       dependencies: ['setup'],
     },
