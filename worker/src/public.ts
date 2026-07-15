@@ -155,8 +155,8 @@ ${assets.map(a => `dirname(import.meta.url)+'${a}'`).join(",\n")}
 }
 
 function dirname(path) {
-    const i = path.lastIndexOf('/');
-    return i === -1 ? '.' : i === 0 ? '/' : path.slice(0, i);
+  const i = path.lastIndexOf('/');
+  return i === -1 ? '.' : i === 0 ? '/' : path.slice(0, i);
 }
 `;
 }

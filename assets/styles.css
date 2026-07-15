@@ -118,20 +118,20 @@
 
 
 hanko-profile::part(headline1) {
-    font-size: 16px;
-    margin-bottom: 0px;
-    margin-top: 1.75rem;
+  font-size: 16px;
+  margin-bottom: 0px;
+  margin-top: 1.75rem;
 }
 .hanko_paragraph {
-    margin-top: 0px;
+  margin-top: 0px;
 }
 hanko-auth {
-    position: absolute;
-    top: 10vh;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 400px;
-    padding: 1rem;
+  position: absolute;
+  top: 10vh;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 400px;
+  padding: 1rem;
 }
 
 @keyframes button-loading-spinner {
@@ -168,43 +168,43 @@ p {
 }
 
 button, input, select, textarea {
-    font: inherit;
+  font: inherit;
 }
 
 /* Exclude workbench so its layout (e.g. .monaco-tl-twistie) uses default content-box */
 *:not(vscode-workbench *) {
-    box-sizing: border-box;
+  box-sizing: border-box;
 }
 
 hidden {
-    display: none !important;
+  display: none !important;
 }
 
 label, legend {
-    color: var(--gray-100);
-    margin-bottom: var(--spacing);
+  color: var(--gray-100);
+  margin-bottom: var(--spacing);
 }
 input[type="text"], textarea, select {
-    border-radius: var(--border-radius);
-    border: 1px solid var(--gray-300);
-    background-color: inherit;
-    color: inherit;
-    padding: 0.5rem;
+  border-radius: var(--border-radius);
+  border: 1px solid var(--gray-300);
+  background-color: inherit;
+  color: inherit;
+  padding: 0.5rem;
 }
 input:not([type="radio"]), button.primary, button.secondary {
-    height: var(--item-height);
+  height: var(--item-height);
 }
 input[type="text"]:focus,
 textarea:focus,
 button:focus,
 select:focus {
-    outline: none;
-    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.2);
+  outline: none; 
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.2);
 }
 input:disabled, textarea:disabled, select:disabled {
-    border: var(--gray-300);
-    cursor:not-allowed;
-    color: var(--gray-300);
+  border: var(--gray-300);
+  cursor:not-allowed;
+  color: var(--gray-300);
 }
 textarea:disabled {
     resize: none;
@@ -212,23 +212,23 @@ textarea:disabled {
 label:has(+ input:disabled),
 label:has(+ select:disabled),
 label:has(+ textarea:disabled) {
-    color: var(--gray-300);
+  color: var(--gray-300);
 }
 input:read-only#project-name {
     border: none;
     cursor:text;
 }
 .input-row {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing);
 }
 .input-row input {
-    flex: 1;
-    min-width: 0;
+  flex: 1; 
+  min-width: 0; 
 }
 .input-row button {
-    flex: 0 0 auto;
+  flex: 0 0 auto;
 }
 .input-row > .icon-btn {
     font-size: var(--text-base);
@@ -249,7 +249,7 @@ button {
     padding: 0.6rem 1rem;
 }
 /* .btn is for all buttons that should look/behave like a button,
-even if they don't have a background color. includes menu items.
+even if they don't have a background color. includes menu items. 
 button.primary and button.secondary are a subset of .btn */
 .btn {
     border-radius: var(--border-radius);
@@ -304,8 +304,8 @@ button span {
     transition: all 0.2s;
 }
 .btn-loading span {
-    visibility: hidden;
-    opacity: 0;
+  visibility: hidden;
+  opacity: 0;
 }
 
 .dialog-close:hover {
@@ -315,62 +315,62 @@ button span {
 /* DASHBOARD ----------------- */
 
 .container {
-    padding: 2rem;
+  padding: 2rem;
 }
 
 header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
 }
 
 header h1 {
-    margin: 0;
-    font-size: 1.5rem;
+  margin: 0;
+  font-size: 1.5rem;
 }
 
 .projects-grid {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 1.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
 }
 
 .no-projects {
-    color: var(--gray-100);
-    text-align: center;
-    font-style: italic;
-    margin: 2rem 0;
-    width: 100%;
+  color: var(--gray-100);
+  text-align: center;
+  font-style: italic;
+  margin: 2rem 0;
+  width: 100%;
 }
 
 .project-card {
-    background: var(--gray-600);
-    border: 1px solid var(--gray-500);
-    padding: 1.2rem;
-    border-radius: var(--border-radius);
-    flex: 0 1 calc((100% - 1.5rem) / 2); /* two-column layout */
-    min-width: 250px;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    cursor: pointer;
+  background: var(--gray-600);
+  border: 1px solid var(--gray-500);
+  padding: 1.2rem;
+  border-radius: var(--border-radius);
+  flex: 0 1 calc((100% - 1.5rem) / 2); /* two-column layout */
+  min-width: 250px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  cursor: pointer;
 }
 
 .project-card .title {
-    margin: 0 0 0.3rem;
-    font-size: 1.1rem;
+  margin: 0 0 0.3rem;
+  font-size: 1.1rem;
 }
 
 .project-card .desc {
-    margin: 0 0 0.8rem;
-    font-size: 0.9rem;
-    color: var(--gray-100);
+  margin: 0 0 0.8rem;
+  font-size: 0.9rem;
+  color: var(--gray-100);
 }
 
 .project-card .time {
-    font-size: 0.8rem;
-    color: var(--gray-100);
+  font-size: 0.8rem;
+  color: var(--gray-100);
 }
 
 .card-header {
@@ -462,18 +462,18 @@ header h1 {
 }
 #header-bar #nav-links,
 #header-bar #header-left {
-    display: flex;
-    align-items: center;
+  display: flex;
+  align-items: center;
 }
 #header-bar #header-left {
-    gap: 1rem;
+  gap: 1rem;
 }
 #header-bar #nav-links {
-    gap: 2rem;
+  gap: 2rem;
 }
 
 #header-bar .project-header button#edit-project {
-    padding: 0 0.25rem;
+  padding: 0 0.25rem;
 }
 
 /* TODO: fix button styling so that a plain button is the default,
@@ -482,10 +482,10 @@ and we won't need these selectors */
 #header-bar #nav-links > apptron-dropdown > button,
 #header-bar .project-header button,
 #header-bar #header-left > button {
-    cursor: pointer;
-    background-color: inherit;
-    color: inherit;
-    padding: 0;
+  cursor: pointer;
+  background-color: inherit;
+  color: inherit;
+  padding: 0;
 }
 
 #header-bar > #header-left > a {
@@ -495,42 +495,42 @@ and we won't need these selectors */
 #header-bar #nav-links > button:focus,
 #header-bar #nav-links > apptron-dropdown > button:focus,
 #header-bar .project-header button:focus {
-    box-shadow: none;
+  box-shadow: none;
 }
 #topbar {
-    height: 35px;
+  height: 35px;
 }
 .project-header.private .name::before {
-    content: "";
-    display: inline-block;
-    width: 1.1em; height: 1.1rem;
-    vertical-align: middle;
-    margin-right: 0.25rem;
-    background: currentColor;
-    -webkit-mask: url('data:image/svg+xml;utf8,<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M13 7H12V5C12 3.93913 11.5786 2.92172 10.8284 2.17157C10.0783 1.42143 9.06087 1 8 1C6.93913 1 5.92172 1.42143 5.17157 2.17157C4.42143 2.92172 4 3.93913 4 5V7H3L2 8V14L3 15H13L14 14V8L13 7ZM5 5C5 4.20435 5.31607 3.44129 5.87868 2.87868C6.44129 2.31607 7.20435 2 8 2C8.79565 2 9.55871 2.31607 10.1213 2.87868C10.6839 3.44129 11 4.20435 11 5V7H5V5ZM13 14H3V8H13V14Z" fill="currentColor"/></svg>') no-repeat center / contain;
-    mask: url('data:image/svg+xml;utf8,<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M13 7H12V5C12 3.93913 11.5786 2.92172 10.8284 2.17157C10.0783 1.42143 9.06087 1 8 1C6.93913 1 5.92172 1.42143 5.17157 2.17157C4.42143 2.92172 4 3.93913 4 5V7H3L2 8V14L3 15H13L14 14V8L13 7ZM5 5C5 4.20435 5.31607 3.44129 5.87868 2.87868C6.44129 2.31607 7.20435 2 8 2C8.79565 2 9.55871 2.31607 10.1213 2.87868C10.6839 3.44129 11 4.20435 11 5V7H5V5ZM13 14H3V8H13V14Z" fill="currentColor"/></svg>') no-repeat center / contain;
+  content: "";
+  display: inline-block;
+  width: 1.1em; height: 1.1rem;
+  vertical-align: middle;
+  margin-right: 0.25rem;
+  background: currentColor;
+  -webkit-mask: url('data:image/svg+xml;utf8,<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M13 7H12V5C12 3.93913 11.5786 2.92172 10.8284 2.17157C10.0783 1.42143 9.06087 1 8 1C6.93913 1 5.92172 1.42143 5.17157 2.17157C4.42143 2.92172 4 3.93913 4 5V7H3L2 8V14L3 15H13L14 14V8L13 7ZM5 5C5 4.20435 5.31607 3.44129 5.87868 2.87868C6.44129 2.31607 7.20435 2 8 2C8.79565 2 9.55871 2.31607 10.1213 2.87868C10.6839 3.44129 11 4.20435 11 5V7H5V5ZM13 14H3V8H13V14Z" fill="currentColor"/></svg>') no-repeat center / contain;
+  mask: url('data:image/svg+xml;utf8,<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M13 7H12V5C12 3.93913 11.5786 2.92172 10.8284 2.17157C10.0783 1.42143 9.06087 1 8 1C6.93913 1 5.92172 1.42143 5.17157 2.17157C4.42143 2.92172 4 3.93913 4 5V7H3L2 8V14L3 15H13L14 14V8L13 7ZM5 5C5 4.20435 5.31607 3.44129 5.87868 2.87868C6.44129 2.31607 7.20435 2 8 2C8.79565 2 9.55871 2.31607 10.1213 2.87868C10.6839 3.44129 11 4.20435 11 5V7H5V5ZM13 14H3V8H13V14Z" fill="currentColor"/></svg>') no-repeat center / contain;
 }
 
 /* Dialog Styles ---------------------------*/
 dialog#modal {
-    position: fixed !important;
-    left: 50%;
-    top: 80px !important;          /* distance from top */
-    transform: translateX(-50%);   /* only center horizontally */
-    font: inherit;
-    background-color: var(--gray-600);
-    border: 1px solid var(--gray-500);
-    border-radius: var(--border-radius);
-    padding: 0rem 3rem 2rem;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
-    color: #fff;
-    z-index: 1000;
-    pointer-events: auto !important;
-    width: 464px;
-    margin: 0;
+  position: fixed !important;
+  left: 50%;
+  top: 80px !important;          /* distance from top */
+  transform: translateX(-50%);   /* only center horizontally */
+  font: inherit;
+  background-color: var(--gray-600);
+  border: 1px solid var(--gray-500);
+  border-radius: var(--border-radius);
+  padding: 0rem 3rem 2rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  color: #fff;
+  z-index: 1000;
+  pointer-events: auto !important;
+  width: 464px;
+  margin: 0;
 }
 dialog#modal::backdrop {
-    background-color: rgba(0, 0, 0, 0.6);
+  background-color: rgba(0, 0, 0, 0.6);
 }
 /* Dialog tabs --------------- */
 .dialog-tabs {
@@ -559,15 +559,15 @@ dialog#modal::backdrop {
 }
 
 .dialog-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: var(--size-2);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: var(--size-2);
 }
 #modal .dialog-header h2 {
-    margin: 0;
-    font-size: 24px;
-    padding: 0;
+  margin: 0;
+  font-size: 24px;
+  padding: 0;
 }
 
 .dialog-body > p {
@@ -581,42 +581,42 @@ dialog#modal::backdrop {
     background-color: var(--gray-500);
 }
 .dialog-body input[type=text],
-.dialog-body textarea,
+.dialog-body textarea, 
 .dialog-body label {
-    display: block;
-    width: 100%;
+  display: block;
+  width: 100%;
 }
 .dialog-body input[type="text"]:not(.input-row input[type="text"]),
 .dialog-body textarea,
 .dialog-body select,
 .dialog-body fieldset {
-    margin-bottom: 1.5rem;
+  margin-bottom: 1.5rem;
 }
 .dialog-footer {
-    display: flex;
-    justify-content: flex-end;
-    gap: 0.5rem;
-    margin-top: 2rem;
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 2rem;
 }
 
 /* Create project modal */
 /* === Visibility fieldset === */
 .visibility-group {
-    border: none;
-    padding: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 0;
+  border: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
 }
 
 /* === Radio options === */
 .radio-option {
-    display: grid !important;
-    grid-template-columns: auto 1fr;
-    column-gap: 0.6rem;
-    row-gap: 0.25rem;
-    align-items: start;
-    border-radius: 6px;
+  display: grid !important;
+  grid-template-columns: auto 1fr;
+  column-gap: 0.6rem;
+  row-gap: 0.25rem;
+  align-items: start;
+  border-radius: 6px;
 }
 .radio-option:hover {
     background-color: rgba(255, 255, 255, 0.05);
@@ -624,38 +624,38 @@ dialog#modal::backdrop {
 
 }
 .radio-option input[type="radio"] {
-    margin-top: 0.2rem; /* vertically aligns circle with title */
-    accent-color: #2e7aff; /* blue highlight */
-    cursor: pointer;
+  margin-top: 0.2rem; /* vertically aligns circle with title */
+  accent-color: #2e7aff; /* blue highlight */
+  cursor: pointer;
 }
 /* === Option text === */
 .option-title {
-    color: #fff;
+  color: #fff;
 }
 .option-help {
-    grid-column: 2;
-    font-size: 0.85rem;
-    color: var(--gray-100);
-    line-height: 1.3;
+  grid-column: 2;
+  font-size: 0.85rem;
+  color: var(--gray-100);
+  line-height: 1.3;
 }
 /* otherwise there's too much space between the close button and the dialog contents... */
 .auth-container {
-    margin-top: -1rem;
+  margin-top: -1rem;
 }
 /* Top bar login state */
 #logout, #account, #account-dropdown, #edit-project, #share {
-    display: none !important;
+  display: none !important;
 }
 .signedin #account,
 .signedin #logout,
 .signedin #account-dropdown {
-    display: block !important;
+  display: block !important;
 }
 .signedin #edit-project {
-    display: inline !important;
+  display: inline !important;
 }
 .signedin #signin {
-    display: none !important;
+  display: none !important;
 }
 .signedin.project #share {
     display: inline-flex !important;
@@ -663,101 +663,101 @@ dialog#modal::backdrop {
 
 /* Project header, if on project page state */
 .project-header {
-    display: none !important;
+  display: none !important;
 }
 .project .project-header {
-    display: flex !important;
-    gap: var(--size-2);
+  display: flex !important;
+  gap: var(--size-2);
 }
 
 /* Dashboard popover menu */
 .card-menu[popover] {
-    color: inherit;
-    font: inherit;
-    min-width: 150px;
-    padding: 0.5rem;
-    background: var(--gray-600);
-    border: 1px solid var(--gray-500);
-    border-radius: var(--border-radius);
-    box-shadow: 0 10px 30px rgba(0,0,0,0.45);
+  color: inherit;
+  font: inherit;
+  min-width: 150px;
+  padding: 0.5rem;
+  background: var(--gray-600);
+  border: 1px solid var(--gray-500);
+  border-radius: var(--border-radius);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.45);
 }
 
 /* Menu items */
 .menu-item {
-    font: inherit;
-    color: inherit;
-    cursor: pointer;
-    display: block;
-    width: 100%;
-    text-align: left;
-    background: transparent;
-    border: 0;
-    border-radius: var(--border-radius);
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  border-radius: var(--border-radius);
 }
 .card-menu .menu-item:hover { background: var(--gray-500); }
 .card-menu .menu-item.danger { color: #ffb4b4; }
 .card-menu .menu-item.danger:hover { background: rgba(255, 80, 80, 0.12); }
 
 #loader {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    max-width: 100%;
-    max-height: 100%;
-    margin: 0;
-    padding: 0;
-    border: none;
-    background: transparent;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    outline: none;
-    pointer-events: none;
-    font: inherit;
-    color: #fff;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  outline: none;
+  pointer-events: none;
+  font: inherit;
+  color: #fff;
 }
 
 #loader .spinner {
-    width: 200px;
-    height: 200px;
-    background-image: url("/img/loader.svg");
-    background-repeat: no-repeat;
-    background-size: contain;
-    background-position: center;
+  width: 200px;
+  height: 200px;
+  background-image: url("/img/loader.svg");
+  background-repeat: no-repeat;
+  background-size: contain;
+  background-position: center;
 }
 
 #loader.fade-out, #loader.fade-out::backdrop {
-    animation: fadeOut 0.2s ease forwards;
+  animation: fadeOut 0.2s ease forwards;
 }
 
 #loader > * {
-    pointer-events: none;
-    user-select: none;
+  pointer-events: none;
+  user-select: none;
 }
 
 
 #loader::backdrop {
-    background-color: var(--gray-700);
+  background-color: var(--gray-700);
 }
 
 @keyframes fadeOut {
-    from {
-        opacity: 1;
-    }
-    to {
-        opacity: 0;
-    }
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
 }
 
 /* temp fixes to be done the "right" way */
 .form-error {
-    color: var(--error-color);
-    font-size: 0.85rem;
-    position: absolute;
-    margin-top: -1.25rem; /* placement hack */
+  color: var(--error-color);
+  font-size: 0.85rem;
+  position: absolute;
+  margin-top: -1.25rem; /* placement hack */
 }
 .form-error.is-info {
     color: var(--gray-100);

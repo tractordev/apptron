@@ -1,38 +1,38 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Apptron</title>
-    <link rel="stylesheet" href="styles.css" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <script type="module">
-        import { getAuth, authRedirect, clearAllCache, getBundle } from "/lib/apptron.js";
+  <meta charset="UTF-8">
+  <title>Apptron</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <script type="module">
+    import { getAuth, authRedirect, clearAllCache, getBundle } from "/lib/apptron.js";
 
-        const auth = await getAuth();
+    const auth = await getAuth();
 
-        auth.onSessionCreated(async () => {
-            const session = await auth.validateSession();
-            authRedirect("/dashboard", session.claims.username);
-        });
+    auth.onSessionCreated(async () => {
+      const session = await auth.validateSession();
+      authRedirect("/dashboard", session.claims.username);
+    });
 
-        // already signed in
-        auth.validatedSession.then(session => {
-            if (session.is_valid) {
-                authRedirect("/dashboard", session.claims.username);
-            }
-        });
+    // already signed in
+    auth.validatedSession.then(session => {
+      if (session.is_valid) {
+        authRedirect("/dashboard", session.claims.username);
+      }
+    });
 
-        // start pre-loading common bundles
-        // on sign-in clear the cache
-        await clearAllCache("assets");
-        await clearAllCache("bundles");
-        getBundle("/bundles/sys.tar.gz");
-        getBundle("/bundles/goroot.tar.br");
-        getBundle("/bundles/gocache-386.tar.br");
-    </script>
+    // start pre-loading common bundles
+    // on sign-in clear the cache
+    await clearAllCache("assets");
+    await clearAllCache("bundles");
+    getBundle("/bundles/sys.tar.gz");
+    getBundle("/bundles/goroot.tar.br");
+    getBundle("/bundles/gocache-386.tar.br");
+  </script>
 </head>
 
 <body>
-    <hanko-auth></hanko-auth>
+  <hanko-auth></hanko-auth>
 </body>
 </html>
