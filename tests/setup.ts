@@ -13,118 +13,118 @@ const projectFile = '.auth/test-project.json';
 // Crucially, it never touches Chrome's real passkey store — credentials exist only in memory
 // for the duration of the test.
 async function setupVirtualAuthenticator(page: any, context: any) {
-  const cdp = await context.newCDPSession(page);
-  await cdp.send('WebAuthn.enable', { enableUI: false });
-  await cdp.send('WebAuthn.addVirtualAuthenticator', {
-    options: {
-      protocol: 'ctap2',                // CTAP2 is the protocol used by modern passkeys
-      transport: 'internal',            // 'internal' = platform authenticator (e.g. Face ID / Touch ID)
-      hasResidentKey: true,             // allows the credential to be stored on the authenticator
-      hasUserVerification: true,        // supports biometric/PIN verification
-      isUserVerified: true,             // auto-passes verification (no real biometrics required)
-      automaticPresenceSimulation: true // auto-responds to "tap your key" prompts
-    },
-  });
-  return cdp;
+    const cdp = await context.newCDPSession(page);
+    await cdp.send('WebAuthn.enable', { enableUI: false });
+    await cdp.send('WebAuthn.addVirtualAuthenticator', {
+        options: {
+            protocol: 'ctap2',                // CTAP2 is the protocol used by modern passkeys
+            transport: 'internal',            // 'internal' = platform authenticator (e.g. Face ID / Touch ID)
+            hasResidentKey: true,             // allows the credential to be stored on the authenticator
+            hasUserVerification: true,        // supports biometric/PIN verification
+            isUserVerified: true,             // auto-passes verification (no real biometrics required)
+            automaticPresenceSimulation: true // auto-responds to "tap your key" prompts
+        },
+    });
+    return cdp;
 }
 
 async function waitForMailinatorCode(inboxName: string, timeoutMs = 30000): Promise<string> {
-  const deadline = Date.now() + timeoutMs;
-  const apiKey = process.env.MAILINATOR_API_KEY!;
-  while (Date.now() < deadline) {
-    const domain = process.env.MAILINATOR_DOMAIN!;
-    const inboxRes = await fetch(
-      `https://mailinator.com/api/v2/domains/${domain}/inboxes/${inboxName}`,
-      { headers: { Authorization: apiKey } }
-    );
-    const inbox = await inboxRes.json() as { msgs?: { id: string }[] };
-    if (inbox.msgs && inbox.msgs.length > 0) {
-      const msgRes = await fetch(
-        `https://mailinator.com/api/v2/domains/${domain}/inboxes/${inboxName}/messages/${inbox.msgs[0].id}`,
-        { headers: { Authorization: apiKey } }
-      );
-      const msg = await msgRes.json() as { parts?: { body: string }[] };
-      const body = msg.parts?.[0]?.body ?? '';
-      const match = body.match(/\d{6}/);
-      if (match) return match[0];
+    const deadline = Date.now() + timeoutMs;
+    const apiKey = process.env.MAILINATOR_API_KEY!;
+    while (Date.now() < deadline) {
+        const domain = process.env.MAILINATOR_DOMAIN!;
+        const inboxRes = await fetch(
+            `https://mailinator.com/api/v2/domains/${domain}/inboxes/${inboxName}`,
+            { headers: { Authorization: apiKey } }
+        );
+        const inbox = await inboxRes.json() as { msgs?: { id: string }[] };
+        if (inbox.msgs && inbox.msgs.length > 0) {
+            const msgRes = await fetch(
+                `https://mailinator.com/api/v2/domains/${domain}/inboxes/${inboxName}/messages/${inbox.msgs[0].id}`,
+                { headers: { Authorization: apiKey } }
+            );
+            const msg = await msgRes.json() as { parts?: { body: string }[] };
+            const body = msg.parts?.[0]?.body ?? '';
+            const match = body.match(/\d{6}/);
+            if (match) return match[0];
+        }
+        await new Promise(r => setTimeout(r, 2000));
     }
-    await new Promise(r => setTimeout(r, 2000));
-  }
-  throw new Error('Timed out waiting for Mailinator email');
+    throw new Error('Timed out waiting for Mailinator email');
 }
 
 setup('create test account', async ({ page, context }) => {
-  // Log browser console messages and failed network requests so we can diagnose
-  // issues with the external Hanko API without staring at a blank spinner.
-  page.on('console', (msg: any) => console.log('[browser]', msg.text()));
-  page.on('requestfailed', (req: any) => {
-    const url = new URL(req.url());
-    console.log('[failed request]', url.origin + url.pathname, req.failure()?.errorText);
-  });
+    // Log browser console messages and failed network requests so we can diagnose
+    // issues with the external Hanko API without staring at a blank spinner.
+    page.on('console', (msg: any) => console.log('[browser]', msg.text()));
+    page.on('requestfailed', (req: any) => {
+        const url = new URL(req.url());
+        console.log('[failed request]', url.origin + url.pathname, req.failure()?.errorText);
+    });
 
-  await setupVirtualAuthenticator(page, context);
-  await page.goto('/signin');
+    await setupVirtualAuthenticator(page, context);
+    await page.goto('/signin');
 
-  // Wait for Hanko to finish initialising before interacting with it.
-  const hankoAuth = page.locator('hanko-auth');
-  await hankoAuth.getByRole('button', { name: 'Create account' }).waitFor({ state: 'visible', timeout: 30000 });
-  await hankoAuth.getByRole('button', { name: 'Create account' }).click();
+    // Wait for Hanko to finish initialising before interacting with it.
+    const hankoAuth = page.locator('hanko-auth');
+    await hankoAuth.getByRole('button', { name: 'Create account' }).waitFor({ state: 'visible', timeout: 30000 });
+    await hankoAuth.getByRole('button', { name: 'Create account' }).click();
 
-  const inboxName = `testuser${Date.now()}`;
-  const emailAddress = `${inboxName}@${process.env.MAILINATOR_DOMAIN}`;
+    const inboxName = `testuser${Date.now()}`;
+    const emailAddress = `${inboxName}@${process.env.MAILINATOR_DOMAIN}`;
 
-  await hankoAuth.getByLabel('Username').fill(inboxName);
-  await hankoAuth.getByLabel('Email').fill(emailAddress);
-  await hankoAuth.getByRole('button', { name: 'Continue' }).click();
+    await hankoAuth.getByLabel('Username').fill(inboxName);
+    await hankoAuth.getByLabel('Email').fill(emailAddress);
+    await hankoAuth.getByRole('button', { name: 'Continue' }).click();
 
-  // Hanko occasionally returns a transient "technical error" after form submission.
-  // If that happens, throw so Playwright's retry (retries: 1) re-runs setup.
-  const hankoError = hankoAuth.locator('#errorMessage');
-  if (await hankoError.isVisible({ timeout: 3000 }).catch(() => false)) {
-    throw new Error('Hanko returned a technical error — retrying');
-  }
+    // Hanko occasionally returns a transient "technical error" after form submission.
+    // If that happens, throw so Playwright's retry (retries: 1) re-runs setup.
+    const hankoError = hankoAuth.locator('#errorMessage');
+    if (await hankoError.isVisible({ timeout: 3000 }).catch(() => false)) {
+        throw new Error('Hanko returned a technical error — retrying');
+    }
 
-  // Poll Mailinator for the passcode email and extract the 6-digit code.
-  const code = await waitForMailinatorCode(inboxName);
+    // Poll Mailinator for the passcode email and extract the 6-digit code.
+    const code = await waitForMailinatorCode(inboxName);
 
-  await hankoAuth.locator('input').first().click();
-  await page.keyboard.type(code);
+    await hankoAuth.locator('input').first().click();
+    await page.keyboard.type(code);
 
-  // Hanko may auto-submit when all 6 digits are entered, making Continue disappear.
-  // Wait for whichever comes first, then only click Continue if it's still there.
-  const createPasskeyHeading = hankoAuth.locator('h1').filter({ hasText: 'Create a passkey' });
-  const continueBtn = hankoAuth.getByRole('button', { name: 'Continue' });
-  await Promise.race([
-    createPasskeyHeading.waitFor({ state: 'visible' }),
-    continueBtn.waitFor({ state: 'visible' }),
-  ]);
-  if (await continueBtn.isVisible()) {
-    await continueBtn.click();
-  }
+    // Hanko may auto-submit when all 6 digits are entered, making Continue disappear.
+    // Wait for whichever comes first, then only click Continue if it's still there.
+    const createPasskeyHeading = hankoAuth.locator('h1').filter({ hasText: 'Create a passkey' });
+    const continueBtn = hankoAuth.getByRole('button', { name: 'Continue' });
+    await Promise.race([
+        createPasskeyHeading.waitFor({ state: 'visible' }),
+        continueBtn.waitFor({ state: 'visible' }),
+    ]);
+    if (await continueBtn.isVisible()) {
+        await continueBtn.click();
+    }
 
-  // The virtual authenticator intercepts navigator.credentials.create() automatically.
-  // Wait for the button to detach before waiting for the redirect — this gives the
-  // WebAuthn ceremony time to complete and avoids ERR_ABORTED on the dashboard navigation.
-  await hankoAuth.getByRole('button', { name: 'Create a passkey' }).click();
-  await hankoAuth.getByRole('button', { name: 'Create a passkey' }).waitFor({ state: 'detached', timeout: 15000 });
-  await page.waitForURL('**/dashboard**', { timeout: 30000 });
+    // The virtual authenticator intercepts navigator.credentials.create() automatically.
+    // Wait for the button to detach before waiting for the redirect — this gives the
+    // WebAuthn ceremony time to complete and avoids ERR_ABORTED on the dashboard navigation.
+    await hankoAuth.getByRole('button', { name: 'Create a passkey' }).click();
+    await hankoAuth.getByRole('button', { name: 'Create a passkey' }).waitFor({ state: 'detached', timeout: 15000 });
+    await page.waitForURL('**/dashboard**', { timeout: 30000 });
 
-  // Save cookies + localStorage so all other tests start already logged in.
-  fs.mkdirSync('.auth', { recursive: true });
-  await page.context().storageState({ path: authFile });
+    // Save cookies + localStorage so all other tests start already logged in.
+    fs.mkdirSync('.auth', { recursive: true });
+    await page.context().storageState({ path: authFile });
 
-  // Save the email so teardown.ts can look up and delete this user via the Hanko admin API.
-  fs.writeFileSync(userFile, JSON.stringify({ email: emailAddress }));
+    // Save the email so teardown.ts can look up and delete this user via the Hanko admin API.
+    fs.writeFileSync(userFile, JSON.stringify({ email: emailAddress }));
 
-  // Create a project so editor tests can navigate straight to it without repeating the creation flow.
-  await page.locator('#header-bar.signedin').waitFor({ state: 'visible' });
-  await page.waitForFunction(() => customElements.get('html-component') !== undefined);
-  await page.getByRole('button', { name: 'Create Project' }).click();
-  await page.getByRole('heading', { name: 'New Project' }).waitFor({ state: 'visible', timeout: 30000 });
-  const projectName = `project${Date.now()}`;
-  await page.getByLabel('Project name').fill(projectName);
-  await expect(page.locator('#project-submit')).toBeEnabled({ timeout: 15000 });
-  await page.locator('#project-submit').click();
-  await page.waitForURL('**/edit/**', { timeout: 15000 });
-  fs.writeFileSync(projectFile, JSON.stringify({ url: page.url() }));
+    // Create a project so editor tests can navigate straight to it without repeating the creation flow.
+    await page.locator('#header-bar.signedin').waitFor({ state: 'visible' });
+    await page.waitForFunction(() => customElements.get('html-component') !== undefined);
+    await page.getByRole('button', { name: 'Create Project' }).click();
+    await page.getByRole('heading', { name: 'New Project' }).waitFor({ state: 'visible', timeout: 30000 });
+    const projectName = `project${Date.now()}`;
+    await page.getByLabel('Project name').fill(projectName);
+    await expect(page.locator('#project-submit')).toBeEnabled({ timeout: 15000 });
+    await page.locator('#project-submit').click();
+    await page.waitForURL('**/edit/**', { timeout: 15000 });
+    fs.writeFileSync(projectFile, JSON.stringify({ url: page.url() }));
 });
